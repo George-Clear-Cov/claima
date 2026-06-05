@@ -36,10 +36,10 @@ export default function Home() {
         </div>
 
         <div className="grid grid-cols-3 gap-3 mt-4 text-sm">
-          <div className="bg-gray-900 border border-gray-800 rounded-lg p-4">
+          <Link href="/denials" className="bg-gray-900 border border-gray-800 rounded-lg p-4 hover:border-red-500 transition-colors text-left">
             <div className="text-gray-400">Denial Management</div>
-            <div className="text-xs text-gray-600 mt-1">Coming soon</div>
-          </div>
+            <div className="text-xs text-red-500 mt-1 font-medium">4 open</div>
+          </Link>
           <div className="bg-gray-900 border border-gray-800 rounded-lg p-4">
             <div className="text-gray-400">Eligibility Check</div>
             <div className="text-xs text-gray-600 mt-1">Coming soon</div>

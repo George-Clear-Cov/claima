@@ -82,6 +82,36 @@ model Claim {
   provider  Provider    @relation(fields: [providerId], references: [id])
   patient   Patient     @relation(fields: [patientId], references: [id])
   lineItems ClaimLine[]
+  denial    Denial?
+}
+
+model Denial {
+  id             String       @id @default(uuid())
+  claimId        String       @unique
+  carcCode       String
+  denialReason   String
+  category       String
+  priority       String
+  action         String
+  appealable     Boolean
+  appealStatus   AppealStatus @default(PENDING)
+  appealLetter   String?
+  appealedAt     DateTime?
+  resolvedAt     DateTime?
+  resolution     String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  claim Claim @relation(fields: [claimId], references: [id])
+}
+
+enum AppealStatus {
+  PENDING
+  IN_PROGRESS
+  SUBMITTED
+  WON
+  LOST
+  WRITE_OFF
 }
 
 model ClaimLine {
