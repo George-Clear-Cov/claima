@@ -1,0 +1,107 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Practice {
+  id           String   @id @default(uuid())
+  name         String
+  npi          String   @unique
+  taxId        String
+  taxonomy     String
+  addressLine1 String
+  addressLine2 String?
+  city         String
+  state        String
+  zip          String
+  phone        String
+  createdAt    DateTime @default(now())
+
+  providers Provider[]
+  patients  Patient[]
+  claims    Claim[]
+}
+
+model Provider {
+  id         String   @id @default(uuid())
+  practiceId String
+  firstName  String
+  lastName   String
+  npi        String   @unique
+  taxonomy   String
+  createdAt  DateTime @default(now())
+
+  practice Practice @relation(fields: [practiceId], references: [id])
+  claims   Claim[]
+}
+
+model Patient {
+  id           String   @id @default(uuid())
+  practiceId   String
+  firstName    String
+  lastName     String
+  dob          DateTime
+  gender       String
+  memberId     String
+  groupNumber  String?
+  payerId      String
+  payerName    String
+  addressLine1 String
+  city         String
+  state        String
+  zip          String
+  createdAt    DateTime @default(now())
+
+  practice Practice @relation(fields: [practiceId], references: [id])
+  claims   Claim[]
+}
+
+model Claim {
+  id            String      @id @default(uuid())
+  practiceId    String
+  providerId    String
+  patientId     String
+  serviceDate   DateTime
+  claimStatus   ClaimStatus @default(DRAFT)
+  totalCharge   Decimal     @db.Decimal(10, 2)
+  stediClaimId  String?
+  stediResponse Json?
+  denialCode    String?
+  denialReason  String?
+  submittedAt   DateTime?
+  paidAmount    Decimal?    @db.Decimal(10, 2)
+  paidAt        DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  practice  Practice    @relation(fields: [practiceId], references: [id])
+  provider  Provider    @relation(fields: [providerId], references: [id])
+  patient   Patient     @relation(fields: [patientId], references: [id])
+  lineItems ClaimLine[]
+}
+
+model ClaimLine {
+  id           String   @id @default(uuid())
+  claimId      String
+  cptCode      String
+  icd10Codes   String[]
+  modifier     String?
+  units        Int      @default(1)
+  chargeAmount Decimal  @db.Decimal(10, 2)
+  description  String?
+
+  claim Claim @relation(fields: [claimId], references: [id])
+}
+
+enum ClaimStatus {
+  DRAFT
+  SUBMITTED
+  ACCEPTED
+  REJECTED
+  DENIED
+  PAID
+}
