@@ -4,7 +4,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model Practice {
@@ -56,8 +55,9 @@ model Patient {
   zip          String
   createdAt    DateTime @default(now())
 
-  practice Practice @relation(fields: [practiceId], references: [id])
-  claims   Claim[]
+  practice          Practice           @relation(fields: [practiceId], references: [id])
+  claims            Claim[]
+  eligibilityChecks EligibilityCheck[]
 }
 
 model Claim {
@@ -112,6 +112,33 @@ enum AppealStatus {
   WON
   LOST
   WRITE_OFF
+}
+
+model EligibilityCheck {
+  id               String   @id @default(uuid())
+  patientId        String
+  payerId          String
+  memberId         String
+  eligible         Boolean
+  coverageActive   Boolean
+  planName         String?
+  groupNumber      String?
+  deductible       Decimal? @db.Decimal(10, 2)
+  deductibleMet    Decimal? @db.Decimal(10, 2)
+  outOfPocketMax   Decimal? @db.Decimal(10, 2)
+  outOfPocketMet   Decimal? @db.Decimal(10, 2)
+  copay            Decimal? @db.Decimal(10, 2)
+  coinsurance      Int?
+  visitLimit       Int?
+  visitsUsed       Int?
+  priorAuthRequired Boolean @default(false)
+  inNetwork        Boolean  @default(true)
+  effectiveDate    String?
+  terminationDate  String?
+  rawResponse      Json?
+  checkedAt        DateTime @default(now())
+
+  patient Patient @relation(fields: [patientId], references: [id])
 }
 
 model ClaimLine {
