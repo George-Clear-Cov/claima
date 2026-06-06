@@ -1,28 +1,50 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
   provider = "postgresql"
 }
 
+model User {
+  id             String   @id @default(uuid())
+  email          String   @unique
+  name           String
+  hashedPassword String
+  practiceId     String
+  role           UserRole @default(BILLER)
+  createdAt      DateTime @default(now())
+
+  practice Practice @relation(fields: [practiceId], references: [id])
+}
+
+enum UserRole {
+  ADMIN
+  BILLER
+}
+
 model Practice {
-  id           String   @id @default(uuid())
-  name         String
-  npi          String   @unique
-  taxId        String
-  taxonomy     String
-  addressLine1 String
-  addressLine2 String?
-  city         String
-  state        String
-  zip          String
-  phone        String
-  createdAt    DateTime @default(now())
+  id                String   @id @default(uuid())
+  name              String
+  npi               String   @unique
+  taxId             String
+  taxonomy          String
+  addressLine1      String
+  addressLine2      String?
+  city              String
+  state             String
+  zip               String
+  phone             String
+  stripeAccountId   String?  // Stripe Connect connected account ID
+  stripeOnboarded   Boolean  @default(false)
+  platformFeePercent Float   @default(5.0) // MediBill platform fee %
+  createdAt         DateTime @default(now())
 
   providers Provider[]
   patients  Patient[]
   claims    Claim[]
+  users     User[]
 }
 
 model Provider {
@@ -58,6 +80,7 @@ model Patient {
   practice          Practice           @relation(fields: [practiceId], references: [id])
   claims            Claim[]
   eligibilityChecks EligibilityCheck[]
+  statements        PatientStatement[]
 }
 
 model Claim {
@@ -78,11 +101,12 @@ model Claim {
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 
-  practice  Practice    @relation(fields: [practiceId], references: [id])
-  provider  Provider    @relation(fields: [providerId], references: [id])
-  patient   Patient     @relation(fields: [patientId], references: [id])
-  lineItems ClaimLine[]
-  denial    Denial?
+  practice   Practice          @relation(fields: [practiceId], references: [id])
+  provider   Provider          @relation(fields: [providerId], references: [id])
+  patient    Patient           @relation(fields: [patientId], references: [id])
+  lineItems  ClaimLine[]
+  denial     Denial?
+  statement  PatientStatement?
 }
 
 model Denial {
@@ -103,6 +127,36 @@ model Denial {
   updatedAt      DateTime     @updatedAt
 
   claim Claim @relation(fields: [claimId], references: [id])
+}
+
+model PatientStatement {
+  id               String          @id @default(uuid())
+  patientId        String
+  claimId          String          @unique
+  totalCharge      Decimal         @db.Decimal(10, 2)
+  insurancePaid    Decimal         @db.Decimal(10, 2)
+  adjustments      Decimal         @db.Decimal(10, 2) @default(0)
+  patientOwes      Decimal         @db.Decimal(10, 2)
+  patientPaid      Decimal         @db.Decimal(10, 2) @default(0)
+  balanceDue       Decimal         @db.Decimal(10, 2)
+  statementStatus  StatementStatus @default(PENDING)
+  dueDate          DateTime?
+  paidAt           DateTime?
+  notes            String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  patient Patient @relation(fields: [patientId], references: [id])
+  claim   Claim   @relation(fields: [claimId], references: [id])
+}
+
+enum StatementStatus {
+  PENDING
+  SENT
+  PARTIAL
+  PAID
+  WRITE_OFF
+  COLLECTIONS
 }
 
 enum AppealStatus {
