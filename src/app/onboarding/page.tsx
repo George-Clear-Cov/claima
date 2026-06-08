@@ -7,9 +7,6 @@ export default function OnboardingPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // In production this would be driven by auth — for now demo with the seeded practice
-  const DEMO_PRACTICE_ID = "8ea4ce61-69f3-4d47-b979-43aa8240fa35"
-
   async function handleConnect() {
     setLoading(true)
     setError(null)
@@ -17,7 +14,7 @@ export default function OnboardingPage() {
       const res = await fetch("/api/connect", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ practiceId: DEMO_PRACTICE_ID }),
+        body: JSON.stringify({}),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? "Failed")
@@ -31,22 +28,22 @@ export default function OnboardingPage() {
   return (
     <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center p-8">
       <div className="max-w-lg w-full">
-        <Link href="/" className="text-gray-500 text-sm hover:text-gray-300">← MediBill</Link>
+        <Link href="/" className="text-gray-500 text-sm hover:text-gray-300">← Claima</Link>
 
         <div className="mt-8 bg-gray-900 border border-gray-800 rounded-2xl p-8">
-          <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-lg font-bold mb-6">M</div>
+          <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-lg font-bold mb-6">C</div>
 
           <h1 className="text-2xl font-bold">Connect your practice to Stripe</h1>
           <p className="text-gray-400 mt-2 text-sm leading-relaxed">
-            MediBill collects patient payments on your behalf. We use Stripe Connect to
-            route funds directly to your bank account — MediBill takes a <span className="text-white font-medium">5% platform fee</span> on
+            Claima collects patient payments on your behalf. We use Stripe Connect to
+            route funds directly to your bank account — Claima takes a <span className="text-white font-medium">5% platform fee</span> on
             patient collections only (insurance payments are separate).
           </p>
 
           <div className="mt-6 space-y-3">
             {[
               ["Patient pays $75 copay", "$75.00"],
-              ["MediBill platform fee (5%)", "−$3.75"],
+              ["Claima platform fee (5%)", "−$3.75"],
               ["You receive", "$71.25"],
             ].map(([label, value]) => (
               <div key={label} className="flex justify-between text-sm">

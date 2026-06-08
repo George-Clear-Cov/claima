@@ -2,7 +2,7 @@ import { SignJWT, jwtVerify } from "jose"
 import { cookies } from "next/headers"
 import { NextRequest } from "next/server"
 
-export const COOKIE_NAME = "medibill_session"
+export const COOKIE_NAME = "claima_session"
 export const JWT_EXPIRY = "7d"
 
 function getSecret() {

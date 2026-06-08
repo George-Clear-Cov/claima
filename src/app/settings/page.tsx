@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, Suspense } from "react"
+import { useSearchParams } from "next/navigation"
 import NavBar from "@/components/NavBar"
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -67,6 +68,8 @@ const COMMON_PAYERS = [
   { id: "MEDICARE", name: "Medicare" },
 ]
 
+const inputClass = "w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all placeholder-gray-400"
+
 // ─── Practice Tab ───────────────────────────────────────────────────────────
 
 function PracticeTab({ practice, onSaved }: { practice: Practice | null; onSaved: () => void }) {
@@ -76,7 +79,18 @@ function PracticeTab({ practice, onSaved }: { practice: Practice | null; onSaved
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (practice) setForm(practice)
+    if (practice) {
+      setForm({
+        ...practice,
+        npi: practice.npi?.startsWith("PENDING-") ? "" : practice.npi,
+        taxId: practice.taxId === "PENDING" ? "" : practice.taxId,
+        addressLine1: practice.addressLine1 === "PENDING" ? "" : practice.addressLine1,
+        city: practice.city === "PENDING" ? "" : practice.city,
+        state: practice.state === "XX" ? "" : practice.state,
+        zip: practice.zip === "00000" ? "" : practice.zip,
+        phone: practice.phone === "0000000000" ? "" : practice.phone,
+      })
+    }
   }, [practice])
 
   async function handleSave(e: React.FormEvent) {
@@ -106,36 +120,36 @@ function PracticeTab({ practice, onSaved }: { practice: Practice | null; onSaved
   function field(key: keyof Practice, label: string, opts?: { placeholder?: string; half?: boolean; type?: string }) {
     return (
       <div className={opts?.half ? "" : "col-span-2"}>
-        <label className="block text-xs text-gray-400 mb-1.5">{label}</label>
+        <label className="block text-xs font-medium text-gray-500 mb-1.5">{label}</label>
         <input
           type={opts?.type ?? "text"}
           value={(form[key] as string) ?? ""}
           onChange={(e) => setForm({ ...form, [key]: e.target.value })}
           placeholder={opts?.placeholder}
-          className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 transition-colors"
+          className={inputClass}
         />
       </div>
     )
   }
 
   if (!practice) {
-    return <div className="text-gray-500 text-sm py-8 text-center">Loading practice details…</div>
+    return <div className="text-gray-400 text-sm py-8 text-center">Loading practice details…</div>
   }
 
   return (
     <form onSubmit={handleSave} className="space-y-6 max-w-2xl">
-      <div>
-        <h3 className="font-semibold mb-4">Practice Information</h3>
+      <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-4">
+        <h3 className="text-xs text-gray-500 uppercase tracking-widest font-medium">Practice Information</h3>
         <div className="grid grid-cols-2 gap-4">
           {field("name", "Practice Name")}
           {field("npi", "NPI", { half: true })}
           {field("taxId", "Tax ID", { half: true })}
           <div className="col-span-2">
-            <label className="block text-xs text-gray-400 mb-1.5">Taxonomy Code</label>
+            <label className="block text-xs font-medium text-gray-500 mb-1.5">Taxonomy Code</label>
             <select
               value={form.taxonomy ?? ""}
               onChange={(e) => setForm({ ...form, taxonomy: e.target.value })}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+              className={inputClass}
             >
               {COMMON_TAXONOMIES.map((t) => (
                 <option key={t.code} value={t.code}>{t.code} — {t.label}</option>
@@ -145,8 +159,8 @@ function PracticeTab({ practice, onSaved }: { practice: Practice | null; onSaved
         </div>
       </div>
 
-      <div>
-        <h3 className="font-semibold mb-4">Address & Contact</h3>
+      <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-4">
+        <h3 className="text-xs text-gray-500 uppercase tracking-widest font-medium">Address & Contact</h3>
         <div className="grid grid-cols-2 gap-4">
           {field("addressLine1", "Address Line 1")}
           {field("addressLine2", "Address Line 2 (optional)")}
@@ -157,40 +171,38 @@ function PracticeTab({ practice, onSaved }: { practice: Practice | null; onSaved
         </div>
       </div>
 
-      <div>
-        <h3 className="font-semibold mb-4">Billing Settings</h3>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="col-span-2">
-            <label className="block text-xs text-gray-400 mb-1.5">MediBill Platform Fee (%)</label>
-            <div className="flex items-center gap-3">
-              <input
-                type="number"
-                value={form.platformFeePercent ?? 5}
-                onChange={(e) => setForm({ ...form, platformFeePercent: parseFloat(e.target.value) })}
-                step="0.5"
-                min="0"
-                max="20"
-                className="w-32 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
-              />
-              <span className="text-gray-500 text-sm">applied to patient payments only</span>
-            </div>
+      <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-4">
+        <h3 className="text-xs text-gray-500 uppercase tracking-widest font-medium">Billing Settings</h3>
+        <div>
+          <label className="block text-xs font-medium text-gray-500 mb-1.5">Claima Platform Fee (%)</label>
+          <div className="flex items-center gap-3">
+            <input
+              type="number"
+              value={form.platformFeePercent ?? 5}
+              onChange={(e) => setForm({ ...form, platformFeePercent: parseFloat(e.target.value) })}
+              step="0.5"
+              min="0"
+              max="20"
+              className="w-32 bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all"
+            />
+            <span className="text-gray-400 text-sm">applied to patient payments only</span>
           </div>
         </div>
       </div>
 
       {error && (
-        <div className="text-red-400 text-sm bg-red-900/30 border border-red-800 rounded-lg px-4 py-2">{error}</div>
+        <div className="text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg px-4 py-2">{error}</div>
       )}
 
       <div className="flex items-center gap-3">
         <button
           type="submit"
           disabled={saving}
-          className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white px-6 py-2.5 rounded-lg text-sm font-medium transition-colors"
+          className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-6 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-sm"
         >
           {saving ? "Saving…" : "Save Changes"}
         </button>
-        {saved && <span className="text-green-400 text-sm">✓ Saved</span>}
+        {saved && <span className="text-green-600 text-sm font-medium">✓ Saved</span>}
       </div>
     </form>
   )
@@ -244,55 +256,56 @@ function ProvidersTab() {
   return (
     <div className="max-w-2xl">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="font-semibold">Providers</h3>
+        <h3 className="font-semibold text-gray-900">Providers</h3>
         <button
           onClick={() => setShowForm((v) => !v)}
-          className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm"
         >
           {showForm ? "Cancel" : "+ Add Provider"}
         </button>
       </div>
 
       {showForm && (
-        <form onSubmit={handleAdd} className="bg-gray-800/50 border border-gray-700 rounded-xl p-5 mb-6 space-y-4">
+        <form onSubmit={handleAdd} className="bg-gray-50 border border-gray-200 rounded-xl p-5 mb-6 space-y-4 shadow-sm">
+          <h4 className="text-xs text-gray-500 uppercase tracking-widest font-medium">New Provider</h4>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs text-gray-400 mb-1.5">First Name</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1.5">First Name</label>
               <input
                 value={form.firstName}
                 onChange={(e) => setForm({ ...form, firstName: e.target.value })}
                 required
                 placeholder="Emily"
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+                className={inputClass}
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-400 mb-1.5">Last Name</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1.5">Last Name</label>
               <input
                 value={form.lastName}
                 onChange={(e) => setForm({ ...form, lastName: e.target.value })}
                 required
                 placeholder="Chen"
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+                className={inputClass}
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-400 mb-1.5">NPI (10 digits)</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1.5">NPI (10 digits)</label>
               <input
                 value={form.npi}
                 onChange={(e) => setForm({ ...form, npi: e.target.value })}
                 required
                 maxLength={10}
                 placeholder="1234567890"
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+                className={inputClass}
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-400 mb-1.5">Taxonomy</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1.5">Taxonomy</label>
               <select
                 value={form.taxonomy}
                 onChange={(e) => setForm({ ...form, taxonomy: e.target.value })}
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+                className={inputClass}
               >
                 {COMMON_TAXONOMIES.map((t) => (
                   <option key={t.code} value={t.code}>{t.code} — {t.label}</option>
@@ -300,11 +313,11 @@ function ProvidersTab() {
               </select>
             </div>
           </div>
-          {error && <div className="text-red-400 text-sm">{error}</div>}
+          {error && <div className="text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</div>}
           <button
             type="submit"
             disabled={saving}
-            className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white px-5 py-2 rounded-lg text-sm font-medium transition-colors"
+            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-5 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm"
           >
             {saving ? "Adding…" : "Add Provider"}
           </button>
@@ -312,27 +325,27 @@ function ProvidersTab() {
       )}
 
       {loading ? (
-        <div className="text-gray-500 text-sm py-8 text-center">Loading…</div>
+        <div className="text-gray-400 text-sm py-8 text-center">Loading…</div>
       ) : providers.length === 0 ? (
-        <div className="text-gray-500 text-sm py-8 text-center">No providers yet. Add one above.</div>
+        <div className="text-gray-400 text-sm py-8 text-center">No providers yet. Add one above.</div>
       ) : (
-        <div className="border border-gray-800 rounded-xl overflow-hidden">
+        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-gray-900/80 border-b border-gray-800">
+              <tr className="bg-gray-50 border-b border-gray-200">
                 <th className="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                 <th className="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NPI</th>
                 <th className="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Taxonomy</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-800/60">
+            <tbody className="divide-y divide-gray-100">
               {providers.map((p) => (
-                <tr key={p.id} className="hover:bg-gray-900/40 transition-colors">
-                  <td className="px-5 py-3.5 font-medium text-gray-100">
+                <tr key={p.id} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-5 py-3.5 font-medium text-gray-900">
                     {p.firstName} {p.lastName}
                   </td>
-                  <td className="px-5 py-3.5 font-mono text-gray-400 text-xs">{p.npi}</td>
-                  <td className="px-5 py-3.5 font-mono text-gray-500 text-xs">{p.taxonomy}</td>
+                  <td className="px-5 py-3.5 font-mono text-gray-500 text-xs">{p.npi}</td>
+                  <td className="px-5 py-3.5 font-mono text-gray-400 text-xs">{p.taxonomy}</td>
                 </tr>
               ))}
             </tbody>
@@ -412,38 +425,34 @@ function PatientsTab() {
   return (
     <div className="max-w-3xl">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="font-semibold">Patients</h3>
+        <h3 className="font-semibold text-gray-900">Patients</h3>
         <button
           onClick={() => setShowForm((v) => !v)}
-          className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm"
         >
           {showForm ? "Cancel" : "+ Add Patient"}
         </button>
       </div>
 
       {showForm && (
-        <form onSubmit={handleAdd} className="bg-gray-800/50 border border-gray-700 rounded-xl p-5 mb-6 space-y-4">
-          <h4 className="text-sm font-medium text-gray-300">Patient Demographics</h4>
+        <form onSubmit={handleAdd} className="bg-gray-50 border border-gray-200 rounded-xl p-5 mb-6 space-y-4 shadow-sm">
+          <h4 className="text-xs text-gray-500 uppercase tracking-widest font-medium">Patient Demographics</h4>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs text-gray-400 mb-1.5">First Name</label>
-              <input value={form.firstName} onChange={(e) => setForm({ ...form, firstName: e.target.value })} required
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500" />
+              <label className="block text-xs font-medium text-gray-500 mb-1.5">First Name</label>
+              <input value={form.firstName} onChange={(e) => setForm({ ...form, firstName: e.target.value })} required className={inputClass} />
             </div>
             <div>
-              <label className="block text-xs text-gray-400 mb-1.5">Last Name</label>
-              <input value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} required
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500" />
+              <label className="block text-xs font-medium text-gray-500 mb-1.5">Last Name</label>
+              <input value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} required className={inputClass} />
             </div>
             <div>
-              <label className="block text-xs text-gray-400 mb-1.5">Date of Birth</label>
-              <input type="date" value={form.dob} onChange={(e) => setForm({ ...form, dob: e.target.value })} required
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500" />
+              <label className="block text-xs font-medium text-gray-500 mb-1.5">Date of Birth</label>
+              <input type="date" value={form.dob} onChange={(e) => setForm({ ...form, dob: e.target.value })} required className={inputClass} />
             </div>
             <div>
-              <label className="block text-xs text-gray-400 mb-1.5">Gender</label>
-              <select value={form.gender} onChange={(e) => setForm({ ...form, gender: e.target.value as "M" | "F" | "U" })}
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+              <label className="block text-xs font-medium text-gray-500 mb-1.5">Gender</label>
+              <select value={form.gender} onChange={(e) => setForm({ ...form, gender: e.target.value as "M" | "F" | "U" })} className={inputClass}>
                 <option value="F">Female</option>
                 <option value="M">Male</option>
                 <option value="U">Unknown / Other</option>
@@ -451,98 +460,90 @@ function PatientsTab() {
             </div>
           </div>
 
-          <h4 className="text-sm font-medium text-gray-300 pt-2">Insurance</h4>
+          <h4 className="text-xs text-gray-500 uppercase tracking-widest font-medium pt-2">Insurance</h4>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs text-gray-400 mb-1.5">Payer</label>
-              <select value={form.payerId} onChange={(e) => payerChange(e.target.value)}
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+              <label className="block text-xs font-medium text-gray-500 mb-1.5">Payer</label>
+              <select value={form.payerId} onChange={(e) => payerChange(e.target.value)} className={inputClass}>
                 {COMMON_PAYERS.map((p) => (
                   <option key={p.id} value={p.id}>{p.name}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="block text-xs text-gray-400 mb-1.5">Member ID</label>
-              <input value={form.memberId} onChange={(e) => setForm({ ...form, memberId: e.target.value })} required placeholder="W123456789"
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500" />
+              <label className="block text-xs font-medium text-gray-500 mb-1.5">Member ID</label>
+              <input value={form.memberId} onChange={(e) => setForm({ ...form, memberId: e.target.value })} required placeholder="W123456789" className={inputClass} />
             </div>
             <div>
-              <label className="block text-xs text-gray-400 mb-1.5">Group Number (optional)</label>
-              <input value={form.groupNumber} onChange={(e) => setForm({ ...form, groupNumber: e.target.value })} placeholder="GRP-12345"
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500" />
+              <label className="block text-xs font-medium text-gray-500 mb-1.5">Group Number (optional)</label>
+              <input value={form.groupNumber} onChange={(e) => setForm({ ...form, groupNumber: e.target.value })} placeholder="GRP-12345" className={inputClass} />
             </div>
           </div>
 
-          <h4 className="text-sm font-medium text-gray-300 pt-2">Address</h4>
+          <h4 className="text-xs text-gray-500 uppercase tracking-widest font-medium pt-2">Address</h4>
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
-              <label className="block text-xs text-gray-400 mb-1.5">Street Address</label>
-              <input value={form.addressLine1} onChange={(e) => setForm({ ...form, addressLine1: e.target.value })} required placeholder="123 Main St"
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500" />
+              <label className="block text-xs font-medium text-gray-500 mb-1.5">Street Address</label>
+              <input value={form.addressLine1} onChange={(e) => setForm({ ...form, addressLine1: e.target.value })} required placeholder="123 Main St" className={inputClass} />
             </div>
             <div>
-              <label className="block text-xs text-gray-400 mb-1.5">City</label>
-              <input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} required
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500" />
+              <label className="block text-xs font-medium text-gray-500 mb-1.5">City</label>
+              <input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} required className={inputClass} />
             </div>
             <div>
-              <label className="block text-xs text-gray-400 mb-1.5">State</label>
-              <input value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} required maxLength={2} placeholder="NY"
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 uppercase" />
+              <label className="block text-xs font-medium text-gray-500 mb-1.5">State</label>
+              <input value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} required maxLength={2} placeholder="NY" className={`${inputClass} uppercase`} />
             </div>
             <div>
-              <label className="block text-xs text-gray-400 mb-1.5">ZIP</label>
-              <input value={form.zip} onChange={(e) => setForm({ ...form, zip: e.target.value })} required placeholder="10001"
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500" />
+              <label className="block text-xs font-medium text-gray-500 mb-1.5">ZIP</label>
+              <input value={form.zip} onChange={(e) => setForm({ ...form, zip: e.target.value })} required placeholder="10001" className={inputClass} />
             </div>
           </div>
 
-          {error && <div className="text-red-400 text-sm">{error}</div>}
+          {error && <div className="text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</div>}
           <button type="submit" disabled={saving}
-            className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white px-5 py-2 rounded-lg text-sm font-medium transition-colors">
+            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-5 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm">
             {saving ? "Adding…" : "Add Patient"}
           </button>
         </form>
       )}
 
-      {/* Search */}
       <div className="mb-4">
         <input
           type="search"
           value={search}
           onChange={handleSearchChange}
           placeholder="Search by name or member ID…"
-          className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 transition-colors"
+          className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all placeholder-gray-400"
         />
       </div>
 
       {loading ? (
-        <div className="text-gray-500 text-sm py-8 text-center">Loading…</div>
+        <div className="text-gray-400 text-sm py-8 text-center">Loading…</div>
       ) : patients.length === 0 ? (
-        <div className="text-gray-500 text-sm py-8 text-center">
+        <div className="text-gray-400 text-sm py-8 text-center">
           {search ? `No patients matching "${search}"` : "No patients yet. Add one above."}
         </div>
       ) : (
-        <div className="border border-gray-800 rounded-xl overflow-hidden">
+        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-gray-900/80 border-b border-gray-800">
+              <tr className="bg-gray-50 border-b border-gray-200">
                 <th className="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                 <th className="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">DOB</th>
                 <th className="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payer</th>
                 <th className="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Member ID</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-800/60">
+            <tbody className="divide-y divide-gray-100">
               {patients.map((p) => (
-                <tr key={p.id} className="hover:bg-gray-900/40 transition-colors">
-                  <td className="px-5 py-3.5 font-medium text-gray-100">{p.lastName}, {p.firstName}</td>
-                  <td className="px-5 py-3.5 text-gray-400 text-xs font-mono">
+                <tr key={p.id} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-5 py-3.5 font-medium text-gray-900">{p.lastName}, {p.firstName}</td>
+                  <td className="px-5 py-3.5 text-gray-500 text-xs font-mono">
                     {new Date(p.dob).toLocaleDateString()}
                   </td>
-                  <td className="px-5 py-3.5 text-gray-400">{p.payerName}</td>
-                  <td className="px-5 py-3.5 font-mono text-xs text-gray-400">{p.memberId}</td>
+                  <td className="px-5 py-3.5 text-gray-500">{p.payerName}</td>
+                  <td className="px-5 py-3.5 font-mono text-xs text-gray-500">{p.memberId}</td>
                 </tr>
               ))}
             </tbody>
@@ -553,12 +554,139 @@ function PatientsTab() {
   )
 }
 
+// ─── Integrations Tab ────────────────────────────────────────────────────────
+
+interface IntegrationStatus {
+  stripeConfigured: boolean
+  stediConfigured: boolean
+  anthropicConfigured: boolean
+  dbConfigured: boolean
+}
+
+function IntegrationsTab() {
+  const [status, setStatus] = useState<IntegrationStatus | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetch("/api/context")
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (data) {
+          setStatus({
+            stripeConfigured: !!data.stripeConfigured,
+            stediConfigured: !!data.stediConfigured,
+            anthropicConfigured: !!data.anthropicConfigured,
+            dbConfigured: !!data.dbConfigured,
+          })
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [])
+
+  const integrations = [
+    {
+      name: "Stripe",
+      description: "Patient payment collection via card. Required for live billing.",
+      configured: status?.stripeConfigured ?? false,
+      envVars: ["STRIPE_SECRET_KEY", "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY", "STRIPE_WEBHOOK_SECRET"],
+      docsUrl: "https://dashboard.stripe.com/apikeys",
+      docsLabel: "Get API keys →",
+      note: "Use test mode keys (prefix sk_test_) during development.",
+    },
+    {
+      name: "Stedi Clearinghouse",
+      description: "837P electronic claim submission to insurance payers.",
+      configured: status?.stediConfigured ?? false,
+      envVars: ["STEDI_API_KEY"],
+      docsUrl: "https://www.stedi.com/app/keys",
+      docsLabel: "Get API key →",
+      note: "Without this key, claims submit in mock mode (accepted locally, not sent to payers).",
+    },
+    {
+      name: "Anthropic (Claude)",
+      description: "AI-generated denial appeal letters.",
+      configured: status?.anthropicConfigured ?? false,
+      envVars: ["ANTHROPIC_API_KEY"],
+      docsUrl: "https://console.anthropic.com/settings/keys",
+      docsLabel: "Get API key →",
+      note: "Required for the AI appeal letter feature in Denials.",
+    },
+    {
+      name: "Database (Supabase)",
+      description: "PostgreSQL for claims, patients, statements, and billing data.",
+      configured: status?.dbConfigured ?? false,
+      envVars: ["DATABASE_URL"],
+      docsUrl: "https://supabase.com/dashboard/project/_/settings/database",
+      docsLabel: "Get connection string →",
+      note: "Without this, all data is ephemeral — nothing persists between requests.",
+    },
+  ]
+
+  return (
+    <div className="max-w-2xl space-y-4">
+      <div className="text-xs text-gray-400 mb-2">
+        Set env vars in <code className="bg-gray-100 px-1.5 py-0.5 rounded font-mono text-gray-600">.env.local</code> then restart the dev server.
+      </div>
+
+      {integrations.map((integ) => (
+        <div key={integ.name} className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+          <div className="flex items-start justify-between mb-3">
+            <div>
+              <div className="flex items-center gap-2 mb-0.5">
+                <h3 className="font-semibold text-gray-900 text-sm">{integ.name}</h3>
+                {loading ? (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-400">checking…</span>
+                ) : integ.configured ? (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-green-50 text-green-700 font-medium">
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-500" /> Connected
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-500">
+                    <span className="w-1.5 h-1.5 rounded-full bg-gray-400" /> Not configured
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-gray-500">{integ.description}</p>
+            </div>
+          </div>
+
+          <div className="space-y-1.5 mb-3">
+            {integ.envVars.map((v) => (
+              <div key={v} className="flex items-center gap-2">
+                <code className="text-xs bg-gray-50 border border-gray-200 text-gray-700 px-2 py-0.5 rounded font-mono">{v}</code>
+              </div>
+            ))}
+          </div>
+
+          {!integ.configured && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-700 mb-3">
+              {integ.note}
+            </div>
+          )}
+
+          <a
+            href={integ.docsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors"
+          >
+            {integ.docsLabel}
+          </a>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 // ─── Page ────────────────────────────────────────────────────────────────────
 
-type Tab = "practice" | "providers" | "patients"
+type Tab = "practice" | "providers" | "patients" | "integrations"
 
-export default function SettingsPage() {
-  const [tab, setTab] = useState<Tab>("practice")
+function SettingsInner() {
+  const params = useSearchParams()
+  const initialTab = (params.get("tab") as Tab | null) ?? "practice"
+  const [tab, setTab] = useState<Tab>(initialTab)
   const [practice, setPractice] = useState<Practice | null>(null)
 
   const loadPractice = useCallback(async () => {
@@ -574,10 +702,11 @@ export default function SettingsPage() {
     { id: "practice", label: "Practice Info" },
     { id: "providers", label: "Providers" },
     { id: "patients", label: "Patients" },
+    { id: "integrations", label: "Integrations" },
   ]
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
+    <div className="min-h-screen bg-gray-50 text-gray-900">
       <NavBar />
       <div className="max-w-4xl mx-auto p-8">
         <div className="mb-8">
@@ -585,16 +714,15 @@ export default function SettingsPage() {
           <p className="text-gray-500 text-sm mt-0.5">Manage your practice, providers, and patients</p>
         </div>
 
-        {/* Tab bar */}
-        <div className="flex gap-0.5 bg-gray-900/60 border border-gray-800 rounded-xl p-1 mb-8 w-fit">
+        <div className="flex gap-0.5 bg-white border border-gray-200 rounded-xl p-1 mb-8 w-fit shadow-sm">
           {TABS.map(({ id, label }) => (
             <button
               key={id}
               onClick={() => setTab(id)}
               className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${
                 tab === id
-                  ? "bg-gray-800 text-white"
-                  : "text-gray-500 hover:text-gray-300"
+                  ? "bg-gray-100 text-gray-900"
+                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
               }`}
             >
               {label}
@@ -602,11 +730,19 @@ export default function SettingsPage() {
           ))}
         </div>
 
-        {/* Tab content */}
         {tab === "practice" && <PracticeTab practice={practice} onSaved={loadPractice} />}
         {tab === "providers" && <ProvidersTab />}
         {tab === "patients" && <PatientsTab />}
+        {tab === "integrations" && <IntegrationsTab />}
       </div>
     </div>
+  )
+}
+
+export default function SettingsPage() {
+  return (
+    <Suspense>
+      <SettingsInner />
+    </Suspense>
   )
 }

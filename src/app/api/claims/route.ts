@@ -124,6 +124,7 @@ export async function GET() {
       patient: { select: { firstName: true, lastName: true } },
       provider: { select: { firstName: true, lastName: true } },
       lineItems: true,
+      statement: { select: { id: true } },
     },
     orderBy: { createdAt: "desc" },
   })

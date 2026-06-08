@@ -1,0 +1,17 @@
+{
+  "framework": "nextjs",
+  "buildCommand": "prisma generate && next build",
+  "devCommand": "next dev",
+  "installCommand": "bun install",
+  "regions": ["iad1"],
+  "env": {
+    "DATABASE_URL": "@medibill-database-url",
+    "DIRECT_URL": "@medibill-direct-url",
+    "JWT_SECRET": "@medibill-jwt-secret",
+    "ANTHROPIC_API_KEY": "@medibill-anthropic-key",
+    "AZURE_AD_CLIENT_ID": "@medibill-azure-client-id",
+    "AZURE_AD_CLIENT_SECRET": "@medibill-azure-client-secret",
+    "STRIPE_SECRET_KEY": "@medibill-stripe-secret",
+    "STRIPE_WEBHOOK_SECRET": "@medibill-stripe-webhook-secret"
+  }
+}

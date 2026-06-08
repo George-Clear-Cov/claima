@@ -11,7 +11,7 @@ const schema = z.object({
 })
 
 // POST /api/payments — create Stripe PaymentIntent via Connect
-// Money flows: patient → practice's Stripe account, MediBill takes platform fee
+// Money flows: patient → practice's Stripe account, Claima takes platform fee
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
       amount: amountCents,
       currency: "usd",
       automatic_payment_methods: { enabled: true },
-      description: `MediBill patient copay — ${input.claimId}`,
+      description: `Claima patient copay — ${input.claimId}`,
       metadata: {
         statementId: input.statementId,
         patientName: input.patientName,
@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (connectedAccountId) {
-      // Connect: charge on behalf of practice, MediBill collects platform fee
+      // Connect: charge on behalf of practice, Claima collects platform fee
       paymentIntentParams.application_fee_amount = platformFeeCents
       paymentIntentParams.transfer_data = { destination: connectedAccountId }
     }

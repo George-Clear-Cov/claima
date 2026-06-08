@@ -16,6 +16,9 @@ const NAV_LINKS = [
   { href: "/denials", label: "Denials" },
   { href: "/eligibility", label: "Eligibility" },
   { href: "/billing", label: "Billing" },
+  { href: "/analytics", label: "Analytics" },
+  { href: "/assistant", label: "AI Assistant" },
+  { href: "/agent", label: "Agent" },
 ]
 
 export default function NavBar() {
@@ -37,16 +40,16 @@ export default function NavBar() {
   }
 
   return (
-    <header className="border-b border-gray-800/80 bg-gray-950/95 backdrop-blur-sm px-6 py-0 flex items-center justify-between sticky top-0 z-30 h-14">
+    <header className="border-b border-gray-200 bg-white px-6 h-14 flex items-center justify-between sticky top-0 z-30 shadow-sm">
       <div className="flex items-center gap-5 h-full">
         <Link href="/" className="flex items-center gap-2.5 shrink-0">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-xs font-bold shadow-lg shadow-blue-900/30">
-            M
+          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-xs font-bold text-white shadow-sm">
+            C
           </div>
-          <span className="font-semibold tracking-tight text-sm text-white">MediBill</span>
+          <span className="font-semibold tracking-tight text-sm text-gray-900">Claima</span>
         </Link>
 
-        <div className="w-px h-4 bg-gray-800" />
+        <div className="w-px h-4 bg-gray-200" />
 
         <nav className="flex items-center gap-0.5 h-full">
           {NAV_LINKS.map(({ href, label }) => {
@@ -55,16 +58,13 @@ export default function NavBar() {
               <Link
                 key={href}
                 href={href}
-                className={`relative px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
                   active
-                    ? "text-white bg-gray-800"
-                    : "text-gray-500 hover:text-gray-300 hover:bg-gray-900"
+                    ? "bg-gray-100 text-gray-900"
+                    : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
                 }`}
               >
                 {label}
-                {active && (
-                  <span className="absolute bottom-0 left-3 right-3 h-px bg-blue-500 rounded-full" />
-                )}
               </Link>
             )
           })}
@@ -74,19 +74,19 @@ export default function NavBar() {
       <div className="flex items-center gap-3">
         {session && (
           <div className="hidden sm:flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full bg-gray-700 flex items-center justify-center text-xs font-medium text-gray-300">
+            <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-xs font-semibold text-blue-700">
               {session.name.charAt(0).toUpperCase()}
             </div>
-            <span className="text-xs text-gray-400">{session.name}</span>
+            <span className="text-xs text-gray-500">{session.name}</span>
           </div>
         )}
-        <div className="w-px h-4 bg-gray-800" />
-        <Link href="/settings" className="text-xs text-gray-500 hover:text-gray-300 transition-colors px-2 py-1 rounded-md hover:bg-gray-900">
+        <div className="w-px h-4 bg-gray-200" />
+        <Link href="/settings" className="text-xs text-gray-500 hover:text-gray-700 transition-colors px-2 py-1 rounded-md hover:bg-gray-50">
           Settings
         </Link>
         <button
           onClick={handleLogout}
-          className="text-xs text-gray-500 hover:text-gray-300 transition-colors px-2 py-1 rounded-md hover:bg-gray-900"
+          className="text-xs text-gray-500 hover:text-gray-700 transition-colors px-2 py-1 rounded-md hover:bg-gray-50"
         >
           Sign out
         </button>

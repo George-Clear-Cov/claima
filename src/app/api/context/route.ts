@@ -24,5 +24,13 @@ export async function GET() {
     }),
   ])
 
-  return NextResponse.json({ practice, providers, patients })
+  return NextResponse.json({
+    practice,
+    providers,
+    patients,
+    stripeConfigured: !!process.env.STRIPE_SECRET_KEY,
+    stediConfigured: !!process.env.STEDI_API_KEY,
+    anthropicConfigured: !!process.env.ANTHROPIC_API_KEY,
+    dbConfigured: !!process.env.DATABASE_URL,
+  })
 }

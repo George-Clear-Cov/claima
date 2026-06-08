@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #030712;
-  --foreground: #f9fafb;
+  --background: #f9fafb;
+  --foreground: #111827;
 }
 
 @theme inline {
@@ -19,11 +19,10 @@ body {
 }
 
 ::selection {
-  background: rgba(59, 130, 246, 0.25);
-  color: #fff;
+  background: rgba(59, 130, 246, 0.15);
+  color: #1d4ed8;
 }
 
-/* Subtle scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -32,9 +31,9 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #374151;
+  background: #d1d5db;
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #4b5563;
+  background: #9ca3af;
 }

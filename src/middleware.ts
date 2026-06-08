@@ -2,7 +2,16 @@ import { NextRequest, NextResponse } from "next/server"
 import { jwtVerify } from "jose"
 import { COOKIE_NAME } from "@/lib/auth"
 
-const PUBLIC_PATHS = ["/login", "/api/auth/login", "/api/webhooks/stripe"]
+const PUBLIC_PATHS = [
+  "/login",
+  "/signup",
+  "/privacy",
+  "/terms",
+  "/api/auth/login",
+  "/api/auth/register",
+  "/api/auth/azure",
+  "/api/webhooks/stripe",
+]
 
 function isPublic(pathname: string) {
   return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"))

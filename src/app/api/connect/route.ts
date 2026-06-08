@@ -1,21 +1,21 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { stripe } from "@/lib/stripe"
+import { getSessionFromRequest } from "@/lib/auth"
 
-const onboardSchema = z.object({
-  practiceId: z.string().uuid(),
-  returnUrl: z.string().url().optional(),
-})
-
-// POST /api/connect — create or resume Stripe Connect onboarding for a practice
+// POST /api/connect — create or resume Stripe Connect onboarding for the current practice
 export async function POST(req: NextRequest) {
+  const session = await getSessionFromRequest(req)
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
   if (!stripe) {
-    return NextResponse.json({ error: "Stripe not configured. Add STRIPE_SECRET_KEY to .env.local." }, { status: 503 })
+    return NextResponse.json({ error: "Stripe not configured" }, { status: 503 })
   }
 
   try {
-    const body = await req.json()
-    const { practiceId, returnUrl } = onboardSchema.parse(body)
+    const body = await req.json().catch(() => ({}))
+    const returnUrl = typeof body.returnUrl === "string" ? body.returnUrl : undefined
+    const practiceId = session.practiceId
 
     const { prisma } = await import("@/lib/prisma")
     const practice = await prisma.practice.findUniqueOrThrow({ where: { id: practiceId } })
@@ -56,18 +56,19 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ url: accountLink.url, accountId })
   } catch (err) {
-    if (err instanceof z.ZodError) return NextResponse.json({ error: err.issues }, { status: 400 })
     console.error(err)
     return NextResponse.json({ error: "Failed to create Connect account" }, { status: 500 })
   }
 }
 
-// GET /api/connect?practiceId=... — check onboarding status
+// GET /api/connect — check onboarding status for current practice
 export async function GET(req: NextRequest) {
+  const session = await getSessionFromRequest(req)
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
   if (!stripe) return NextResponse.json({ configured: false })
 
-  const practiceId = req.nextUrl.searchParams.get("practiceId")
-  if (!practiceId) return NextResponse.json({ error: "practiceId required" }, { status: 400 })
+  const practiceId = session.practiceId
 
   const { prisma } = await import("@/lib/prisma")
   const practice = await prisma.practice.findUniqueOrThrow({ where: { id: practiceId } })
