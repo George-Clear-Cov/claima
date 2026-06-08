@@ -12,6 +12,7 @@ export default function TermsPage() {
         </Link>
         <div className="flex gap-4 text-xs text-gray-500">
           <Link href="/privacy" className="hover:text-gray-700">Privacy</Link>
+          <Link href="/security" className="hover:text-gray-700">Security</Link>
           <Link href="/login" className="hover:text-gray-700">Sign in</Link>
         </div>
       </header>
@@ -102,6 +103,16 @@ export default function TermsPage() {
 
         </div>
       </main>
+
+      <footer className="border-t border-gray-200 mt-16 py-8 text-center text-xs text-gray-400">
+        <div className="flex items-center justify-center gap-4">
+          <Link href="/privacy" className="hover:text-gray-600">Privacy Policy</Link>
+          <Link href="/terms" className="hover:text-gray-600 text-gray-600 font-medium">Terms of Service</Link>
+          <Link href="/security" className="hover:text-gray-600">Security</Link>
+          <a href="mailto:legal@claima.io" className="hover:text-gray-600">legal@claima.io</a>
+        </div>
+        <p className="mt-3">© 2026 Claima, Inc. All rights reserved.</p>
+      </footer>
     </div>
   )
 }
