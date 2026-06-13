@@ -35,7 +35,153 @@ const URGENCY_CONFIG = {
   this_week: { bg: "bg-blue-50", border: "border-blue-200", text: "text-blue-800", badge: "bg-blue-100 text-blue-700", label: "This Week" },
 }
 
-export default function Home() {
+function MarketingPage() {
+  return (
+    <div className="min-h-screen bg-white text-gray-900">
+      {/* Header */}
+      <header className="border-b border-gray-100 px-8 h-14 flex items-center justify-between max-w-6xl mx-auto">
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-xs font-bold text-white">C</div>
+          <span className="font-semibold text-sm text-gray-900">Claima</span>
+        </div>
+        <div className="flex items-center gap-4">
+          <Link href="/security" className="text-sm text-gray-500 hover:text-gray-700">Security</Link>
+          <Link href="/login" className="text-sm text-gray-500 hover:text-gray-700">Sign in</Link>
+          <Link href="/signup" className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
+            Get started
+          </Link>
+        </div>
+      </header>
+
+      {/* Hero */}
+      <section className="max-w-4xl mx-auto px-8 pt-20 pb-16 text-center">
+        <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 text-xs font-medium text-blue-700 mb-6">
+          <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+          AI-native medical billing
+        </div>
+        <h1 className="text-5xl font-bold tracking-tight text-gray-900 mb-5 leading-tight">
+          Stop leaving money<br />on the table
+        </h1>
+        <p className="text-xl text-gray-500 mb-8 max-w-2xl mx-auto leading-relaxed">
+          Claima handles claim submission, denial management, and patient billing automatically — so you can focus on patients, not paperwork.
+        </p>
+        <div className="flex items-center justify-center gap-3">
+          <Link href="/signup" className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-xl transition-colors shadow-sm">
+            Start free →
+          </Link>
+          <Link href="/login" className="text-gray-600 hover:text-gray-900 font-medium px-6 py-3 rounded-xl border border-gray-200 hover:border-gray-300 transition-colors">
+            Sign in
+          </Link>
+        </div>
+        <p className="text-xs text-gray-400 mt-4">No setup fee · HIPAA compliant · BAA included</p>
+      </section>
+
+      {/* Stats bar */}
+      <section className="border-y border-gray-100 bg-gray-50 py-8">
+        <div className="max-w-4xl mx-auto px-8 grid grid-cols-3 gap-8 text-center">
+          {[
+            { value: "< 24h", label: "Average claim submission time" },
+            { value: "94%", label: "First-pass claim acceptance rate" },
+            { value: "% of collections", label: "You only pay when you get paid" },
+          ].map((s) => (
+            <div key={s.label}>
+              <div className="text-2xl font-bold text-gray-900 mb-1">{s.value}</div>
+              <div className="text-sm text-gray-500">{s.label}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Features */}
+      <section className="max-w-4xl mx-auto px-8 py-20">
+        <h2 className="text-2xl font-bold text-center text-gray-900 mb-12">Everything billing, automated</h2>
+        <div className="grid grid-cols-2 gap-6">
+          {[
+            {
+              icon: "⚡",
+              title: "Autonomous billing agent",
+              desc: "One click posts ERAs, drafts appeal letters, flags timely filing risks, and identifies aging claims across your entire practice.",
+            },
+            {
+              icon: "✉",
+              title: "AI appeal letters",
+              desc: "Every denied claim gets an AI-generated appeal letter in seconds, citing the exact CARC code and payer policy.",
+            },
+            {
+              icon: "📋",
+              title: "Claim submission",
+              desc: "Submit 837P claims directly to payers. Real-time eligibility verification before every appointment.",
+            },
+            {
+              icon: "💳",
+              title: "Patient billing",
+              desc: "Automated statements, online payments, and AR tracking. Stop chasing patients for balances.",
+            },
+            {
+              icon: "📊",
+              title: "Daily AI briefing",
+              desc: "Start every morning with an AI-generated summary of what needs attention — prioritized by dollar impact.",
+            },
+            {
+              icon: "🔒",
+              title: "HIPAA compliant",
+              desc: "BAA included with every account. AES-256 encryption, audit logging, and SOC 2 Type II in progress.",
+            },
+          ].map((f) => (
+            <div key={f.title} className="p-5 border border-gray-200 rounded-xl hover:border-blue-200 hover:shadow-sm transition-all">
+              <div className="text-2xl mb-3">{f.icon}</div>
+              <div className="font-semibold text-gray-900 mb-1.5">{f.title}</div>
+              <div className="text-sm text-gray-500 leading-relaxed">{f.desc}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Specialties */}
+      <section className="bg-gray-50 border-y border-gray-100 py-16">
+        <div className="max-w-4xl mx-auto px-8 text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-3">Built for every outpatient specialty</h2>
+          <p className="text-gray-500 text-sm mb-8">If you bill insurance, Claima works for you.</p>
+          <div className="flex flex-wrap justify-center gap-2">
+            {[
+              "Family Medicine", "Internal Medicine", "Pediatrics", "OB/GYN",
+              "Psychiatry", "Psychology", "Mental Health Counseling",
+              "Physical Therapy", "Occupational Therapy", "Speech Therapy", "Chiropractic",
+              "Cardiology", "Neurology", "Gastroenterology", "Dermatology",
+              "Orthopedics", "Podiatry", "Optometry", "Nurse Practitioners", "Physician Assistants",
+            ].map((s) => (
+              <span key={s} className="bg-white border border-gray-200 text-gray-600 text-xs px-3 py-1.5 rounded-full">
+                {s}
+              </span>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="max-w-2xl mx-auto px-8 py-20 text-center">
+        <h2 className="text-3xl font-bold text-gray-900 mb-4">Ready to collect more?</h2>
+        <p className="text-gray-500 mb-8">Set up your practice in minutes. No contract, no setup fee.</p>
+        <Link href="/signup" className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3.5 rounded-xl transition-colors shadow-sm text-lg">
+          Create free account →
+        </Link>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t border-gray-100 py-8 text-center text-xs text-gray-400">
+        <div className="flex items-center justify-center gap-4 mb-3">
+          <Link href="/privacy" className="hover:text-gray-600">Privacy Policy</Link>
+          <Link href="/terms" className="hover:text-gray-600">Terms of Service</Link>
+          <Link href="/security" className="hover:text-gray-600">Security</Link>
+          <a href="mailto:support@claima.io" className="hover:text-gray-600">support@claima.io</a>
+        </div>
+        <p>© 2026 Claima, Inc. All rights reserved.</p>
+      </footer>
+    </div>
+  )
+}
+
+function Dashboard() {
   const [userName, setUserName] = useState("")
   const [setup, setSetup] = useState<{ practiceComplete: boolean; hasProviders: boolean; hasPatients: boolean } | null>(null)
   const [briefing, setBriefing] = useState<BriefingData | null>(null)
@@ -74,7 +220,6 @@ export default function Home() {
     <div className="min-h-screen bg-gray-50 text-gray-900">
       <NavBar />
       <main className="max-w-3xl mx-auto px-8 py-10">
-
         <div className="mb-8 flex items-start justify-between">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">
@@ -228,4 +373,15 @@ export default function Home() {
       </main>
     </div>
   )
+}
+
+export default function Home() {
+  const [authed, setAuthed] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    fetch("/api/auth/me").then(r => setAuthed(r.ok)).catch(() => setAuthed(false))
+  }, [])
+
+  if (authed === null) return null
+  return authed ? <Dashboard /> : <MarketingPage />
 }

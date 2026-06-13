@@ -3,10 +3,12 @@ import { jwtVerify } from "jose"
 import { COOKIE_NAME } from "@/lib/auth"
 
 const PUBLIC_PATHS = [
+  "/",
   "/login",
   "/signup",
   "/privacy",
   "/terms",
+  "/security",
   "/api/auth/login",
   "/api/auth/register",
   "/api/auth/azure",
