@@ -112,22 +112,22 @@ function MarketingPage() {
       {/* Payer marquee */}
       {(() => {
         const PAYERS = [
-          { name: "Aetna", domain: "aetna.com" },
-          { name: "UnitedHealthcare", domain: "uhc.com" },
-          { name: "Cigna", domain: "cigna.com" },
-          { name: "Humana", domain: "humana.com" },
-          { name: "Blue Cross Blue Shield", domain: "bcbs.com" },
-          { name: "Anthem", domain: "anthem.com" },
-          { name: "Molina Healthcare", domain: "molinahealthcare.com" },
-          { name: "Kaiser Permanente", domain: "kp.org" },
-          { name: "Centene", domain: "centene.com" },
-          { name: "Oscar Health", domain: "hioscar.com" },
-          { name: "Highmark", domain: "highmark.com" },
-          { name: "Optum", domain: "optum.com" },
-          { name: "Ambetter", domain: "ambetterhealth.com" },
-          { name: "Tricare", domain: "tricare.mil" },
-          { name: "Tufts Health", domain: "tuftshealthplan.com" },
-          { name: "Harvard Pilgrim", domain: "harvardpilgrim.org" },
+          { name: "Aetna",                  color: "#C41E3A" },
+          { name: "UnitedHealthcare",        color: "#0070CE" },
+          { name: "Cigna",                   color: "#006699" },
+          { name: "Humana",                  color: "#007AC2" },
+          { name: "Blue Cross Blue Shield",  color: "#00A3E0" },
+          { name: "Anthem",                  color: "#1B4598" },
+          { name: "Molina Healthcare",       color: "#006CB7" },
+          { name: "Kaiser Permanente",       color: "#009999" },
+          { name: "Centene",                 color: "#1B4D9C" },
+          { name: "Oscar Health",            color: "#FF4E00" },
+          { name: "Highmark",                color: "#0068A5" },
+          { name: "Optum",                   color: "#FF671B" },
+          { name: "Ambetter",                color: "#007ABA" },
+          { name: "Tricare",                 color: "#003087" },
+          { name: "Tufts Health",            color: "#0072CE" },
+          { name: "Harvard Pilgrim",         color: "#0066A6" },
         ]
         const doubled = [...PAYERS, ...PAYERS]
         return (
@@ -135,22 +135,20 @@ function MarketingPage() {
             <p className="text-center text-[10px] font-semibold text-gray-400 uppercase tracking-[0.12em] mb-6">
               Submits to every major payer
             </p>
-            <div className="relative">
-              <div className="flex animate-marquee items-center">
+            <div className="relative overflow-visible">
+              <div className="flex animate-marquee items-center py-2">
                 {doubled.map((payer, i) => (
-                  <div key={i} className="flex items-center gap-2.5 px-8 shrink-0 group">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={`https://logo.clearbit.com/${payer.domain}`}
-                      alt={payer.name}
-                      className="h-5 w-5 object-contain grayscale opacity-50 hover:grayscale-0 hover:opacity-100 hover:scale-125 transition-all duration-200 rounded shrink-0 cursor-pointer"
-                      onError={(e) => {
-                        const el = e.currentTarget
-                        el.src = `https://www.google.com/s2/favicons?domain=${payer.domain}&sz=64`
-                        el.onerror = () => { el.style.display = "none" }
-                      }}
+                  <div key={i} className="flex items-center gap-2.5 px-8 shrink-0 group cursor-pointer">
+                    <span
+                      className="w-2 h-2 rounded-full shrink-0 transition-all duration-200 opacity-40 group-hover:opacity-100 group-hover:scale-125"
+                      style={{ background: payer.color }}
                     />
-                    <span className="text-sm font-medium text-gray-400 group-hover:text-gray-700 whitespace-nowrap transition-colors duration-200">{payer.name}</span>
+                    <span
+                      className="text-[13px] font-semibold whitespace-nowrap transition-all duration-200 opacity-40 group-hover:opacity-100"
+                      style={{ color: payer.color }}
+                    >
+                      {payer.name}
+                    </span>
                   </div>
                 ))}
               </div>
