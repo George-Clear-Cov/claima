@@ -37,19 +37,19 @@ const URGENCY_CONFIG = {
 
 function MarketingPage() {
   return (
-    <div className="min-h-screen bg-white text-gray-900">
+    <div className="min-h-screen bg-white text-gray-900 antialiased">
 
       {/* Nav */}
-      <header className="sticky top-0 z-10 bg-white/90 backdrop-blur border-b border-gray-100">
+      <header className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm border-b border-gray-100">
         <div className="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-xs font-bold text-white">C</div>
-            <span className="font-semibold text-sm">Claima</span>
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-md bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-[10px] font-bold text-white">C</div>
+            <span className="font-semibold text-sm tracking-tight">Claima</span>
           </div>
-          <nav className="flex items-center gap-6">
-            <Link href="/security" className="text-sm text-gray-500 hover:text-gray-900 transition-colors">Security</Link>
-            <Link href="/login" className="text-sm text-gray-500 hover:text-gray-900 transition-colors">Sign in</Link>
-            <Link href="/signup" className="text-sm font-medium bg-gray-900 hover:bg-gray-700 text-white px-4 py-1.5 rounded-lg transition-colors">
+          <nav className="flex items-center gap-1">
+            <Link href="/security" className="text-sm text-gray-500 hover:text-gray-900 transition-colors px-3 py-1.5 rounded-md hover:bg-gray-50">Security</Link>
+            <Link href="/login" className="text-sm text-gray-500 hover:text-gray-900 transition-colors px-3 py-1.5 rounded-md hover:bg-gray-50">Sign in</Link>
+            <Link href="/signup" className="ml-2 text-sm font-medium bg-gray-900 hover:bg-gray-700 text-white px-3.5 py-1.5 rounded-md transition-colors">
               Get started
             </Link>
           </nav>
@@ -57,194 +57,230 @@ function MarketingPage() {
       </header>
 
       {/* Hero */}
-      <section className="max-w-5xl mx-auto px-6 pt-24 pb-20">
-        <div className="max-w-3xl">
-          <p className="text-sm font-medium text-blue-600 mb-4 tracking-wide uppercase">AI-native medical billing</p>
-          <h1 className="text-[3.25rem] font-bold tracking-tight leading-[1.1] text-gray-900 mb-6">
-            Your billing team,<br />minus the overhead
+      <section className="max-w-5xl mx-auto px-6 pt-20 pb-16">
+        <div className="max-w-2xl">
+          <h1 className="text-[2.75rem] font-bold tracking-tight leading-[1.12] text-gray-900 mb-5">
+            Medical billing that doesn't require a billing department
           </h1>
-          <p className="text-lg text-gray-500 leading-relaxed mb-8 max-w-xl">
-            Claima automates the full revenue cycle — claim submission, denial appeals, ERA posting, and patient billing. You keep seeing patients. We handle the rest.
+          <p className="text-[1.05rem] text-gray-500 leading-relaxed mb-8">
+            Claima handles the full revenue cycle for outpatient practices — claim submission, denial appeals, ERA posting, and patient statements. Works across every specialty that bills insurance.
           </p>
-          <div className="flex items-center gap-3">
-            <Link href="/signup" className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-5 py-2.5 rounded-lg transition-colors text-sm shadow-sm">
+          <div className="flex items-center gap-3 mb-6">
+            <Link href="/signup" className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2.5 rounded-lg transition-colors text-sm">
               Start for free
             </Link>
-            <Link href="/login" className="text-sm text-gray-500 hover:text-gray-900 px-5 py-2.5 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
-              Sign in to your practice
-            </Link>
+            <a href="mailto:support@claima.io" className="text-sm text-gray-500 hover:text-gray-900 transition-colors">
+              Talk to us →
+            </a>
           </div>
-          <p className="text-xs text-gray-400 mt-5">HIPAA compliant · BAA included · No contracts</p>
+          <div className="flex items-center gap-4 text-xs text-gray-400">
+            <span className="flex items-center gap-1.5">
+              <svg className="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+              HIPAA compliant
+            </span>
+            <span className="flex items-center gap-1.5">
+              <svg className="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+              BAA included
+            </span>
+            <span className="flex items-center gap-1.5">
+              <svg className="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+              No setup fee
+            </span>
+          </div>
         </div>
       </section>
 
-      {/* How it works */}
+      {/* Problem statement */}
       <section className="border-t border-gray-100 bg-gray-50">
-        <div className="max-w-5xl mx-auto px-6 py-16">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-10">How it works</p>
-          <div className="grid grid-cols-3 gap-8">
+        <div className="max-w-5xl mx-auto px-6 py-14">
+          <div className="grid grid-cols-3 gap-10">
             {[
-              {
-                step: "01",
-                title: "Submit a claim",
-                body: "Enter patient and visit details. Claima validates the claim, checks eligibility in real time, and routes it to the payer.",
-              },
-              {
-                step: "02",
-                title: "We handle denials",
-                body: "When a claim is denied, Claima reads the CARC code and drafts a complete appeal letter using Claude AI — ready to send in one click.",
-              },
-              {
-                step: "03",
-                title: "You get paid",
-                body: "ERAs are posted automatically. Patient balances are billed and tracked. Every dollar is accounted for.",
-              },
+              { stat: "30%", label: "of claims are denied on first submission industry-wide", sub: "Most are recoverable — but only if you catch them." },
+              { stat: "8–12hrs", label: "per week spent by average practice on billing admin", sub: "Time that could be spent on patient care." },
+              { stat: "5–7%", label: "of collections lost to billing firms that take a flat cut", sub: "Claima charges less, and only when you get paid." },
             ].map((s) => (
-              <div key={s.step}>
-                <div className="text-xs font-mono text-gray-300 mb-3">{s.step}</div>
-                <div className="text-base font-semibold text-gray-900 mb-2">{s.title}</div>
-                <div className="text-sm text-gray-500 leading-relaxed">{s.body}</div>
+              <div key={s.stat} className="border-l-2 border-gray-200 pl-5">
+                <div className="text-2xl font-bold text-gray-900 mb-1">{s.stat}</div>
+                <div className="text-sm font-medium text-gray-700 mb-1">{s.label}</div>
+                <div className="text-xs text-gray-400 leading-relaxed">{s.sub}</div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Features */}
-      <section className="max-w-5xl mx-auto px-6 py-20">
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-10">What's included</p>
-        <div className="grid grid-cols-2 gap-x-16 gap-y-10">
+      {/* How it works */}
+      <section className="max-w-5xl mx-auto px-6 py-16">
+        <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em] mb-10">How it works</p>
+        <div className="grid grid-cols-4 gap-6">
           {[
-            {
-              title: "Autonomous billing sweep",
-              body: "One click reviews your entire practice: posts ERA payments, drafts pending appeals, flags claims at timely filing risk, and surfaces aging AR.",
-              icon: (
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-              ),
-            },
-            {
-              title: "AI-generated appeal letters",
-              body: "Every denial triggers a fully written appeal letter citing the specific CARC/RARC code, payer policy, and clinical justification. No templates.",
-              icon: (
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-              ),
-            },
-            {
-              title: "837P claim submission",
-              body: "Build and submit HIPAA-standard claims directly. Real-time 270/271 eligibility verification before every appointment.",
-              icon: (
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
-              ),
-            },
-            {
-              title: "Patient billing & AR",
-              body: "Automated patient statements, balance tracking, and payment collection. Stop manually chasing co-pays and deductibles.",
-              icon: (
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
-              ),
-            },
-            {
-              title: "Daily AI briefing",
-              body: "Every morning, a prioritized summary of what needs your attention — sorted by dollar impact, not alphabetically.",
-              icon: (
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-              ),
-            },
-            {
-              title: "HIPAA-ready infrastructure",
-              body: "BAA signed at signup. AES-256 encryption at rest, TLS 1.2+ in transit, immutable audit logs retained 6 years. SOC 2 Type II in progress.",
-              icon: (
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
-              ),
-            },
-          ].map((f) => (
-            <div key={f.title} className="flex gap-4">
-              <div className="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 mt-0.5">
-                {f.icon}
-              </div>
-              <div>
-                <div className="font-semibold text-gray-900 mb-1 text-sm">{f.title}</div>
-                <div className="text-sm text-gray-500 leading-relaxed">{f.body}</div>
-              </div>
+            { n: "1", title: "Patient visits", body: "Eligibility verified before the appointment. Coverage gaps flagged before the claim is even written." },
+            { n: "2", title: "Claim submitted", body: "837P claim built from visit data and routed to the payer through a HIPAA-certified clearinghouse." },
+            { n: "3", title: "Denial — handled", body: "Claima reads the CARC code, cites the payer policy, and writes the appeal letter. One click to send." },
+            { n: "4", title: "Payment posted", body: "ERA auto-posted. Patient balance calculated. Statement sent. Aging AR tracked in one view." },
+          ].map((s) => (
+            <div key={s.n}>
+              <div className="w-7 h-7 rounded-full bg-blue-50 text-blue-600 text-xs font-bold flex items-center justify-center mb-4">{s.n}</div>
+              <div className="text-sm font-semibold text-gray-900 mb-2">{s.title}</div>
+              <div className="text-sm text-gray-500 leading-relaxed">{s.body}</div>
             </div>
           ))}
         </div>
       </section>
 
+      {/* Feature detail — alternating */}
+      <section className="border-t border-gray-100">
+        {[
+          {
+            label: "Autonomous agent",
+            title: "One click. Every billing task done.",
+            body: "The Claima agent sweeps your practice daily: posts ERA payments at contracted rates, drafts appeal letters for every new denial, flags claims approaching the timely filing window, and surfaces aging AR sorted by dollar value. What used to take a billing coordinator half a day takes 30 seconds.",
+            icon: (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+            ),
+          },
+          {
+            label: "Denial management",
+            title: "Every denial gets a real appeal, not a template",
+            body: "When a payer returns CARC 197 (missing auth) or CARC 50 (not medically necessary), Claima doesn't send a form letter. It writes a specific appeal citing the denial code, the relevant payer policy, and the clinical documentation on file. Practices using Claima appeal more claims — and win more of them.",
+            icon: (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+            ),
+          },
+          {
+            label: "Daily briefing",
+            title: "Start every morning knowing exactly what to do",
+            body: "Claima's AI briefing summarizes overnight ERA activity, new denials, timely filing risks, and patient AR — ranked by dollar impact. Not a dashboard you have to interpret. A briefing you can act on.",
+            icon: (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+            ),
+          },
+        ].map((f, i) => (
+          <div key={f.label} className={i % 2 === 1 ? "bg-gray-50 border-b border-gray-100" : "border-b border-gray-100"}>
+            <div className="max-w-5xl mx-auto px-6 py-14 flex gap-16 items-start">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-8 h-8 rounded-lg bg-white border border-gray-200 text-gray-500 flex items-center justify-center shadow-sm">
+                    {f.icon}
+                  </div>
+                  <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em]">{f.label}</span>
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-3 leading-snug">{f.title}</h3>
+                <p className="text-sm text-gray-500 leading-relaxed max-w-lg">{f.body}</p>
+              </div>
+              <div className="w-56 shrink-0 hidden lg:block" />
+            </div>
+          </div>
+        ))}
+      </section>
+
       {/* Pricing */}
-      <section className="border-t border-gray-100 bg-gray-50">
-        <div className="max-w-5xl mx-auto px-6 py-16">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Pricing</p>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">You only pay when you get paid</h2>
-          <p className="text-gray-500 text-sm mb-10">We charge a percentage of collections. No monthly fee, no per-claim cost, no setup fee.</p>
-          <div className="bg-white border border-gray-200 rounded-2xl p-8 max-w-sm">
-            <div className="text-3xl font-bold text-gray-900 mb-1">% of collections</div>
-            <div className="text-sm text-gray-500 mb-6">Contact us for your rate — based on specialty and volume.</div>
-            <ul className="space-y-2.5 text-sm text-gray-600 mb-8">
-              {["Unlimited claims", "Unlimited appeal letters", "ERA posting included", "Patient billing included", "BAA included", "No long-term contract"].map(item => (
-                <li key={item} className="flex items-center gap-2.5">
+      <section className="max-w-5xl mx-auto px-6 py-16">
+        <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em] mb-8">Pricing</p>
+        <div className="flex gap-12 items-start">
+          <div className="flex-1">
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">Pay a percentage of what you collect. Nothing else.</h2>
+            <p className="text-sm text-gray-500 leading-relaxed mb-6 max-w-md">
+              No monthly subscriptions. No per-claim fees. No setup costs. We make money when you make money, which means our incentives are exactly aligned with yours.
+            </p>
+            <a href="mailto:support@claima.io" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+              Contact us for your rate →
+            </a>
+          </div>
+          <div className="w-72 shrink-0 bg-gray-50 border border-gray-200 rounded-xl p-6">
+            <ul className="space-y-3">
+              {[
+                "Unlimited claims",
+                "Unlimited appeal letters",
+                "ERA posting",
+                "Patient billing & statements",
+                "Eligibility verification",
+                "HIPAA BAA",
+                "No contracts",
+              ].map(item => (
+                <li key={item} className="flex items-center gap-2.5 text-sm text-gray-700">
                   <svg className="w-4 h-4 text-green-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
                   {item}
                 </li>
               ))}
             </ul>
-            <Link href="/signup" className="block text-center bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg text-sm transition-colors">
-              Get started
-            </Link>
+            <div className="mt-6 pt-5 border-t border-gray-200">
+              <Link href="/signup" className="block text-center text-sm font-medium bg-gray-900 hover:bg-gray-700 text-white py-2.5 rounded-lg transition-colors">
+                Create account
+              </Link>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Specialties */}
-      <section className="max-w-5xl mx-auto px-6 py-16">
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-6">Supported specialties</p>
-        <div className="flex flex-wrap gap-2">
+      <section className="border-t border-gray-100 bg-gray-50">
+        <div className="max-w-5xl mx-auto px-6 py-14">
+          <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em] mb-6">Works for every outpatient specialty</p>
+          <div className="flex flex-wrap gap-1.5">
+            {[
+              "Family Medicine", "Internal Medicine", "Pediatrics", "OB/GYN",
+              "Psychiatry", "Psychology", "Mental Health Counseling", "Social Work",
+              "Physical Therapy", "Occupational Therapy", "Speech Therapy", "Chiropractic",
+              "Cardiology", "Neurology", "Gastroenterology", "Dermatology",
+              "Orthopedic Surgery", "Podiatry", "Optometry", "Allergy & Immunology",
+              "Endocrinology", "Rheumatology", "Urology", "Nurse Practitioners", "Physician Assistants",
+            ].map((s) => (
+              <span key={s} className="bg-white border border-gray-200 text-gray-600 text-xs px-2.5 py-1 rounded">
+                {s}
+              </span>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Security strip */}
+      <section className="border-t border-gray-100">
+        <div className="max-w-5xl mx-auto px-6 py-10 flex flex-wrap gap-8">
           {[
-            "Family Medicine", "Internal Medicine", "Pediatrics", "OB/GYN",
-            "Psychiatry", "Psychology", "Mental Health Counseling", "Social Work",
-            "Physical Therapy", "Occupational Therapy", "Speech Therapy", "Chiropractic",
-            "Cardiology", "Neurology", "Gastroenterology", "Dermatology",
-            "Orthopedics", "Podiatry", "Optometry", "Allergy & Immunology",
-            "Endocrinology", "Rheumatology", "Urology",
-            "Nurse Practitioners", "Physician Assistants",
+            { title: "HIPAA-ready", body: "BAA executed at signup. PHI encrypted in transit and at rest." },
+            { title: "AES-256 encryption", body: "All data encrypted at the storage layer on AWS infrastructure." },
+            { title: "Audit logs", body: "Every PHI access logged and retained for 6 years per HIPAA." },
+            { title: "SOC 2 Type II", body: "Audit period begins Q3 2026. Report available to enterprise customers." },
           ].map((s) => (
-            <span key={s} className="border border-gray-200 text-gray-600 text-xs px-3 py-1.5 rounded-md">
-              {s}
-            </span>
+            <div key={s.title} className="flex-1 min-w-[180px]">
+              <div className="text-sm font-semibold text-gray-900 mb-1">{s.title}</div>
+              <div className="text-xs text-gray-500 leading-relaxed">{s.body}</div>
+            </div>
           ))}
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="border-t border-gray-100">
-        <div className="max-w-5xl mx-auto px-6 py-20 flex items-center justify-between gap-8">
+      {/* Dark footer CTA */}
+      <section className="bg-gray-900">
+        <div className="max-w-5xl mx-auto px-6 py-16 flex items-center justify-between gap-8">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Ready to start?</h2>
-            <p className="text-gray-500 text-sm">Set up your practice in under 10 minutes.</p>
+            <h2 className="text-2xl font-bold text-white mb-2">Get started in 10 minutes</h2>
+            <p className="text-gray-400 text-sm">Create an account, add your practice details, and submit your first claim today.</p>
           </div>
           <div className="flex items-center gap-3 shrink-0">
-            <Link href="/signup" className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-5 py-2.5 rounded-lg transition-colors text-sm shadow-sm">
+            <Link href="/signup" className="bg-white hover:bg-gray-100 text-gray-900 font-semibold px-5 py-2.5 rounded-lg transition-colors text-sm">
               Create account
             </Link>
-            <a href="mailto:support@claima.io" className="text-sm text-gray-500 hover:text-gray-900 px-5 py-2.5 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
-              Talk to us
+            <a href="mailto:support@claima.io" className="text-gray-400 hover:text-white text-sm transition-colors">
+              Talk to sales →
             </a>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-gray-100 py-6">
-        <div className="max-w-5xl mx-auto px-6 flex items-center justify-between text-xs text-gray-400">
+      <footer className="bg-gray-900 border-t border-gray-800 py-6">
+        <div className="max-w-5xl mx-auto px-6 flex items-center justify-between text-xs text-gray-500">
           <div className="flex items-center gap-2">
             <div className="w-5 h-5 rounded bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white font-bold" style={{fontSize: 9}}>C</div>
             <span>© 2026 Claima, Inc.</span>
           </div>
           <div className="flex items-center gap-5">
-            <Link href="/privacy" className="hover:text-gray-600">Privacy</Link>
-            <Link href="/terms" className="hover:text-gray-600">Terms</Link>
-            <Link href="/security" className="hover:text-gray-600">Security</Link>
-            <a href="mailto:support@claima.io" className="hover:text-gray-600">support@claima.io</a>
+            <Link href="/privacy" className="hover:text-gray-300 transition-colors">Privacy</Link>
+            <Link href="/terms" className="hover:text-gray-300 transition-colors">Terms</Link>
+            <Link href="/security" className="hover:text-gray-300 transition-colors">Security</Link>
+            <a href="mailto:support@claima.io" className="hover:text-gray-300 transition-colors">support@claima.io</a>
           </div>
         </div>
       </footer>
