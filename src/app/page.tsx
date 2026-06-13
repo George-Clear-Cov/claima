@@ -181,32 +181,57 @@ function MarketingPage() {
       </section>
 
       {/* Payer marquee */}
-      <section className="border-t border-gray-100 bg-white py-8 overflow-hidden">
-        <p className="text-center text-[10px] font-semibold text-gray-400 uppercase tracking-[0.12em] mb-5">
-          Submits to every major payer
-        </p>
-        <div className="relative">
-          <div className="flex animate-marquee whitespace-nowrap">
-            {[
-              "Aetna", "UnitedHealthcare", "Cigna", "Humana", "Blue Cross Blue Shield",
-              "Medicare", "Medicaid", "Anthem", "Molina Healthcare", "Centene",
-              "Kaiser Permanente", "Tricare", "Oscar Health", "Ambetter", "Highmark",
-              "Optum", "Magellan Health", "Tufts Health Plan", "WPS Health", "Harvard Pilgrim",
-              "Aetna", "UnitedHealthcare", "Cigna", "Humana", "Blue Cross Blue Shield",
-              "Medicare", "Medicaid", "Anthem", "Molina Healthcare", "Centene",
-              "Kaiser Permanente", "Tricare", "Oscar Health", "Ambetter", "Highmark",
-              "Optum", "Magellan Health", "Tufts Health Plan", "WPS Health", "Harvard Pilgrim",
-            ].map((payer, i) => (
-              <span key={i} className="inline-flex items-center gap-3 px-5 text-sm font-medium text-gray-400 shrink-0">
-                {payer}
-                <span className="w-1 h-1 rounded-full bg-gray-200 shrink-0" />
-              </span>
-            ))}
-          </div>
-          <div className="absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-white to-transparent pointer-events-none" />
-          <div className="absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-white to-transparent pointer-events-none" />
-        </div>
-      </section>
+      {(() => {
+        const PAYERS = [
+          { name: "Aetna", domain: "aetna.com" },
+          { name: "UnitedHealthcare", domain: "uhc.com" },
+          { name: "Cigna", domain: "cigna.com" },
+          { name: "Humana", domain: "humana.com" },
+          { name: "Blue Cross Blue Shield", domain: "bcbs.com" },
+          { name: "Anthem", domain: "anthem.com" },
+          { name: "Molina Healthcare", domain: "molinahealthcare.com" },
+          { name: "Kaiser Permanente", domain: "kp.org" },
+          { name: "Centene", domain: "centene.com" },
+          { name: "Oscar Health", domain: "hioscar.com" },
+          { name: "Highmark", domain: "highmark.com" },
+          { name: "Optum", domain: "optum.com" },
+          { name: "Ambetter", domain: "ambetterhealth.com" },
+          { name: "Tricare", domain: "tricare.mil" },
+          { name: "Tufts Health", domain: "tuftshealthplan.com" },
+          { name: "Harvard Pilgrim", domain: "harvardpilgrim.org" },
+        ]
+        const doubled = [...PAYERS, ...PAYERS]
+        return (
+          <section className="border-t border-gray-100 bg-white py-8 overflow-hidden">
+            <p className="text-center text-[10px] font-semibold text-gray-400 uppercase tracking-[0.12em] mb-6">
+              Submits to every major payer
+            </p>
+            <div className="relative">
+              <div className="flex animate-marquee items-center">
+                {doubled.map((payer, i) => (
+                  <div key={i} className="flex items-center gap-10 px-8 shrink-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={`https://logo.clearbit.com/${payer.domain}`}
+                      alt={payer.name}
+                      className="h-7 w-auto object-contain grayscale opacity-50 hover:opacity-80 hover:grayscale-0 transition-all"
+                      onError={(e) => {
+                        const el = e.currentTarget
+                        el.style.display = "none"
+                        const fallback = el.nextElementSibling as HTMLElement | null
+                        if (fallback) fallback.style.display = "block"
+                      }}
+                    />
+                    <span className="hidden text-sm font-medium text-gray-400 whitespace-nowrap">{payer.name}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-white to-transparent pointer-events-none" />
+              <div className="absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-white to-transparent pointer-events-none" />
+            </div>
+          </section>
+        )
+      })()}
 
       {/* Problem statement */}
       <section className="border-t border-gray-100 bg-gray-50">
