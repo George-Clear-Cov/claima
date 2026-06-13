@@ -42,7 +42,7 @@ function MarketingPage() {
 
       {/* Nav */}
       <header className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm border-b border-gray-100">
-        <div className="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <LogoMark size={24} />
             <span className="font-semibold text-sm tracking-tight">Claima</span>
@@ -58,42 +58,131 @@ function MarketingPage() {
       </header>
 
       {/* Hero */}
-      <section className="max-w-5xl mx-auto px-6 pt-20 pb-16">
-        <div className="max-w-2xl">
-          <h1 className="text-[2.75rem] font-bold tracking-tight leading-[1.12] text-gray-900 mb-5">
-            Medical billing that doesn't require a billing department
-          </h1>
-          <p className="text-[1.05rem] text-gray-500 leading-relaxed mb-8">
-            Claima handles the full revenue cycle for outpatient practices — claim submission, denial appeals, ERA posting, and patient statements. Works across every specialty that bills insurance.
-          </p>
-          <div className="flex items-center gap-3 mb-6">
-            <Link href="/signup" className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2.5 rounded-lg transition-colors text-sm">
-              Start for free
-            </Link>
-            <a href="mailto:support@claima.io" className="text-sm text-gray-500 hover:text-gray-900 transition-colors">
-              Talk to us →
-            </a>
+      <section className="max-w-6xl mx-auto px-6 pt-14 pb-0">
+        <div className="grid lg:grid-cols-2 gap-14 items-center">
+
+          {/* Left */}
+          <div className="pb-12">
+            <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-100 rounded-full px-3 py-1 text-xs font-medium text-blue-700 mb-6">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+              Works across every outpatient specialty
+            </div>
+            <h1 className="text-[2.6rem] font-bold tracking-tight leading-[1.1] text-gray-900 mb-5">
+              Medical billing that doesn&apos;t require a billing department
+            </h1>
+            <p className="text-[1.05rem] text-gray-500 leading-relaxed mb-8">
+              Claima handles the full revenue cycle for outpatient practices — claim submission, denial appeals, ERA posting, and patient statements.
+            </p>
+            <div className="flex items-center gap-3 mb-8">
+              <Link href="/signup" className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2.5 rounded-lg transition-colors text-sm shadow-sm">
+                Start for free
+              </Link>
+              <a href="mailto:support@claima.io" className="text-sm text-gray-500 hover:text-gray-900 transition-colors">
+                Talk to us →
+              </a>
+            </div>
+            <div className="flex items-center gap-5 text-xs text-gray-400">
+              <span className="flex items-center gap-1.5">
+                <svg className="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+                HIPAA compliant
+              </span>
+              <span className="flex items-center gap-1.5">
+                <svg className="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+                BAA included
+              </span>
+              <span className="flex items-center gap-1.5">
+                <svg className="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+                No setup fee
+              </span>
+            </div>
           </div>
-          <div className="flex items-center gap-4 text-xs text-gray-400">
-            <span className="flex items-center gap-1.5">
-              <svg className="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
-              HIPAA compliant
-            </span>
-            <span className="flex items-center gap-1.5">
-              <svg className="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
-              BAA included
-            </span>
-            <span className="flex items-center gap-1.5">
-              <svg className="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
-              No setup fee
-            </span>
+
+          {/* Right: product mockup */}
+          <div className="relative hidden lg:block pb-0 translate-y-6">
+            <div className="rounded-xl overflow-hidden border border-gray-200 shadow-2xl ring-1 ring-black/5">
+              {/* Browser chrome */}
+              <div className="bg-gray-100 border-b border-gray-200 px-4 py-2 flex items-center gap-2">
+                <div className="flex gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full bg-red-400" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-amber-400" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-green-400" />
+                </div>
+                <div className="flex-1 bg-white rounded px-3 py-0.5 text-[11px] text-gray-400 ml-2 border border-gray-200">
+                  app.claima.io
+                </div>
+              </div>
+              {/* App */}
+              <div className="bg-gray-50">
+                {/* Mini nav */}
+                <div className="bg-white border-b border-gray-200 px-3 h-9 flex items-center gap-3">
+                  <LogoMark size={18} />
+                  <span className="text-[11px] font-semibold text-gray-900">Claima</span>
+                  <div className="w-px h-3 bg-gray-200" />
+                  {["Dashboard", "Claims", "Denials", "Billing"].map((l) => (
+                    <span key={l} className={`text-[11px] px-2 py-0.5 rounded ${l === "Dashboard" ? "bg-gray-100 text-gray-900 font-medium" : "text-gray-400"}`}>{l}</span>
+                  ))}
+                </div>
+                {/* Content */}
+                <div className="p-3 space-y-2">
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-2.5">
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <LogoMark size={14} />
+                      <span className="text-[9px] font-semibold text-gray-500 uppercase tracking-wider">AI Briefing</span>
+                    </div>
+                    <div className="text-[11px] font-bold text-amber-900 mb-1">3 denials need appeals — $4,200 at risk</div>
+                    <div className="text-[10px] text-amber-700 leading-relaxed">CARC 197 on claim #2841 (missing auth), CARC 50 on #2839. Both are winnable — draft letters ready.</div>
+                  </div>
+                  <div className="space-y-1">
+                    {[
+                      { urgency: "red", label: "Immediate", action: "Appeal #2841 — timely filing in 4 days", dollars: "$1,840" },
+                      { urgency: "amber", label: "Today", action: "Post Aetna ERA — 12 claims, $6,200", dollars: "$6,200" },
+                      { urgency: "blue", label: "This Week", action: "Verify eligibility for 3 upcoming visits", dollars: "" },
+                    ].map((p) => (
+                      <div key={p.action} className={`rounded-lg border px-2.5 py-1.5 flex items-center gap-2 ${
+                        p.urgency === "red" ? "bg-red-50 border-red-200" :
+                        p.urgency === "amber" ? "bg-amber-50 border-amber-200" : "bg-blue-50 border-blue-200"
+                      }`}>
+                        <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ${
+                          p.urgency === "red" ? "bg-red-100 text-red-700" :
+                          p.urgency === "amber" ? "bg-amber-100 text-amber-700" : "bg-blue-100 text-blue-700"
+                        }`}>{p.label}</span>
+                        <span className={`text-[10px] font-medium flex-1 ${
+                          p.urgency === "red" ? "text-red-800" :
+                          p.urgency === "amber" ? "text-amber-800" : "text-blue-800"
+                        }`}>{p.action}</span>
+                        {p.dollars && <span className={`text-[10px] font-mono font-bold shrink-0 ${
+                          p.urgency === "red" ? "text-red-700" :
+                          p.urgency === "amber" ? "text-amber-700" : "text-blue-700"
+                        }`}>{p.dollars}</span>}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {[
+                      { label: "Payments In", val: "$12.4k", color: "text-green-700", accent: "bg-green-500" },
+                      { label: "New Denials", val: "3", color: "text-red-700", accent: "bg-red-500" },
+                      { label: "Timely Risk", val: "1", color: "text-red-700", accent: "bg-red-500" },
+                      { label: "Overdue AR", val: "$8.1k", color: "text-amber-700", accent: "bg-amber-500" },
+                    ].map((m) => (
+                      <div key={m.label} className="bg-white border border-gray-200 rounded-lg p-2 relative overflow-hidden">
+                        <div className={`absolute inset-x-0 top-0 h-0.5 ${m.accent}`} />
+                        <div className="text-[8px] text-gray-400 uppercase tracking-wide mb-0.5">{m.label}</div>
+                        <div className={`text-sm font-bold font-mono ${m.color}`}>{m.val}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="absolute -inset-6 bg-blue-100 rounded-3xl -z-10 blur-2xl opacity-40" />
           </div>
+
         </div>
       </section>
 
       {/* Problem statement */}
       <section className="border-t border-gray-100 bg-gray-50">
-        <div className="max-w-5xl mx-auto px-6 py-14">
+        <div className="max-w-6xl mx-auto px-6 py-14">
           <div className="grid grid-cols-3 gap-10">
             {[
               { stat: "30%", label: "of claims are denied on first submission industry-wide", sub: "Most are recoverable — but only if you catch them." },
@@ -111,7 +200,7 @@ function MarketingPage() {
       </section>
 
       {/* How it works */}
-      <section className="max-w-5xl mx-auto px-6 py-16">
+      <section className="max-w-6xl mx-auto px-6 py-16">
         <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em] mb-10">How it works</p>
         <div className="grid grid-cols-4 gap-6">
           {[
@@ -129,54 +218,149 @@ function MarketingPage() {
         </div>
       </section>
 
-      {/* Feature detail — alternating */}
+      {/* Feature detail */}
       <section className="border-t border-gray-100">
-        {[
-          {
-            label: "Autonomous agent",
-            title: "One click. Every billing task done.",
-            body: "The Claima agent sweeps your practice daily: posts ERA payments at contracted rates, drafts appeal letters for every new denial, flags claims approaching the timely filing window, and surfaces aging AR sorted by dollar value. What used to take a billing coordinator half a day takes 30 seconds.",
-            icon: (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-            ),
-          },
-          {
-            label: "Denial management",
-            title: "Every denial gets a real appeal, not a template",
-            body: "When a payer returns CARC 197 (missing auth) or CARC 50 (not medically necessary), Claima doesn't send a form letter. It writes a specific appeal citing the denial code, the relevant payer policy, and the clinical documentation on file. Practices using Claima appeal more claims — and win more of them.",
-            icon: (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-            ),
-          },
-          {
-            label: "Daily briefing",
-            title: "Start every morning knowing exactly what to do",
-            body: "Claima's AI briefing summarizes overnight ERA activity, new denials, timely filing risks, and patient AR — ranked by dollar impact. Not a dashboard you have to interpret. A briefing you can act on.",
-            icon: (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-            ),
-          },
-        ].map((f, i) => (
-          <div key={f.label} className={i % 2 === 1 ? "bg-gray-50 border-b border-gray-100" : "border-b border-gray-100"}>
-            <div className="max-w-5xl mx-auto px-6 py-14 flex gap-16 items-start">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-8 h-8 rounded-lg bg-white border border-gray-200 text-gray-500 flex items-center justify-center shadow-sm">
-                    {f.icon}
-                  </div>
-                  <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em]">{f.label}</span>
+
+        {/* Feature 1: Agent */}
+        <div className="border-b border-gray-100">
+          <div className="max-w-6xl mx-auto px-6 py-14 flex gap-16 items-center">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 rounded-lg bg-white border border-gray-200 text-gray-500 flex items-center justify-center shadow-sm">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3 leading-snug">{f.title}</h3>
-                <p className="text-sm text-gray-500 leading-relaxed max-w-lg">{f.body}</p>
+                <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em]">Autonomous agent</span>
               </div>
-              <div className="w-56 shrink-0 hidden lg:block" />
+              <h3 className="text-xl font-bold text-gray-900 mb-3 leading-snug">One click. Every billing task done.</h3>
+              <p className="text-sm text-gray-500 leading-relaxed max-w-md">The Claima agent sweeps your practice daily: posts ERA payments at contracted rates, drafts appeal letters for every new denial, flags claims approaching the timely filing window, and surfaces aging AR sorted by dollar value. What used to take a billing coordinator half a day takes 30 seconds.</p>
+            </div>
+            <div className="w-80 shrink-0 hidden lg:block">
+              <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+                <div className="bg-gray-50 border-b border-gray-100 px-4 py-2.5 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <svg className="w-3.5 h-3.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                    <span className="text-xs font-semibold text-gray-700">Daily Sweep</span>
+                  </div>
+                  <span className="text-[10px] font-medium text-blue-600 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-full">Running</span>
+                </div>
+                <div className="px-4 py-3 space-y-2.5">
+                  {[
+                    { done: true, text: "ERA posted — Cigna 11/14", sub: "$8,400 applied" },
+                    { done: true, text: "3 appeal letters drafted", sub: "Ready to send" },
+                    { done: true, text: "Timely filing alerts sent", sub: "2 claims flagged" },
+                    { done: false, text: "Eligibility checks", sub: "8 visits pending" },
+                    { done: false, text: "Aging AR review", sub: "In queue" },
+                  ].map((task) => (
+                    <div key={task.text} className="flex items-start gap-2.5">
+                      <div className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${task.done ? "bg-green-100" : "bg-gray-100"}`}>
+                        {task.done
+                          ? <svg className="w-2.5 h-2.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                          : <div className="w-1.5 h-1.5 rounded-full bg-gray-300" />
+                        }
+                      </div>
+                      <div>
+                        <div className={`text-xs font-medium ${task.done ? "text-gray-700" : "text-gray-400"}`}>{task.text}</div>
+                        <div className={`text-[10px] ${task.done ? "text-gray-400" : "text-gray-300"}`}>{task.sub}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="px-4 py-2.5 border-t border-gray-100 bg-gray-50 flex items-center gap-3">
+                  <span className="text-[10px] text-gray-400">3 of 5 tasks complete</span>
+                  <div className="flex-1 bg-gray-200 rounded-full h-1">
+                    <div className="bg-blue-500 h-1 rounded-full w-3/5" />
+                  </div>
+                  <span className="text-[10px] font-medium text-blue-600">60%</span>
+                </div>
+              </div>
             </div>
           </div>
-        ))}
+        </div>
+
+        {/* Feature 2: Denial management */}
+        <div className="border-b border-gray-100 bg-gray-50">
+          <div className="max-w-6xl mx-auto px-6 py-14 flex gap-16 items-center flex-row-reverse">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 rounded-lg bg-white border border-gray-200 text-gray-500 flex items-center justify-center shadow-sm">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                </div>
+                <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em]">Denial management</span>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3 leading-snug">Every denial gets a real appeal, not a template</h3>
+              <p className="text-sm text-gray-500 leading-relaxed max-w-md">When a payer returns CARC 197 (missing auth) or CARC 50 (not medically necessary), Claima doesn&apos;t send a form letter. It writes a specific appeal citing the denial code, the relevant payer policy, and the clinical documentation on file. Practices using Claima appeal more claims — and win more of them.</p>
+            </div>
+            <div className="w-80 shrink-0 hidden lg:block">
+              <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden text-[11px]">
+                <div className="bg-red-50 border-b border-red-100 px-4 py-3">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-semibold text-red-900">Denial — Claim #2841</span>
+                    <span className="text-[9px] font-bold bg-red-100 text-red-700 px-1.5 py-0.5 rounded">DENIED</span>
+                  </div>
+                  <div className="text-red-700">CARC 197 — Authorization required</div>
+                  <div className="text-red-500 text-[10px] mt-0.5">$1,840 · Aetna · Dr. Chen</div>
+                </div>
+                <div className="px-4 py-3 border-b border-gray-100">
+                  <div className="text-[9px] font-semibold text-gray-400 uppercase tracking-wider mb-2">AI-Generated Appeal</div>
+                  <div className="space-y-1 text-[10px] leading-relaxed">
+                    <div className="font-medium text-gray-800">Re: Appeal of Claim #2841</div>
+                    <div className="text-gray-500">Dear Aetna Appeals Department,</div>
+                    <div className="text-gray-500">We are writing to appeal the denial of claim #2841 (CARC 197). Per Aetna Policy CP.MP.116, psychiatric services under an established treatment plan do not require prior authorization when the treating provider has documented medical necessity and...</div>
+                    <div className="text-blue-500 cursor-pointer text-[9px]">[read more]</div>
+                  </div>
+                </div>
+                <div className="px-4 py-2.5 bg-gray-50 flex items-center justify-between">
+                  <span className="text-[10px] text-gray-400">Ready to send</span>
+                  <button className="text-[10px] font-semibold bg-blue-600 text-white px-2.5 py-1 rounded-md">Send Appeal</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Feature 3: Daily briefing */}
+        <div className="border-b border-gray-100">
+          <div className="max-w-6xl mx-auto px-6 py-14 flex gap-16 items-center">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 rounded-lg bg-white border border-gray-200 text-gray-500 flex items-center justify-center shadow-sm">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                </div>
+                <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em]">Daily briefing</span>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3 leading-snug">Start every morning knowing exactly what to do</h3>
+              <p className="text-sm text-gray-500 leading-relaxed max-w-md">Claima&apos;s AI briefing summarizes overnight ERA activity, new denials, timely filing risks, and patient AR — ranked by dollar impact. Not a dashboard you have to interpret. A briefing you can act on.</p>
+            </div>
+            <div className="w-80 shrink-0 hidden lg:block">
+              <div className="bg-amber-50 border border-amber-200 rounded-xl shadow-sm p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <LogoMark size={16} />
+                  <span className="text-[9px] font-semibold text-gray-500 uppercase tracking-wider">AI Briefing · Mon, Jun 9</span>
+                </div>
+                <div className="text-sm font-bold text-amber-900 mb-2">3 denials need appeals — $4,200 at risk</div>
+                <div className="text-[11px] text-amber-700 leading-relaxed mb-3">ERA from Cigna posted overnight — $8,400 applied. Two CARC 197 denials on #2841 and #2844. Both have winning appeal paths.</div>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { label: "Payments In", val: "$12.4k", color: "text-green-700" },
+                    { label: "New Denials", val: "3", color: "text-red-700" },
+                    { label: "Timely Risk", val: "1", color: "text-amber-700" },
+                    { label: "Overdue AR", val: "$8.1k", color: "text-amber-700" },
+                  ].map((m) => (
+                    <div key={m.label} className="bg-white/70 rounded-lg p-2">
+                      <div className="text-[9px] text-gray-400 uppercase tracking-wide">{m.label}</div>
+                      <div className={`text-sm font-bold font-mono ${m.color}`}>{m.val}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </section>
 
       {/* Pricing */}
-      <section className="max-w-5xl mx-auto px-6 py-16">
+      <section className="max-w-6xl mx-auto px-6 py-16">
         <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em] mb-8">Pricing</p>
         <div className="flex gap-12 items-start">
           <div className="flex-1">
@@ -216,7 +400,7 @@ function MarketingPage() {
 
       {/* Specialties */}
       <section className="border-t border-gray-100 bg-gray-50">
-        <div className="max-w-5xl mx-auto px-6 py-14">
+        <div className="max-w-6xl mx-auto px-6 py-14">
           <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em] mb-6">Works for every outpatient specialty</p>
           <div className="flex flex-wrap gap-1.5">
             {[
@@ -237,7 +421,7 @@ function MarketingPage() {
 
       {/* Security strip */}
       <section className="border-t border-gray-100">
-        <div className="max-w-5xl mx-auto px-6 py-10 flex flex-wrap gap-8">
+        <div className="max-w-6xl mx-auto px-6 py-10 flex flex-wrap gap-8">
           {[
             { title: "HIPAA-ready", body: "BAA executed at signup. PHI encrypted in transit and at rest." },
             { title: "AES-256 encryption", body: "All data encrypted at the storage layer on AWS infrastructure." },
@@ -254,7 +438,7 @@ function MarketingPage() {
 
       {/* Dark footer CTA */}
       <section className="bg-gray-900">
-        <div className="max-w-5xl mx-auto px-6 py-16 flex items-center justify-between gap-8">
+        <div className="max-w-6xl mx-auto px-6 py-16 flex items-center justify-between gap-8">
           <div>
             <h2 className="text-2xl font-bold text-white mb-2">Get started in 10 minutes</h2>
             <p className="text-gray-400 text-sm">Create an account, add your practice details, and submit your first claim today.</p>
@@ -272,7 +456,7 @@ function MarketingPage() {
 
       {/* Footer */}
       <footer className="bg-gray-900 border-t border-gray-800 py-6">
-        <div className="max-w-5xl mx-auto px-6 flex items-center justify-between text-xs text-gray-500">
+        <div className="max-w-6xl mx-auto px-6 flex items-center justify-between text-xs text-gray-500">
           <div className="flex items-center gap-2">
             <LogoMark size={20} />
             <span>© 2026 Claima, Inc.</span>
