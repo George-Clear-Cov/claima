@@ -20,6 +20,7 @@ function isPublic(pathname: string) {
     || pathname.startsWith("/_next/")
     || pathname.startsWith("/favicon")
     || pathname.startsWith("/public/")
+    || pathname.startsWith("/logos/")
 }
 
 export async function middleware(req: NextRequest) {
