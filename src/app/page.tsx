@@ -112,22 +112,22 @@ function MarketingPage() {
       {/* Payer marquee */}
       {(() => {
         const PAYERS = [
-          { name: "Aetna",                  color: "#C41E3A" },
-          { name: "UnitedHealthcare",        color: "#0070CE" },
-          { name: "Cigna",                   color: "#006699" },
-          { name: "Humana",                  color: "#007AC2" },
-          { name: "Blue Cross Blue Shield",  color: "#00A3E0" },
-          { name: "Anthem",                  color: "#1B4598" },
-          { name: "Molina Healthcare",       color: "#006CB7" },
-          { name: "Kaiser Permanente",       color: "#009999" },
-          { name: "Centene",                 color: "#1B4D9C" },
-          { name: "Oscar Health",            color: "#FF4E00" },
-          { name: "Highmark",                color: "#0068A5" },
-          { name: "Optum",                   color: "#FF671B" },
-          { name: "Ambetter",                color: "#007ABA" },
-          { name: "Tricare",                 color: "#003087" },
-          { name: "Tufts Health",            color: "#0072CE" },
-          { name: "Harvard Pilgrim",         color: "#0066A6" },
+          { name: "Aetna",                 slug: "aetna"          },
+          { name: "UnitedHealthcare",       slug: "uhc"            },
+          { name: "Cigna",                  slug: "cigna"          },
+          { name: "Humana",                 slug: "humana"         },
+          { name: "Blue Cross Blue Shield", slug: "bcbs"           },
+          { name: "Anthem",                 slug: "anthem"         },
+          { name: "Molina Healthcare",      slug: "molina"         },
+          { name: "Kaiser Permanente",      slug: "kaiser"         },
+          { name: "Centene",                slug: "centene"        },
+          { name: "Oscar Health",           slug: "oscar"          },
+          { name: "Highmark",               slug: "highmark"       },
+          { name: "Optum",                  slug: "optum"          },
+          { name: "Ambetter",               slug: "ambetter"       },
+          { name: "Tricare",                slug: "tricare"        },
+          { name: "Tufts Health",           slug: "tufts"          },
+          { name: "Harvard Pilgrim",        slug: "harvard-pilgrim"},
         ]
         const doubled = [...PAYERS, ...PAYERS]
         return (
@@ -138,17 +138,13 @@ function MarketingPage() {
             <div className="relative overflow-visible">
               <div className="flex animate-marquee items-center py-2">
                 {doubled.map((payer, i) => (
-                  <div key={i} className="flex items-center gap-2.5 px-8 shrink-0 group cursor-pointer">
-                    <span
-                      className="w-2 h-2 rounded-full shrink-0 transition-all duration-200 opacity-40 group-hover:opacity-100 group-hover:scale-125"
-                      style={{ background: payer.color }}
+                  <div key={i} className="flex items-center px-8 shrink-0 group cursor-pointer">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={`/logos/${payer.slug}.svg`}
+                      alt={payer.name}
+                      className="h-5 w-auto opacity-40 group-hover:opacity-100 group-hover:scale-105 transition-all duration-200"
                     />
-                    <span
-                      className="text-[13px] font-semibold whitespace-nowrap transition-all duration-200 opacity-40 group-hover:opacity-100"
-                      style={{ color: payer.color }}
-                    >
-                      {payer.name}
-                    </span>
                   </div>
                 ))}
               </div>
