@@ -142,22 +142,22 @@ function MarketingPage() {
       {/* Payer marquee */}
       {(() => {
         const PAYERS = [
-          { name: "Aetna",                  color: "#C41E3A", letter: "A" },
-          { name: "UnitedHealthcare",        color: "#0070CE", letter: "U" },
-          { name: "Cigna",                   color: "#006699", letter: "C" },
-          { name: "Humana",                  color: "#007AC2", letter: "H" },
-          { name: "Blue Cross Blue Shield",  color: "#00A3E0", letter: "B" },
-          { name: "Anthem",                  color: "#1B4598", letter: "A" },
-          { name: "Molina Healthcare",       color: "#006CB7", letter: "M" },
-          { name: "Kaiser Permanente",       color: "#009999", letter: "K" },
-          { name: "Centene",                 color: "#1B4D9C", letter: "C" },
-          { name: "Oscar Health",            color: "#FF4E00", letter: "O" },
-          { name: "Highmark",                color: "#0068A5", letter: "H" },
-          { name: "Optum",                   color: "#FF671B", letter: "O" },
-          { name: "Ambetter",                color: "#007ABA", letter: "A" },
-          { name: "Tricare",                 color: "#003087", letter: "T" },
-          { name: "Tufts Health",            color: "#0072CE", letter: "T" },
-          { name: "Harvard Pilgrim",         color: "#0066A6", letter: "H" },
+          { name: "Aetna",                  logo: "aetna.svg",    color: "#C41E3A", letter: "A" },
+          { name: "UnitedHealthcare",        logo: "uhc.svg",      color: "#0070CE", letter: "U" },
+          { name: "Cigna",                   logo: null,           color: "#006699", letter: "C" },
+          { name: "Humana",                  logo: "humana.svg",   color: "#007AC2", letter: "H" },
+          { name: "Blue Cross Blue Shield",  logo: null,           color: "#00A3E0", letter: "B" },
+          { name: "Anthem",                  logo: "anthem.png",   color: "#1B4598", letter: "A" },
+          { name: "Molina Healthcare",       logo: "molina.png",   color: "#006CB7", letter: "M" },
+          { name: "Kaiser Permanente",       logo: null,           color: "#009999", letter: "K" },
+          { name: "Centene",                 logo: "centene.png",  color: "#1B4D9C", letter: "C" },
+          { name: "Oscar Health",            logo: "oscar.png",    color: "#FF4E00", letter: "O" },
+          { name: "Highmark",                logo: "highmark.png", color: "#0068A5", letter: "H" },
+          { name: "Optum",                   logo: "optum.svg",    color: "#FF671B", letter: "O" },
+          { name: "Ambetter",                logo: null,           color: "#007ABA", letter: "A" },
+          { name: "Tricare",                 logo: "tricare.png",  color: "#003087", letter: "T" },
+          { name: "Tufts Health",            logo: null,           color: "#0072CE", letter: "T" },
+          { name: "Harvard Pilgrim",         logo: null,           color: "#0066A6", letter: "H" },
         ]
         const doubled = [...PAYERS, ...PAYERS]
         return (
@@ -168,14 +168,23 @@ function MarketingPage() {
             <div className="relative overflow-visible">
               <div className="flex animate-marquee items-center py-2">
                 {doubled.map((payer, i) => (
-                  <div key={i} className="flex items-center gap-2.5 px-8 shrink-0 group cursor-pointer opacity-40 hover:opacity-100 transition-opacity duration-200">
-                    <svg viewBox="0 0 24 24" width="22" height="22" className="shrink-0">
-                      <rect width="24" height="24" rx="5" fill={payer.color} />
-                      <text x="12" y="17" textAnchor="middle" fontFamily="system-ui,-apple-system,sans-serif" fontWeight="800" fontSize="13" fill="white">{payer.letter}</text>
-                    </svg>
-                    <span className="text-[13px] font-semibold whitespace-nowrap" style={{ color: payer.color }}>
-                      {payer.name}
-                    </span>
+                  <div key={i} className="flex items-center gap-3 px-8 shrink-0 group cursor-pointer">
+                    {payer.logo ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={`/logos/${payer.logo}`}
+                        alt={payer.name}
+                        className="h-6 w-auto max-w-[110px] object-contain grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-200"
+                      />
+                    ) : (
+                      <div className="flex items-center gap-2 opacity-40 group-hover:opacity-100 transition-opacity duration-200">
+                        <svg viewBox="0 0 22 22" width="22" height="22" className="shrink-0">
+                          <rect width="22" height="22" rx="4.5" fill={payer.color} />
+                          <text x="11" y="15.5" textAnchor="middle" fontFamily="system-ui,-apple-system,sans-serif" fontWeight="800" fontSize="12" fill="white">{payer.letter}</text>
+                        </svg>
+                        <span className="text-[13px] font-semibold whitespace-nowrap" style={{ color: payer.color }}>{payer.name}</span>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
