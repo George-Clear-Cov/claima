@@ -39,7 +39,7 @@ export default function SecurityPage() {
         </div>
         <p className="text-gray-500 text-sm mb-2">Last updated: June 8, 2026</p>
         <p className="text-gray-600 text-sm mb-10 leading-relaxed">
-          Claima is built for healthcare. Every architectural decision — from our database to our AI providers — is made with HIPAA compliance and the protection of Protected Health Information (PHI) as a first-order requirement.
+          Claima is built for healthcare providers across all specialties. Every architectural decision — from our database to our AI providers — is made with HIPAA compliance and the protection of Protected Health Information (PHI) as a first-order requirement.
         </p>
 
         {/* Compliance status banner */}

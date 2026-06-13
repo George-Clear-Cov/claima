@@ -88,7 +88,7 @@ function SignupForm() {
                 value={practiceName}
                 onChange={(e) => setPracticeName(e.target.value)}
                 required
-                placeholder="Clearview Mental Health"
+                placeholder="Riverside Medical Group"
                 className={inputClass}
               />
             </div>

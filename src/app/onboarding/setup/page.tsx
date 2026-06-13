@@ -8,18 +8,36 @@ const US_STATES = ["AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","
 
 const TAXONOMIES = [
   { code: "193200000X", label: "Group Practice" },
-  { code: "101Y00000X", label: "Counselor" },
-  { code: "101YA0400X", label: "Addiction (Substance Use Disorder) Counselor" },
-  { code: "101YM0800X", label: "Mental Health Counselor" },
-  { code: "101YP1600X", label: "Pastoral Counselor" },
-  { code: "101YP2500X", label: "Professional Counselor" },
-  { code: "101YS0200X", label: "School Counselor" },
+  // Primary Care
+  { code: "207Q00000X", label: "Family Medicine" },
+  { code: "207R00000X", label: "Internal Medicine" },
+  { code: "208000000X", label: "Pediatrics" },
+  { code: "207V00000X", label: "Obstetrics & Gynecology" },
+  // Mental & Behavioral Health
+  { code: "2084P0800X", label: "Psychiatrist" },
   { code: "103T00000X", label: "Psychologist" },
+  { code: "101YM0800X", label: "Mental Health Counselor" },
   { code: "104100000X", label: "Social Worker" },
   { code: "1041C0700X", label: "Clinical Social Worker" },
   { code: "106H00000X", label: "Marriage & Family Therapist" },
-  { code: "2084P0800X", label: "Psychiatrist" },
+  { code: "101YA0400X", label: "Addiction (Substance Use Disorder) Counselor" },
   { code: "363LP0808X", label: "Psychiatric/Mental Health Nurse Practitioner" },
+  // Physical Medicine
+  { code: "225100000X", label: "Physical Therapist" },
+  { code: "225X00000X", label: "Occupational Therapist" },
+  { code: "235Z00000X", label: "Speech-Language Pathologist" },
+  { code: "111N00000X", label: "Chiropractor" },
+  // Specialty
+  { code: "207X00000X", label: "Orthopedic Surgery" },
+  { code: "207N00000X", label: "Dermatology" },
+  { code: "207W00000X", label: "Ophthalmology" },
+  { code: "207Y00000X", label: "Otolaryngology (ENT)" },
+  { code: "208100000X", label: "Physical Medicine & Rehabilitation" },
+  { code: "2086S0120X", label: "Surgery — General" },
+  { code: "207P00000X", label: "Emergency Medicine" },
+  // Other
+  { code: "101Y00000X", label: "Counselor" },
+  { code: "101YP2500X", label: "Professional Counselor" },
 ]
 
 export default function PracticeSetupPage() {
@@ -83,7 +101,7 @@ export default function PracticeSetupPage() {
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1.5 uppercase tracking-wide">Practice Name</label>
-              <input type="text" value={practiceName} onChange={(e) => setPracticeName(e.target.value)} required placeholder="Clearview Mental Health" className={inputClass} />
+              <input type="text" value={practiceName} onChange={(e) => setPracticeName(e.target.value)} required placeholder="Riverside Medical Group" className={inputClass} />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
