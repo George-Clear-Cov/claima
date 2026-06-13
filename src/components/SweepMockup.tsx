@@ -1,13 +1,13 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 
 const TASKS = [
-  { text: "ERA posted — Cigna 11/14",      sub: "$8,400 applied"    },
-  { text: "3 appeal letters drafted",       sub: "Ready to send"    },
-  { text: "Timely filing alerts sent",      sub: "2 claims flagged" },
-  { text: "Eligibility checks",             sub: "8 visits pending" },
-  { text: "Aging AR review",               sub: "In queue"         },
+  { text: "ERA posted — Cigna 11/14",  sub: "$8,400 applied"    },
+  { text: "3 appeal letters drafted",  sub: "Ready to send"     },
+  { text: "Timely filing alerts sent", sub: "2 claims flagged"  },
+  { text: "Eligibility checks",        sub: "8 visits pending"  },
+  { text: "Aging AR review",           sub: "In queue"          },
 ]
 const DONE_AT = 3
 
@@ -16,15 +16,33 @@ function sleep(ms: number) {
 }
 
 export default function SweepMockup() {
+  const ref = useRef<HTMLDivElement>(null)
+  const [inView, setInView] = useState(false)
   const [checked, setChecked] = useState(0)
 
   useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const observer = new IntersectionObserver(
+      ([entry]) => setInView(entry.isIntersecting),
+      { threshold: 0.3 }
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
+  useEffect(() => {
+    if (!inView) {
+      setChecked(0)
+      return
+    }
+
     let cancelled = false
 
     async function run() {
       while (!cancelled) {
         setChecked(0)
-        await sleep(1000)
+        await sleep(800)
         for (let i = 1; i <= DONE_AT; i++) {
           if (cancelled) return
           await sleep(850)
@@ -36,12 +54,12 @@ export default function SweepMockup() {
 
     run()
     return () => { cancelled = true }
-  }, [])
+  }, [inView])
 
   const pct = Math.round((checked / TASKS.length) * 100)
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+    <div ref={ref} className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
       <div className="bg-gray-50 border-b border-gray-100 px-4 py-2.5 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <svg className="w-3.5 h-3.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">

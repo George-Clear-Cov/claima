@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { LogoMark } from "@/components/Logo"
 
 const HEADLINE = "3 denials need appeals — $4,200 at risk"
@@ -29,20 +29,38 @@ function sleep(ms: number) {
 }
 
 export default function HeroDashboardMockup() {
-  const [headline, setHeadline]   = useState("")
-  const [showSub, setShowSub]     = useState(false)
-  const [visible, setVisible]     = useState(0)
-  const [metrics, setMetrics]     = useState([0, 0, 0, 0])
+  const ref = useRef<HTMLDivElement>(null)
+  const [inView, setInView] = useState(false)
+
+  const [headline, setHeadline] = useState("")
+  const [showSub, setShowSub]   = useState(false)
+  const [visible, setVisible]   = useState(0)
+  const [metrics, setMetrics]   = useState([0, 0, 0, 0])
 
   useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const observer = new IntersectionObserver(
+      ([entry]) => setInView(entry.isIntersecting),
+      { threshold: 0.25 }
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
+  useEffect(() => {
+    if (!inView) {
+      setHeadline(""); setShowSub(false); setVisible(0); setMetrics([0, 0, 0, 0])
+      return
+    }
+
     let cancelled = false
 
     async function run() {
       while (!cancelled) {
         setHeadline(""); setShowSub(false); setVisible(0); setMetrics([0, 0, 0, 0])
-        await sleep(600)
+        await sleep(500)
 
-        // 1. Typewriter
         for (let i = 1; i <= HEADLINE.length; i++) {
           if (cancelled) return
           setHeadline(HEADLINE.slice(0, i))
@@ -51,14 +69,12 @@ export default function HeroDashboardMockup() {
         await sleep(180)
         if (!cancelled) setShowSub(true)
 
-        // 2. Priorities stagger in
         for (let i = 1; i <= PRIORITIES.length; i++) {
           if (cancelled) return
           await sleep(360)
           setVisible(i)
         }
 
-        // 3. Metrics count up
         await sleep(250)
         const start = Date.now()
         const dur = 1200
@@ -79,10 +95,10 @@ export default function HeroDashboardMockup() {
 
     run()
     return () => { cancelled = true }
-  }, [])
+  }, [inView])
 
   return (
-    <div className="rounded-xl overflow-hidden border border-gray-200 shadow-2xl ring-1 ring-black/5">
+    <div ref={ref} className="rounded-xl overflow-hidden border border-gray-200 shadow-2xl ring-1 ring-black/5">
       {/* Browser chrome */}
       <div className="bg-gray-100 border-b border-gray-200 px-4 py-2 flex items-center gap-2">
         <div className="flex gap-1.5">
@@ -97,7 +113,6 @@ export default function HeroDashboardMockup() {
 
       {/* App */}
       <div className="bg-gray-50">
-        {/* Mini nav */}
         <div className="bg-white border-b border-gray-200 px-3 h-9 flex items-center gap-3">
           <LogoMark size={18} />
           <span className="text-[11px] font-semibold text-gray-900">Claima</span>
@@ -108,7 +123,6 @@ export default function HeroDashboardMockup() {
         </div>
 
         <div className="p-3 space-y-2">
-          {/* Briefing card */}
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-2.5" style={{ minHeight: 76 }}>
             <div className="flex items-center gap-1.5 mb-1.5">
               <LogoMark size={14} />
@@ -123,12 +137,10 @@ export default function HeroDashboardMockup() {
             </div>
           </div>
 
-          {/* Priority items */}
           <div className="space-y-1" style={{ minHeight: 90 }}>
             {PRIORITIES.map((p, i) => (
               <div
                 key={p.action}
-                style={{ transitionDelay: `0ms` }}
                 className={`rounded-lg border px-2.5 py-1.5 flex items-center gap-2 transition-all duration-300 ${
                   i < visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-events-none"
                 } ${
@@ -154,7 +166,6 @@ export default function HeroDashboardMockup() {
             ))}
           </div>
 
-          {/* Metrics */}
           <div className="grid grid-cols-4 gap-1.5">
             {METRIC_META.map((m, i) => (
               <div key={m.label} className="bg-white border border-gray-200 rounded-lg p-2 relative overflow-hidden">

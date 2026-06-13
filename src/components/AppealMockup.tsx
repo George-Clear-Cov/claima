@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 
 const APPEAL = "We are writing to appeal the denial of claim #2841 (CARC 197). Per Aetna Policy CP.MP.116, psychiatric services under an established treatment plan do not require prior authorization when the treating provider has documented medical necessity and the services are part of a continuing course of treatment. Enclosed is the signed treatment plan and progress notes confirming medical necessity."
 
@@ -9,16 +9,34 @@ function sleep(ms: number) {
 }
 
 export default function AppealMockup() {
-  const [text, setText]           = useState("")
-  const [showButton, setShowBtn]  = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  const [inView, setInView] = useState(false)
+  const [text, setText]         = useState("")
+  const [showButton, setShowBtn] = useState(false)
 
   useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const observer = new IntersectionObserver(
+      ([entry]) => setInView(entry.isIntersecting),
+      { threshold: 0.3 }
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
+  useEffect(() => {
+    if (!inView) {
+      setText(""); setShowBtn(false)
+      return
+    }
+
     let cancelled = false
 
     async function run() {
       while (!cancelled) {
         setText(""); setShowBtn(false)
-        await sleep(1200)
+        await sleep(1000)
 
         for (let i = 1; i <= APPEAL.length; i++) {
           if (cancelled) return
@@ -34,13 +52,12 @@ export default function AppealMockup() {
 
     run()
     return () => { cancelled = true }
-  }, [])
+  }, [inView])
 
   const typing = text.length > 0 && text.length < APPEAL.length
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden text-[11px]">
-      {/* Denial header */}
+    <div ref={ref} className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden text-[11px]">
       <div className="bg-red-50 border-b border-red-100 px-4 py-3">
         <div className="flex items-center justify-between mb-1">
           <span className="font-semibold text-red-900">Denial — Claim #2841</span>
@@ -50,7 +67,6 @@ export default function AppealMockup() {
         <div className="text-red-500 text-[10px] mt-0.5">$1,840 · Aetna · Dr. Chen</div>
       </div>
 
-      {/* Appeal being generated */}
       <div className="px-4 py-3 border-b border-gray-100">
         <div className="flex items-center gap-2 mb-2">
           <div className="text-[9px] font-semibold text-gray-400 uppercase tracking-wider">AI-Generated Appeal</div>
