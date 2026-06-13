@@ -180,6 +180,34 @@ function MarketingPage() {
         </div>
       </section>
 
+      {/* Payer marquee */}
+      <section className="border-t border-gray-100 bg-white py-8 overflow-hidden">
+        <p className="text-center text-[10px] font-semibold text-gray-400 uppercase tracking-[0.12em] mb-5">
+          Submits to every major payer
+        </p>
+        <div className="relative">
+          <div className="flex animate-marquee whitespace-nowrap">
+            {[
+              "Aetna", "UnitedHealthcare", "Cigna", "Humana", "Blue Cross Blue Shield",
+              "Medicare", "Medicaid", "Anthem", "Molina Healthcare", "Centene",
+              "Kaiser Permanente", "Tricare", "Oscar Health", "Ambetter", "Highmark",
+              "Optum", "Magellan Health", "Tufts Health Plan", "WPS Health", "Harvard Pilgrim",
+              "Aetna", "UnitedHealthcare", "Cigna", "Humana", "Blue Cross Blue Shield",
+              "Medicare", "Medicaid", "Anthem", "Molina Healthcare", "Centene",
+              "Kaiser Permanente", "Tricare", "Oscar Health", "Ambetter", "Highmark",
+              "Optum", "Magellan Health", "Tufts Health Plan", "WPS Health", "Harvard Pilgrim",
+            ].map((payer, i) => (
+              <span key={i} className="inline-flex items-center gap-3 px-5 text-sm font-medium text-gray-400 shrink-0">
+                {payer}
+                <span className="w-1 h-1 rounded-full bg-gray-200 shrink-0" />
+              </span>
+            ))}
+          </div>
+          <div className="absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-white to-transparent pointer-events-none" />
+          <div className="absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-white to-transparent pointer-events-none" />
+        </div>
+      </section>
+
       {/* Problem statement */}
       <section className="border-t border-gray-100 bg-gray-50">
         <div className="max-w-6xl mx-auto px-6 py-14">
