@@ -138,19 +138,19 @@ function MarketingPage() {
             <div className="relative">
               <div className="flex animate-marquee items-center">
                 {doubled.map((payer, i) => (
-                  <div key={i} className="flex items-center gap-2.5 px-8 shrink-0">
+                  <div key={i} className="flex items-center gap-2.5 px-8 shrink-0 group">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={`https://logo.clearbit.com/${payer.domain}`}
                       alt={payer.name}
-                      className="h-5 w-5 object-contain grayscale opacity-50 transition-all rounded shrink-0"
+                      className="h-5 w-5 object-contain grayscale opacity-50 hover:grayscale-0 hover:opacity-100 hover:scale-125 transition-all duration-200 rounded shrink-0 cursor-pointer"
                       onError={(e) => {
                         const el = e.currentTarget
                         el.src = `https://www.google.com/s2/favicons?domain=${payer.domain}&sz=64`
                         el.onerror = () => { el.style.display = "none" }
                       }}
                     />
-                    <span className="text-sm font-medium text-gray-400 whitespace-nowrap">{payer.name}</span>
+                    <span className="text-sm font-medium text-gray-400 group-hover:text-gray-700 whitespace-nowrap transition-colors duration-200">{payer.name}</span>
                   </div>
                 ))}
               </div>
