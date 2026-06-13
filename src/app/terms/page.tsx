@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { LogoMark } from "@/components/Logo"
 
 export const metadata = { title: "Terms of Service — Claima" }
 
@@ -7,7 +8,7 @@ export default function TermsPage() {
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b border-gray-200 px-8 h-14 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-xs font-bold text-white">C</div>
+          <LogoMark size={28} />
           <span className="font-semibold text-sm text-gray-900">Claima</span>
         </Link>
         <div className="flex gap-4 text-xs text-gray-500">

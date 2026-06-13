@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { LogoMark } from "@/components/Logo"
 
 const US_STATES = ["AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY","DC"]
 
@@ -102,9 +103,7 @@ export default function PracticeSetupPage() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-8">
       <div className="w-full max-w-lg">
         <div className="flex items-center gap-3 mb-8">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-sm font-bold text-white shadow-md">
-            C
-          </div>
+          <LogoMark size={40} />
           <div>
             <div className="text-xl font-semibold tracking-tight text-gray-900">Claima</div>
             <div className="text-xs text-gray-400 -mt-0.5">Practice setup</div>

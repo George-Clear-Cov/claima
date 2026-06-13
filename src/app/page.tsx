@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import NavBar from "@/components/NavBar"
+import { LogoMark } from "@/components/Logo"
 
 interface Priority {
   rank: number
@@ -43,7 +44,7 @@ function MarketingPage() {
       <header className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm border-b border-gray-100">
         <div className="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-md bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-[10px] font-bold text-white">C</div>
+            <LogoMark size={24} />
             <span className="font-semibold text-sm tracking-tight">Claima</span>
           </div>
           <nav className="flex items-center gap-1">
@@ -273,7 +274,7 @@ function MarketingPage() {
       <footer className="bg-gray-900 border-t border-gray-800 py-6">
         <div className="max-w-5xl mx-auto px-6 flex items-center justify-between text-xs text-gray-500">
           <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white font-bold" style={{fontSize: 9}}>C</div>
+            <LogoMark size={20} />
             <span>© 2026 Claima, Inc.</span>
           </div>
           <div className="flex items-center gap-5">

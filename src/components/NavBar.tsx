@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
+import { LogoMark } from "@/components/Logo"
 
 interface Session {
   name: string
@@ -43,9 +44,7 @@ export default function NavBar() {
     <header className="border-b border-gray-200 bg-white px-6 h-14 flex items-center justify-between sticky top-0 z-30 shadow-sm">
       <div className="flex items-center gap-5 h-full">
         <Link href="/" className="flex items-center gap-2.5 shrink-0">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-xs font-bold text-white shadow-sm">
-            C
-          </div>
+          <LogoMark size={28} />
           <span className="font-semibold tracking-tight text-sm text-gray-900">Claima</span>
         </Link>
 
