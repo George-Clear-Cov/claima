@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import NavBar from "@/components/NavBar"
 import { LogoMark } from "@/components/Logo"
@@ -40,6 +40,36 @@ const URGENCY_CONFIG = {
 }
 
 function MarketingPage() {
+  const statsRef  = useRef<HTMLDivElement>(null)
+  const stepsRef  = useRef<HTMLDivElement>(null)
+  const feat1Ref  = useRef<HTMLDivElement>(null)
+  const feat2Ref  = useRef<HTMLDivElement>(null)
+  const feat3Ref  = useRef<HTMLDivElement>(null)
+
+  const [statsIn,  setStatsIn]  = useState(false)
+  const [stepsIn,  setStepsIn]  = useState(0)
+  const [feat1In,  setFeat1In]  = useState(false)
+  const [feat2In,  setFeat2In]  = useState(false)
+  const [feat3In,  setFeat3In]  = useState(false)
+
+  useEffect(() => {
+    const makeObs = (el: HTMLElement | null, cb: () => void) => {
+      if (!el) return
+      const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) { cb(); obs.disconnect() } }, { threshold: 0.25 })
+      obs.observe(el)
+      return obs
+    }
+    const o1 = makeObs(statsRef.current, () => setStatsIn(true))
+    const o2 = makeObs(stepsRef.current, () => {
+      const timers = [1,2,3,4].map((n, i) => setTimeout(() => setStepsIn(n), i * 160))
+      return timers
+    })
+    const o3 = makeObs(feat1Ref.current, () => setFeat1In(true))
+    const o4 = makeObs(feat2Ref.current, () => setFeat2In(true))
+    const o5 = makeObs(feat3Ref.current, () => setFeat3In(true))
+    return () => { o1?.disconnect(); o2?.disconnect(); o3?.disconnect(); o4?.disconnect(); o5?.disconnect() }
+  }, [])
+
   return (
     <div className="min-h-screen bg-white text-gray-900 antialiased">
 
@@ -112,22 +142,22 @@ function MarketingPage() {
       {/* Payer marquee */}
       {(() => {
         const PAYERS = [
-          { name: "Aetna",                 slug: "aetna"          },
-          { name: "UnitedHealthcare",       slug: "uhc"            },
-          { name: "Cigna",                  slug: "cigna"          },
-          { name: "Humana",                 slug: "humana"         },
-          { name: "Blue Cross Blue Shield", slug: "bcbs"           },
-          { name: "Anthem",                 slug: "anthem"         },
-          { name: "Molina Healthcare",      slug: "molina"         },
-          { name: "Kaiser Permanente",      slug: "kaiser"         },
-          { name: "Centene",                slug: "centene"        },
-          { name: "Oscar Health",           slug: "oscar"          },
-          { name: "Highmark",               slug: "highmark"       },
-          { name: "Optum",                  slug: "optum"          },
-          { name: "Ambetter",               slug: "ambetter"       },
-          { name: "Tricare",                slug: "tricare"        },
-          { name: "Tufts Health",           slug: "tufts"          },
-          { name: "Harvard Pilgrim",        slug: "harvard-pilgrim"},
+          { name: "Aetna",                  color: "#C41E3A", letter: "A" },
+          { name: "UnitedHealthcare",        color: "#0070CE", letter: "U" },
+          { name: "Cigna",                   color: "#006699", letter: "C" },
+          { name: "Humana",                  color: "#007AC2", letter: "H" },
+          { name: "Blue Cross Blue Shield",  color: "#00A3E0", letter: "B" },
+          { name: "Anthem",                  color: "#1B4598", letter: "A" },
+          { name: "Molina Healthcare",       color: "#006CB7", letter: "M" },
+          { name: "Kaiser Permanente",       color: "#009999", letter: "K" },
+          { name: "Centene",                 color: "#1B4D9C", letter: "C" },
+          { name: "Oscar Health",            color: "#FF4E00", letter: "O" },
+          { name: "Highmark",                color: "#0068A5", letter: "H" },
+          { name: "Optum",                   color: "#FF671B", letter: "O" },
+          { name: "Ambetter",                color: "#007ABA", letter: "A" },
+          { name: "Tricare",                 color: "#003087", letter: "T" },
+          { name: "Tufts Health",            color: "#0072CE", letter: "T" },
+          { name: "Harvard Pilgrim",         color: "#0066A6", letter: "H" },
         ]
         const doubled = [...PAYERS, ...PAYERS]
         return (
@@ -138,13 +168,14 @@ function MarketingPage() {
             <div className="relative overflow-visible">
               <div className="flex animate-marquee items-center py-2">
                 {doubled.map((payer, i) => (
-                  <div key={i} className="flex items-center px-8 shrink-0 group cursor-pointer">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={`/logos/${payer.slug}.svg`}
-                      alt={payer.name}
-                      className="h-5 w-auto opacity-40 group-hover:opacity-100 group-hover:scale-105 transition-all duration-200"
-                    />
+                  <div key={i} className="flex items-center gap-2.5 px-8 shrink-0 group cursor-pointer opacity-40 hover:opacity-100 transition-opacity duration-200">
+                    <svg viewBox="0 0 24 24" width="22" height="22" className="shrink-0">
+                      <rect width="24" height="24" rx="5" fill={payer.color} />
+                      <text x="12" y="17" textAnchor="middle" fontFamily="system-ui,-apple-system,sans-serif" fontWeight="800" fontSize="13" fill="white">{payer.letter}</text>
+                    </svg>
+                    <span className="text-[13px] font-semibold whitespace-nowrap" style={{ color: payer.color }}>
+                      {payer.name}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -158,13 +189,17 @@ function MarketingPage() {
       {/* Problem statement */}
       <section className="border-t border-gray-100 bg-gray-50">
         <div className="max-w-6xl mx-auto px-6 py-14">
-          <div className="grid grid-cols-3 gap-10">
+          <div ref={statsRef} className="grid grid-cols-3 gap-10">
             {[
               { stat: "30%", label: "of claims are denied on first submission industry-wide", sub: "Most are recoverable — but only if you catch them." },
               { stat: "8–12hrs", label: "per week spent by average practice on billing admin", sub: "Time that could be spent on patient care." },
               { stat: "5–7%", label: "of collections lost to billing firms that take a flat cut", sub: "Claima charges less, and only when you get paid." },
-            ].map((s) => (
-              <div key={s.stat} className="border-l-2 border-gray-200 pl-5">
+            ].map((s, i) => (
+              <div
+                key={s.stat}
+                className={`border-l-2 pl-5 transition-all duration-600 ${statsIn ? "opacity-100 translate-y-0 border-gray-200" : "opacity-0 translate-y-5 border-transparent"}`}
+                style={{ transitionDelay: statsIn ? `${i * 120}ms` : "0ms" }}
+              >
                 <div className="text-2xl font-bold text-gray-900 mb-1">{s.stat}</div>
                 <div className="text-sm font-medium text-gray-700 mb-1">{s.label}</div>
                 <div className="text-xs text-gray-400 leading-relaxed">{s.sub}</div>
@@ -177,14 +212,17 @@ function MarketingPage() {
       {/* How it works */}
       <section className="max-w-6xl mx-auto px-6 py-16">
         <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em] mb-10">How it works</p>
-        <div className="grid grid-cols-4 gap-6">
+        <div ref={stepsRef} className="grid grid-cols-4 gap-6">
           {[
             { n: "1", title: "Patient visits", body: "Eligibility verified before the appointment. Coverage gaps flagged before the claim is even written." },
             { n: "2", title: "Claim submitted", body: "837P claim built from visit data and routed to the payer through a HIPAA-certified clearinghouse." },
             { n: "3", title: "Denial — handled", body: "Claima reads the CARC code, cites the payer policy, and writes the appeal letter. One click to send." },
             { n: "4", title: "Payment posted", body: "ERA auto-posted. Patient balance calculated. Statement sent. Aging AR tracked in one view." },
-          ].map((s) => (
-            <div key={s.n}>
+          ].map((s, i) => (
+            <div
+              key={s.n}
+              className={`transition-all duration-500 ${i < stepsIn ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}
+            >
               <div className="w-7 h-7 rounded-full bg-blue-50 text-blue-600 text-xs font-bold flex items-center justify-center mb-4">{s.n}</div>
               <div className="text-sm font-semibold text-gray-900 mb-2">{s.title}</div>
               <div className="text-sm text-gray-500 leading-relaxed">{s.body}</div>
@@ -198,8 +236,8 @@ function MarketingPage() {
 
         {/* Feature 1: Agent */}
         <div className="border-b border-gray-100">
-          <div className="max-w-6xl mx-auto px-6 py-14 flex gap-16 items-center">
-            <div className="flex-1">
+          <div ref={feat1Ref} className="max-w-6xl mx-auto px-6 py-14 flex gap-16 items-center">
+            <div className={`flex-1 transition-all duration-700 ${feat1In ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-8"}`}>
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-8 h-8 rounded-lg bg-white border border-gray-200 text-gray-500 flex items-center justify-center shadow-sm">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
@@ -217,8 +255,8 @@ function MarketingPage() {
 
         {/* Feature 2: Denial management */}
         <div className="border-b border-gray-100 bg-gray-50">
-          <div className="max-w-6xl mx-auto px-6 py-14 flex gap-16 items-center flex-row-reverse">
-            <div className="flex-1">
+          <div ref={feat2Ref} className="max-w-6xl mx-auto px-6 py-14 flex gap-16 items-center flex-row-reverse">
+            <div className={`flex-1 transition-all duration-700 ${feat2In ? "opacity-100 translate-x-0" : "opacity-0 translate-x-8"}`}>
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-8 h-8 rounded-lg bg-white border border-gray-200 text-gray-500 flex items-center justify-center shadow-sm">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
@@ -236,8 +274,8 @@ function MarketingPage() {
 
         {/* Feature 3: Daily briefing */}
         <div className="border-b border-gray-100">
-          <div className="max-w-6xl mx-auto px-6 py-14 flex gap-16 items-center">
-            <div className="flex-1">
+          <div ref={feat3Ref} className="max-w-6xl mx-auto px-6 py-14 flex gap-16 items-center">
+            <div className={`flex-1 transition-all duration-700 ${feat3In ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-8"}`}>
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-8 h-8 rounded-lg bg-white border border-gray-200 text-gray-500 flex items-center justify-center shadow-sm">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
