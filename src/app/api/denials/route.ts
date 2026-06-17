@@ -21,31 +21,37 @@ export async function POST(req: NextRequest) {
     const classification = classifyDenial(input.carcCode)
 
     const { prisma } = await import("@/lib/prisma")
-    // Verify claim belongs to this practice
-    const claim = await prisma.claim.findUnique({ where: { id: input.claimId } })
-    if (!claim || claim.practiceId !== session.practiceId) {
-      return NextResponse.json({ error: "Claim not found" }, { status: 404 })
-    }
 
-    await prisma.claim.update({
-      where: { id: input.claimId },
-      data: { claimStatus: "DENIED", denialCode: input.carcCode, denialReason: input.denialReason },
+    // Atomic ownership check — scoped by practiceId at DB level
+    const claimExists = await prisma.claim.findUnique({
+      where: { id: input.claimId, practiceId: session.practiceId },
+      select: { id: true },
     })
+    if (!claimExists) return NextResponse.json({ error: "Claim not found" }, { status: 404 })
 
-    const denial = await prisma.denial.create({
-      data: {
-        claimId: input.claimId,
-        carcCode: input.carcCode,
-        denialReason: input.denialReason,
-        category: classification.category,
-        priority: classification.priority,
-        action: classification.action,
-        appealable: classification.appealable,
-      },
-      include: {
-        claim: { include: { patient: true, provider: true, lineItems: true } },
-      },
-    })
+    logAudit({ action: "denial.create", practiceId: session.practiceId, userId: session.userId, userEmail: session.email, resource: "denial", req })
+
+    // Atomic: both writes succeed or neither does
+    const [, denial] = await prisma.$transaction([
+      prisma.claim.update({
+        where: { id: input.claimId, practiceId: session.practiceId },
+        data: { claimStatus: "DENIED", denialCode: input.carcCode, denialReason: input.denialReason },
+      }),
+      prisma.denial.create({
+        data: {
+          claimId: input.claimId,
+          carcCode: input.carcCode,
+          denialReason: input.denialReason,
+          category: classification.category,
+          priority: classification.priority,
+          action: classification.action,
+          appealable: classification.appealable,
+        },
+        include: {
+          claim: { include: { patient: true, provider: true, lineItems: true } },
+        },
+      }),
+    ])
 
     return NextResponse.json(denial)
   } catch (err) {

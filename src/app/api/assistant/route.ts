@@ -11,7 +11,14 @@ export async function POST(req: NextRequest) {
     return new Response("AI not configured", { status: 503 })
   }
 
-  const { messages } = await req.json()
+  let messages: { role: "user" | "assistant"; content: string }[]
+  try {
+    const body = await req.json()
+    if (!Array.isArray(body?.messages)) return new Response("messages must be an array", { status: 400 })
+    messages = body.messages
+  } catch {
+    return new Response("Invalid JSON body", { status: 400 })
+  }
   const practiceId = session.practiceId
 
   logAudit({ action: "assistant.query", practiceId, userId: session.userId, userEmail: session.email, req })

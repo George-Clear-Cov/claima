@@ -6,7 +6,12 @@ export async function POST(req: NextRequest) {
   const session = await getSession()
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const { patientId, payerName, payerId, cptCode, serviceDate } = await req.json()
+  const body = await req.json()
+  const { patientId, payerName, payerId, cptCode, serviceDate } = body
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  if (patientId && !UUID_RE.test(patientId)) {
+    return NextResponse.json({ error: "Invalid patientId" }, { status: 400 })
+  }
 
   // Count prior sessions for this patient
   let sessionCount = 0

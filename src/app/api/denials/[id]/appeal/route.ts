@@ -15,7 +15,6 @@ export async function POST(
     const { id } = await params
 
     const { prisma } = await import("@/lib/prisma")
-    logAudit({ action: "denial.appeal_generate", practiceId: session.practiceId, userId: session.userId, userEmail: session.email, resource: "denial", resourceId: id, req })
     const denial = await prisma.denial.findUniqueOrThrow({
       where: { id, claim: { practiceId: session.practiceId } },
       include: {
@@ -50,8 +49,9 @@ export async function POST(
       practiceName: claim.practice.name,
     })
 
+    logAudit({ action: "denial.appeal_generate", practiceId: session.practiceId, userId: session.userId, userEmail: session.email, resource: "denial", resourceId: id, req })
     const updated = await prisma.denial.update({
-      where: { id },
+      where: { id, claim: { practiceId: session.practiceId } },
       data: { appealLetter: letter, appealStatus: "IN_PROGRESS", appealedAt: new Date() },
     })
 
@@ -92,7 +92,7 @@ export async function PATCH(
 
     if (input.appealStatus === "WON") {
       await prisma.claim.update({
-        where: { id: denial.claimId },
+        where: { id: denial.claimId, practiceId: session.practiceId },
         data: { claimStatus: "SUBMITTED" },
       })
     }

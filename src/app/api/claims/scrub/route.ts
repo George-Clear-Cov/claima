@@ -48,9 +48,9 @@ export async function POST(req: NextRequest) {
 CPT Code: ${cptCode}
 ICD-10 Diagnosis Codes: ${icd10Codes.join(", ")}
 Modifier: ${modifier || "none"}
-Payer: ${payerName}
-Charge Amount: $${charge}
-Service Date: ${serviceDate}
+Payer: ${payerName ?? "unknown"}
+Charge Amount: ${charge != null ? `$${charge}` : "not provided"}
+Service Date: ${serviceDate ?? "not provided"}
 
 Analyze for:
 1. CPT/ICD-10 medical necessity alignment — do the diagnoses justify this procedure?
