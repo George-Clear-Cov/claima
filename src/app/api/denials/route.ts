@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
-import { prisma } from "@/lib/prisma"
 import { classifyDenial } from "@/lib/denial-codes"
 import { getSessionFromRequest } from "@/lib/auth"
 import { logAudit } from "@/lib/audit"
@@ -21,6 +20,7 @@ export async function POST(req: NextRequest) {
 
     const classification = classifyDenial(input.carcCode)
 
+    const { prisma } = await import("@/lib/prisma")
     // Verify claim belongs to this practice
     const claim = await prisma.claim.findUnique({ where: { id: input.claimId } })
     if (!claim || claim.practiceId !== session.practiceId) {
@@ -61,6 +61,7 @@ export async function GET(req: NextRequest) {
   const session = await getSessionFromRequest(req)
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
+  const { prisma } = await import("@/lib/prisma")
   logAudit({ action: "denial.list", practiceId: session.practiceId, userId: session.userId, userEmail: session.email, resource: "denial", req })
   const denials = await prisma.denial.findMany({
     where: { claim: { practiceId: session.practiceId } },

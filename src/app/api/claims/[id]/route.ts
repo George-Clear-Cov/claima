@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
-import { prisma } from "@/lib/prisma"
 import { getSessionFromRequest } from "@/lib/auth"
+import { logAudit } from "@/lib/audit"
 
 const eraSchema = z.object({
   insurancePaid: z.number().min(0),
@@ -22,6 +22,8 @@ export async function PATCH(
     const body = await req.json()
     const input = eraSchema.parse(body)
 
+    const { prisma } = await import("@/lib/prisma")
+    logAudit({ action: "claim.era_post", practiceId: session.practiceId, userId: session.userId, userEmail: session.email, resource: "claim", resourceId: id, req })
     const claim = await prisma.claim.findUniqueOrThrow({
       where: { id, practiceId: session.practiceId },
       include: { statement: { select: { id: true } } },

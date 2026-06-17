@@ -1,12 +1,20 @@
 import { NextRequest } from "next/server"
+import { getSessionFromRequest } from "@/lib/auth"
+import { logAudit } from "@/lib/audit"
 import { aiStream, isAIConfigured } from "@/lib/ai"
 
 export async function POST(req: NextRequest) {
+  const session = await getSessionFromRequest(req)
+  if (!session) return new Response("Unauthorized", { status: 401 })
+
   if (!isAIConfigured()) {
     return new Response("AI not configured", { status: 503 })
   }
 
-  const { messages, practiceId } = await req.json()
+  const { messages } = await req.json()
+  const practiceId = session.practiceId
+
+  logAudit({ action: "assistant.query", practiceId, userId: session.userId, userEmail: session.email, req })
 
   // Fetch live billing context to ground the assistant in real data
   let context = ""

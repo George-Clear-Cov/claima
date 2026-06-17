@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
-import { prisma } from "@/lib/prisma"
 import { generate837P } from "@/lib/837p"
 import { submitClaimToStedi } from "@/lib/stedi"
 import { getSessionFromRequest } from "@/lib/auth"
@@ -30,6 +29,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const input = submitClaimSchema.parse(body)
 
+    const { prisma } = await import("@/lib/prisma")
     const [practice, provider, patient] = await Promise.all([
       prisma.practice.findUniqueOrThrow({ where: { id: session.practiceId } }),
       prisma.provider.findUniqueOrThrow({ where: { id: input.providerId, practiceId: session.practiceId } }),
@@ -124,6 +124,7 @@ export async function GET(req: NextRequest) {
   const session = await getSessionFromRequest(req)
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
+  const { prisma } = await import("@/lib/prisma")
   logAudit({ action: "claim.list", practiceId: session.practiceId, userId: session.userId, userEmail: session.email, resource: "claim", req })
   const claims = await prisma.claim.findMany({
     where: { practiceId: session.practiceId },

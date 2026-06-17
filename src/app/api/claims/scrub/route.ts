@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
+import { z } from "zod"
+import { getSessionFromRequest } from "@/lib/auth"
 import { aiComplete, isAIConfigured } from "@/lib/ai"
 
 interface ScrubIssue {
@@ -14,16 +16,31 @@ interface ScrubResult {
   summary: string
 }
 
-export async function POST(req: NextRequest) {
-  const body = await req.json()
-  const { cptCode, icd10Codes, modifier, payerName, charge, serviceDate } = body
+const scrubSchema = z.object({
+  cptCode: z.string().min(5).max(5),
+  icd10Codes: z.array(z.string().max(10)).min(1).max(12),
+  modifier: z.string().max(10).optional(),
+  payerName: z.string().max(100).optional(),
+  charge: z.number().positive().optional(),
+  serviceDate: z.string().optional(),
+})
 
-  if (!cptCode || !Array.isArray(icd10Codes)) {
-    return NextResponse.json({ error: "cptCode and icd10Codes required" }, { status: 400 })
+export async function POST(req: NextRequest) {
+  const session = await getSessionFromRequest(req)
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
+  let input: z.infer<typeof scrubSchema>
+  try {
+    input = scrubSchema.parse(await req.json())
+  } catch (err) {
+    if (err instanceof z.ZodError) return NextResponse.json({ error: err.issues }, { status: 400 })
+    return NextResponse.json({ error: "Invalid request" }, { status: 400 })
   }
 
+  const { cptCode, icd10Codes, modifier, payerName, charge, serviceDate } = input
+
   if (!isAIConfigured()) {
-    return NextResponse.json(basicScrub({ cptCode, icd10Codes, modifier, charge }))
+    return NextResponse.json(basicScrub({ cptCode, icd10Codes, modifier, charge: charge ?? 0 }))
   }
 
   const prompt = `You are a medical billing expert specializing in mental health claims (837P). Review this claim for denial risk before it is submitted.
@@ -66,7 +83,7 @@ verdict: clean if score>=85, caution if 60-84, warning if <60. Return an empty a
     const result: ScrubResult = JSON.parse(match[0])
     return NextResponse.json(result)
   } catch {
-    return NextResponse.json(basicScrub({ cptCode, icd10Codes, modifier, charge }))
+    return NextResponse.json(basicScrub({ cptCode, icd10Codes, modifier, charge: charge ?? 0 }))
   }
 }
 

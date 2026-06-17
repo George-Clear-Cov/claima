@@ -19,12 +19,13 @@ export async function POST(req: NextRequest) {
         prisma.claim.count({
           where: {
             patientId,
+            practiceId: session.practiceId,
             claimStatus: { in: ["PAID", "SUBMITTED", "ACCEPTED"] },
           },
         }),
         prisma.denial.findMany({
           where: {
-            claim: { patientId },
+            claim: { patientId, practiceId: session.practiceId },
             appealStatus: { in: ["PENDING", "IN_PROGRESS", "LOST"] },
           },
           select: { carcCode: true, denialReason: true },

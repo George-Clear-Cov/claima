@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
   const { prisma } = await import("@/lib/prisma")
 
   const statement = await prisma.patientStatement.findUnique({
-    where: { id: statementId },
+    where: { id: statementId, claim: { practiceId: session.practiceId } },
     include: {
       patient: { select: { firstName: true, lastName: true, payerName: true } },
       claim: {

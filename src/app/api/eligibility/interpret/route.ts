@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { getSessionFromRequest } from "@/lib/auth"
 import { aiComplete, isAIConfigured } from "@/lib/ai"
 
 interface InterpretRequest {
@@ -22,6 +23,9 @@ interface InterpretRequest {
 }
 
 export async function POST(req: NextRequest) {
+  const session = await getSessionFromRequest(req)
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
   try {
     const { patientName, payerName, coverage }: InterpretRequest = await req.json()
 

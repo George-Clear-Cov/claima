@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
+import { getSessionFromRequest } from "@/lib/auth"
 import { aiComplete, isAIConfigured } from "@/lib/ai"
 
 export async function POST(req: NextRequest) {
+  const session = await getSessionFromRequest(req)
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
   const { text } = await req.json()
 
   if (!text?.trim()) {
