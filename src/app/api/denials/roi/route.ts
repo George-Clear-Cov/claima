@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import Anthropic from "@anthropic-ai/sdk"
+import { aiComplete, isAIConfigured } from "@/lib/ai"
 import { getSession } from "@/lib/auth"
-
-const client = process.env.ANTHROPIC_API_KEY
-  ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-  : null
 
 export interface ROIResult {
   winProbability: number
@@ -52,7 +48,7 @@ export async function POST(req: NextRequest) {
     } catch {}
   }
 
-  if (!client) {
+  if (!isAIConfigured()) {
     // Rule-based fallback
     const rates: Record<string, number> = { "197": 60, "4": 35, "50": 50, "16": 0, "11": 45, "119": 30, "96": 40 }
     const winProb = (historicalTotal > 3 ? historicalWins / historicalTotal * 100 : rates[carcCode] ?? 40)
@@ -105,12 +101,7 @@ For CARC-4 (not covered): 25-40%, parity argument helps.
 For CARC-50 (medical necessity): 45-60% with good clinical notes.`
 
   try {
-    const message = await client.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 512,
-      messages: [{ role: "user", content: prompt }],
-    })
-    const text = message.content[0].type === "text" ? message.content[0].text : ""
+    const text = await aiComplete({ max_tokens: 512, messages: [{ role: "user", content: prompt }] })
     const match = text.match(/\{[\s\S]*\}/)
     if (!match) throw new Error("No JSON")
     const result = JSON.parse(match[0])

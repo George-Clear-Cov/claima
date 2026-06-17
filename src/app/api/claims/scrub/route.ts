@@ -1,9 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import Anthropic from "@anthropic-ai/sdk"
-
-const client = process.env.ANTHROPIC_API_KEY
-  ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-  : null
+import { aiComplete, isAIConfigured } from "@/lib/ai"
 
 interface ScrubIssue {
   severity: "error" | "warning" | "info"
@@ -26,7 +22,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "cptCode and icd10Codes required" }, { status: 400 })
   }
 
-  if (!client) {
+  if (!isAIConfigured()) {
     return NextResponse.json(basicScrub({ cptCode, icd10Codes, modifier, charge }))
   }
 
@@ -63,13 +59,7 @@ Respond ONLY with valid JSON:
 verdict: clean if score>=85, caution if 60-84, warning if <60. Return an empty array if no issues.`
 
   try {
-    const message = await client.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 1024,
-      messages: [{ role: "user", content: prompt }],
-    })
-
-    const text = message.content[0].type === "text" ? message.content[0].text : ""
+    const text = await aiComplete({ max_tokens: 1024, messages: [{ role: "user", content: prompt }] })
     const match = text.match(/\{[\s\S]*\}/)
     if (!match) throw new Error("No JSON in response")
 

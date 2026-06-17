@@ -1,10 +1,6 @@
 import { NextResponse } from "next/server"
-import Anthropic from "@anthropic-ai/sdk"
+import { aiComplete, isAIConfigured } from "@/lib/ai"
 import { getSession } from "@/lib/auth"
-
-const client = process.env.ANTHROPIC_API_KEY
-  ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-  : null
 
 export async function GET() {
   const session = await getSession()
@@ -88,7 +84,7 @@ export async function GET() {
     overdueAmount: overdueStatements.reduce((s, s2) => s + Number(s2.balanceDue), 0),
   }
 
-  if (!client) {
+  if (!isAIConfigured()) {
     return NextResponse.json({
       ...data,
       headline: `${data.paidYesterday} payments received · ${data.newDenials} new denials · ${data.timelyRisks} timely filing risks`,
@@ -131,12 +127,7 @@ Rules:
 - Do NOT use "delinquent" or collection-agency language`
 
   try {
-    const message = await client.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 768,
-      messages: [{ role: "user", content: prompt }],
-    })
-    const raw = message.content[0].type === "text" ? message.content[0].text : ""
+    const raw = await aiComplete({ max_tokens: 768, messages: [{ role: "user", content: prompt }] })
     const stripped = raw.replace(/```json\s*/gi, "").replace(/```\s*/g, "")
     const match = stripped.match(/\{[\s\S]*\}/)
     if (!match) throw new Error("No JSON")

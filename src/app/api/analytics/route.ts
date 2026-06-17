@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getSession } from "@/lib/auth"
+import { logAudit } from "@/lib/audit"
 
 export async function GET(req: NextRequest) {
   const session = await getSession()
@@ -22,6 +23,7 @@ export async function GET(req: NextRequest) {
 
   const { prisma } = await import("@/lib/prisma")
   const practiceId = session.practiceId
+  logAudit({ action: "analytics.view", practiceId, userId: session.userId, userEmail: session.email, resource: "analytics", req })
 
   const [claims, statements, denials] = await Promise.all([
     prisma.claim.findMany({

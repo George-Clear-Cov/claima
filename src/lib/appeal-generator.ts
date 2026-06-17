@@ -1,9 +1,4 @@
-/**
- * Generates appeal letters for denied claims using Claude API.
- * Falls back to a template when no API key is set.
- */
-
-import Anthropic from "@anthropic-ai/sdk"
+import { aiComplete, isAIConfigured } from "./ai"
 import { classifyDenial } from "./denial-codes"
 
 interface AppealContext {
@@ -26,11 +21,7 @@ interface AppealContext {
 export async function generateAppealLetter(ctx: AppealContext): Promise<string> {
   const denial = classifyDenial(ctx.carcCode)
 
-  const client = process.env.ANTHROPIC_API_KEY
-    ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-    : null
-
-  if (!client) {
+  if (!isAIConfigured()) {
     return generateTemplateAppeal(ctx, denial.action)
   }
 
@@ -61,13 +52,8 @@ Requirements:
 
 Write only the letter body, no explanations.`
 
-  const message = await client.messages.create({
-    model: "claude-sonnet-4-6",
-    max_tokens: 1024,
-    messages: [{ role: "user", content: prompt }],
-  })
-
-  return message.content[0].type === "text" ? message.content[0].text : generateTemplateAppeal(ctx, denial.action)
+  const text = await aiComplete({ max_tokens: 1024, messages: [{ role: "user", content: prompt }] })
+  return text || generateTemplateAppeal(ctx, denial.action)
 }
 
 function generateTemplateAppeal(ctx: AppealContext, action: string): string {

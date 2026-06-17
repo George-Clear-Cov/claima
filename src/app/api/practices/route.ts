@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { getSession } from "@/lib/auth"
+import { logAudit } from "@/lib/audit"
 
 const updateSchema = z.object({
   name: z.string().min(1).optional(),
@@ -17,13 +18,14 @@ const updateSchema = z.object({
 })
 
 // GET /api/practices — return the current practice
-export async function GET() {
+export async function GET(req: NextRequest) {
   const session = await getSession()
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   if (!process.env.DATABASE_URL) return NextResponse.json({ error: "No database" }, { status: 503 })
 
   const { prisma } = await import("@/lib/prisma")
+  logAudit({ action: "practice.view", practiceId: session.practiceId, userId: session.userId, userEmail: session.email, resource: "practice", req })
   const practice = await prisma.practice.findUnique({ where: { id: session.practiceId } })
   return NextResponse.json(practice)
 }

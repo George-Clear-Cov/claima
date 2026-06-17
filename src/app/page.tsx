@@ -7,6 +7,7 @@ import { LogoMark } from "@/components/Logo"
 import HeroDashboardMockup from "@/components/HeroDashboardMockup"
 import SweepMockup from "@/components/SweepMockup"
 import AppealMockup from "@/components/AppealMockup"
+import BaaGate from "@/components/BaaGate"
 
 interface Priority {
   rank: number
@@ -40,41 +41,63 @@ const URGENCY_CONFIG = {
 }
 
 function MarketingPage() {
-  const statsRef  = useRef<HTMLDivElement>(null)
-  const stepsRef  = useRef<HTMLDivElement>(null)
-  const feat1Ref  = useRef<HTMLDivElement>(null)
-  const feat2Ref  = useRef<HTMLDivElement>(null)
-  const feat3Ref  = useRef<HTMLDivElement>(null)
+  const statsRef   = useRef<HTMLDivElement>(null)
+  const stepsRef   = useRef<HTMLDivElement>(null)
+  const feat1Ref   = useRef<HTMLDivElement>(null)
+  const feat2Ref   = useRef<HTMLDivElement>(null)
+  const feat3Ref   = useRef<HTMLDivElement>(null)
+  const pricingRef  = useRef<HTMLDivElement>(null)
+  const specRef     = useRef<HTMLDivElement>(null)
+  const footerRef   = useRef<HTMLDivElement>(null)
+  const securityRef = useRef<HTMLDivElement>(null)
 
-  const [statsIn,  setStatsIn]  = useState(false)
-  const [stepsIn,  setStepsIn]  = useState(0)
-  const [feat1In,  setFeat1In]  = useState(false)
-  const [feat2In,  setFeat2In]  = useState(false)
-  const [feat3In,  setFeat3In]  = useState(false)
+  const [heroIn,    setHeroIn]    = useState(false)
+  const [scrolled,  setScrolled]  = useState(false)
+  const [statsIn,   setStatsIn]   = useState(false)
+  const [stepsIn,   setStepsIn]   = useState(0)
+  const [feat1In,   setFeat1In]   = useState(false)
+  const [feat2In,   setFeat2In]   = useState(false)
+  const [feat3In,   setFeat3In]   = useState(false)
+  const [pricingIn,  setPricingIn]  = useState(0)
+  const [specIn,     setSpecIn]     = useState(false)
+  const [footerIn,   setFooterIn]   = useState(false)
+  const [securityIn, setSecurityIn] = useState(0)
+
+  useEffect(() => {
+    const t = setTimeout(() => setHeroIn(true), 60)
+    return () => clearTimeout(t)
+  }, [])
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8)
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => window.removeEventListener("scroll", onScroll)
+  }, [])
 
   useEffect(() => {
     const makeObs = (el: HTMLElement | null, cb: () => void) => {
       if (!el) return
-      const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) { cb(); obs.disconnect() } }, { threshold: 0.25 })
+      const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) { cb(); obs.disconnect() } }, { threshold: 0.2 })
       obs.observe(el)
       return obs
     }
-    const o1 = makeObs(statsRef.current, () => setStatsIn(true))
-    const o2 = makeObs(stepsRef.current, () => {
-      const timers = [1,2,3,4].map((n, i) => setTimeout(() => setStepsIn(n), i * 160))
-      return timers
-    })
-    const o3 = makeObs(feat1Ref.current, () => setFeat1In(true))
-    const o4 = makeObs(feat2Ref.current, () => setFeat2In(true))
-    const o5 = makeObs(feat3Ref.current, () => setFeat3In(true))
-    return () => { o1?.disconnect(); o2?.disconnect(); o3?.disconnect(); o4?.disconnect(); o5?.disconnect() }
+    const o1 = makeObs(statsRef.current,   () => setStatsIn(true))
+    const o2 = makeObs(stepsRef.current,   () => { [1,2,3,4].forEach((n, i) => setTimeout(() => setStepsIn(n), i * 160)) })
+    const o3 = makeObs(feat1Ref.current,   () => setFeat1In(true))
+    const o4 = makeObs(feat2Ref.current,   () => setFeat2In(true))
+    const o5 = makeObs(feat3Ref.current,   () => setFeat3In(true))
+    const o6 = makeObs(pricingRef.current, () => { [1,2,3,4,5,6,7].forEach((n, i) => setTimeout(() => setPricingIn(n), i * 90)) })
+    const o7 = makeObs(specRef.current,     () => setSpecIn(true))
+    const o8 = makeObs(footerRef.current,   () => setFooterIn(true))
+    const o9 = makeObs(securityRef.current, () => { [1,2,3,4].forEach((n, i) => setTimeout(() => setSecurityIn(n), i * 100)) })
+    return () => { [o1,o2,o3,o4,o5,o6,o7,o8,o9].forEach(o => o?.disconnect()) }
   }, [])
 
   return (
     <div className="min-h-screen bg-white text-gray-900 antialiased">
 
       {/* Nav */}
-      <header className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm border-b border-gray-100">
+      <header className={`sticky top-0 z-10 bg-white/95 backdrop-blur-sm border-b border-gray-100 transition-shadow duration-300 ${scrolled ? "shadow-md" : ""}`}>
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <LogoMark size={24} />
@@ -96,17 +119,17 @@ function MarketingPage() {
 
           {/* Left */}
           <div className="pb-12">
-            <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-100 rounded-full px-3 py-1 text-xs font-medium text-blue-700 mb-6">
+            <div className={`inline-flex items-center gap-2 bg-blue-50 border border-blue-100 rounded-full px-3 py-1 text-xs font-medium text-blue-700 mb-6 transition-all duration-700 ${heroIn ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`} style={{ transitionDelay: "0ms" }}>
               <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
               Works across every outpatient specialty
             </div>
-            <h1 className="text-[2.6rem] font-bold tracking-tight leading-[1.1] text-gray-900 mb-5">
+            <h1 className={`text-[2.6rem] font-bold tracking-tight leading-[1.1] text-gray-900 mb-5 transition-all duration-700 ${heroIn ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`} style={{ transitionDelay: "100ms" }}>
               Medical billing that doesn&apos;t require a billing department
             </h1>
-            <p className="text-[1.05rem] text-gray-500 leading-relaxed mb-8">
+            <p className={`text-[1.05rem] text-gray-500 leading-relaxed mb-8 transition-all duration-700 ${heroIn ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`} style={{ transitionDelay: "200ms" }}>
               Claima handles the full revenue cycle for outpatient practices — claim submission, denial appeals, ERA posting, and patient statements.
             </p>
-            <div className="flex items-center gap-3 mb-8">
+            <div className={`flex items-center gap-3 mb-8 transition-all duration-700 ${heroIn ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`} style={{ transitionDelay: "300ms" }}>
               <Link href="/signup" className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2.5 rounded-lg transition-colors text-sm shadow-sm">
                 Start for free
               </Link>
@@ -114,7 +137,7 @@ function MarketingPage() {
                 Talk to us →
               </a>
             </div>
-            <div className="flex items-center gap-5 text-xs text-gray-400">
+            <div className={`flex items-center gap-5 text-xs text-gray-400 transition-all duration-700 ${heroIn ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`} style={{ transitionDelay: "400ms" }}>
               <span className="flex items-center gap-1.5">
                 <svg className="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
                 HIPAA compliant
@@ -132,8 +155,10 @@ function MarketingPage() {
 
           {/* Right: product mockup */}
           <div className="relative hidden lg:block pb-0 translate-y-6">
-            <HeroDashboardMockup />
-            <div className="absolute -inset-6 bg-blue-100 rounded-3xl -z-10 blur-2xl opacity-40" />
+            <div className={`transition-all duration-700 ${heroIn ? "opacity-100 translate-x-0" : "opacity-0 translate-x-10"}`} style={{ transitionDelay: "250ms" }}>
+              <HeroDashboardMockup />
+              <div className="absolute -inset-6 bg-blue-100 rounded-3xl -z-10 blur-2xl opacity-40" />
+            </div>
           </div>
 
         </div>
@@ -144,49 +169,52 @@ function MarketingPage() {
         const PAYERS = [
           { name: "Aetna",                  logo: "aetna.svg",    color: "#C41E3A", letter: "A" },
           { name: "UnitedHealthcare",        logo: "uhc.svg",      color: "#0070CE", letter: "U" },
-          { name: "Cigna",                   logo: null,           color: "#006699", letter: "C" },
+          { name: "Cigna",                   logo: "cigna.svg",    color: "#006699", letter: "C", h: "h-10" },
           { name: "Humana",                  logo: "humana.svg",   color: "#007AC2", letter: "H" },
-          { name: "Blue Cross Blue Shield",  logo: null,           color: "#00A3E0", letter: "B" },
+          { name: "Blue Cross Blue Shield",  logo: "bcbs.svg",     color: "#00A3E0", letter: "B", h: "h-10" },
           { name: "Anthem",                  logo: "anthem.png",   color: "#1B4598", letter: "A" },
           { name: "Molina Healthcare",       logo: "molina.png",   color: "#006CB7", letter: "M" },
-          { name: "Kaiser Permanente",       logo: null,           color: "#009999", letter: "K" },
+          { name: "Kaiser Permanente",       logo: "kaiser.svg",   color: "#009999", letter: "K" },
           { name: "Centene",                 logo: "centene.png",  color: "#1B4D9C", letter: "C" },
           { name: "Oscar Health",            logo: "oscar.png",    color: "#FF4E00", letter: "O" },
           { name: "Highmark",                logo: "highmark.png", color: "#0068A5", letter: "H" },
           { name: "Optum",                   logo: "optum.svg",    color: "#FF671B", letter: "O" },
-          { name: "Ambetter",                logo: null,           color: "#007ABA", letter: "A" },
           { name: "Tricare",                 logo: "tricare.png",  color: "#003087", letter: "T" },
-          { name: "Tufts Health",            logo: null,           color: "#0072CE", letter: "T" },
-          { name: "Harvard Pilgrim",         logo: null,           color: "#0066A6", letter: "H" },
+          { name: "Tufts Health",            logo: "tufts.png",    color: "#0072CE", letter: "T" },
         ]
-        const doubled = [...PAYERS, ...PAYERS]
+        const PayerList = () => (
+          <div className="flex shrink-0 items-center py-2">
+            {PAYERS.map((payer, i) => (
+              <div key={i} className="flex items-center gap-3 px-8 shrink-0 group cursor-pointer">
+                {payer.logo ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={`/logos/${payer.logo}`}
+                    alt={payer.name}
+                    className={`${"h" in payer ? payer.h : "h-6"} w-auto max-w-[110px] object-contain grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-200`}
+                  />
+                ) : (
+                  <div className="flex items-center gap-2 opacity-40 group-hover:opacity-100 transition-opacity duration-200">
+                    <svg viewBox="0 0 22 22" width="22" height="22" className="shrink-0">
+                      <rect width="22" height="22" rx="4.5" fill={payer.color} />
+                      <text x="11" y="15.5" textAnchor="middle" fontFamily="system-ui,-apple-system,sans-serif" fontWeight="800" fontSize="12" fill="white">{payer.letter}</text>
+                    </svg>
+                    <span className="text-[13px] font-semibold whitespace-nowrap" style={{ color: payer.color }}>{payer.name}</span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )
         return (
           <section className="border-t border-gray-100 bg-white py-8 overflow-hidden">
             <p className="text-center text-[10px] font-semibold text-gray-400 uppercase tracking-[0.12em] mb-6">
               Submits to every major payer
             </p>
             <div className="relative overflow-visible">
-              <div className="flex animate-marquee items-center py-2">
-                {doubled.map((payer, i) => (
-                  <div key={i} className="flex items-center gap-3 px-8 shrink-0 group cursor-pointer">
-                    {payer.logo ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={`/logos/${payer.logo}`}
-                        alt={payer.name}
-                        className="h-6 w-auto max-w-[110px] object-contain grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-200"
-                      />
-                    ) : (
-                      <div className="flex items-center gap-2 opacity-40 group-hover:opacity-100 transition-opacity duration-200">
-                        <svg viewBox="0 0 22 22" width="22" height="22" className="shrink-0">
-                          <rect width="22" height="22" rx="4.5" fill={payer.color} />
-                          <text x="11" y="15.5" textAnchor="middle" fontFamily="system-ui,-apple-system,sans-serif" fontWeight="800" fontSize="12" fill="white">{payer.letter}</text>
-                        </svg>
-                        <span className="text-[13px] font-semibold whitespace-nowrap" style={{ color: payer.color }}>{payer.name}</span>
-                      </div>
-                    )}
-                  </div>
-                ))}
+              <div className="animate-marquee">
+                <PayerList />
+                <PayerList />
               </div>
               <div className="absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-white to-transparent pointer-events-none" />
               <div className="absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-white to-transparent pointer-events-none" />
@@ -206,8 +234,8 @@ function MarketingPage() {
             ].map((s, i) => (
               <div
                 key={s.stat}
-                className={`border-l-2 pl-5 transition-all duration-600 ${statsIn ? "opacity-100 translate-y-0 border-gray-200" : "opacity-0 translate-y-5 border-transparent"}`}
-                style={{ transitionDelay: statsIn ? `${i * 120}ms` : "0ms" }}
+                className={`border-l-2 pl-5 transition-all duration-700 ${statsIn ? "opacity-100 translate-y-0 border-gray-200" : "opacity-0 translate-y-5 border-transparent"}`}
+                style={{ transitionDelay: statsIn ? `${i * 120}ms` : "0ms", filter: statsIn ? "blur(0px)" : "blur(6px)" }}
               >
                 <div className="text-2xl font-bold text-gray-900 mb-1">{s.stat}</div>
                 <div className="text-sm font-medium text-gray-700 mb-1">{s.label}</div>
@@ -256,7 +284,7 @@ function MarketingPage() {
               <h3 className="text-xl font-bold text-gray-900 mb-3 leading-snug">One click. Every billing task done.</h3>
               <p className="text-sm text-gray-500 leading-relaxed max-w-md">The Claima agent sweeps your practice daily: posts ERA payments at contracted rates, drafts appeal letters for every new denial, flags claims approaching the timely filing window, and surfaces aging AR sorted by dollar value. What used to take a billing coordinator half a day takes 30 seconds.</p>
             </div>
-            <div className="w-80 shrink-0 hidden lg:block">
+            <div className={`w-80 shrink-0 hidden lg:block transition-all duration-700 ${feat1In ? "opacity-100 translate-x-0" : "opacity-0 translate-x-10"}`}>
               <SweepMockup />
             </div>
           </div>
@@ -275,7 +303,7 @@ function MarketingPage() {
               <h3 className="text-xl font-bold text-gray-900 mb-3 leading-snug">Every denial gets a real appeal, not a template</h3>
               <p className="text-sm text-gray-500 leading-relaxed max-w-md">When a payer returns CARC 197 (missing auth) or CARC 50 (not medically necessary), Claima doesn&apos;t send a form letter. It writes a specific appeal citing the denial code, the relevant payer policy, and the clinical documentation on file. Practices using Claima appeal more claims — and win more of them.</p>
             </div>
-            <div className="w-80 shrink-0 hidden lg:block">
+            <div className={`w-80 shrink-0 hidden lg:block transition-all duration-700 ${feat2In ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-10"}`}>
               <AppealMockup />
             </div>
           </div>
@@ -294,7 +322,7 @@ function MarketingPage() {
               <h3 className="text-xl font-bold text-gray-900 mb-3 leading-snug">Start every morning knowing exactly what to do</h3>
               <p className="text-sm text-gray-500 leading-relaxed max-w-md">Claima&apos;s AI briefing summarizes overnight ERA activity, new denials, timely filing risks, and patient AR — ranked by dollar impact. Not a dashboard you have to interpret. A briefing you can act on.</p>
             </div>
-            <div className="w-80 shrink-0 hidden lg:block">
+            <div className={`w-80 shrink-0 hidden lg:block transition-all duration-700 ${feat3In ? "opacity-100 translate-x-0" : "opacity-0 translate-x-10"}`}>
               <div className="bg-amber-50 border border-amber-200 rounded-xl shadow-sm p-4">
                 <div className="flex items-center gap-2 mb-3">
                   <LogoMark size={16} />
@@ -323,7 +351,7 @@ function MarketingPage() {
       </section>
 
       {/* Pricing */}
-      <section className="max-w-6xl mx-auto px-6 py-16">
+      <section ref={pricingRef} className="max-w-6xl mx-auto px-6 py-16">
         <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em] mb-8">Pricing</p>
         <div className="flex gap-12 items-start">
           <div className="flex-1">
@@ -345,8 +373,8 @@ function MarketingPage() {
                 "Eligibility verification",
                 "HIPAA BAA",
                 "No contracts",
-              ].map(item => (
-                <li key={item} className="flex items-center gap-2.5 text-sm text-gray-700">
+              ].map((item, i) => (
+                <li key={item} className={`flex items-center gap-2.5 text-sm text-gray-700 transition-all duration-500 ${i < pricingIn ? "opacity-100 translate-x-0" : "opacity-0 translate-x-3"}`}>
                   <svg className="w-4 h-4 text-green-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
                   {item}
                 </li>
@@ -362,7 +390,7 @@ function MarketingPage() {
       </section>
 
       {/* Specialties */}
-      <section className="border-t border-gray-100 bg-gray-50">
+      <section ref={specRef} className="border-t border-gray-100 bg-gray-50">
         <div className="max-w-6xl mx-auto px-6 py-14">
           <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.1em] mb-6">Works for every outpatient specialty</p>
           <div className="flex flex-wrap gap-1.5">
@@ -373,8 +401,12 @@ function MarketingPage() {
               "Cardiology", "Neurology", "Gastroenterology", "Dermatology",
               "Orthopedic Surgery", "Podiatry", "Optometry", "Allergy & Immunology",
               "Endocrinology", "Rheumatology", "Urology", "Nurse Practitioners", "Physician Assistants",
-            ].map((s) => (
-              <span key={s} className="bg-white border border-gray-200 text-gray-600 text-xs px-2.5 py-1 rounded">
+            ].map((s, i) => (
+              <span
+                key={s}
+                className={`bg-white border border-gray-200 text-gray-600 text-xs px-2.5 py-1 rounded transition-all duration-400 ${specIn ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"}`}
+                style={{ transitionDelay: specIn ? `${i * 25}ms` : "0ms" }}
+              >
                 {s}
               </span>
             ))}
@@ -384,14 +416,14 @@ function MarketingPage() {
 
       {/* Security strip */}
       <section className="border-t border-gray-100">
-        <div className="max-w-6xl mx-auto px-6 py-10 flex flex-wrap gap-8">
+        <div ref={securityRef} className="max-w-6xl mx-auto px-6 py-10 flex flex-wrap gap-8">
           {[
             { title: "HIPAA-ready", body: "BAA executed at signup. PHI encrypted in transit and at rest." },
             { title: "AES-256 encryption", body: "All data encrypted at the storage layer on AWS infrastructure." },
             { title: "Audit logs", body: "Every PHI access logged and retained for 6 years per HIPAA." },
             { title: "SOC 2 Type II", body: "Audit period begins Q3 2026. Report available to enterprise customers." },
-          ].map((s) => (
-            <div key={s.title} className="flex-1 min-w-[180px]">
+          ].map((s, i) => (
+            <div key={s.title} className={`flex-1 min-w-[180px] transition-all duration-500 ${i < securityIn ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
               <div className="text-sm font-semibold text-gray-900 mb-1">{s.title}</div>
               <div className="text-xs text-gray-500 leading-relaxed">{s.body}</div>
             </div>
@@ -400,8 +432,8 @@ function MarketingPage() {
       </section>
 
       {/* Dark footer CTA */}
-      <section className="bg-gray-900">
-        <div className="max-w-6xl mx-auto px-6 py-16 flex items-center justify-between gap-8">
+      <section ref={footerRef} className="bg-gray-900">
+        <div className={`max-w-6xl mx-auto px-6 py-16 flex items-center justify-between gap-8 transition-all duration-700 ${footerIn ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
           <div>
             <h2 className="text-2xl font-bold text-white mb-2">Get started in 10 minutes</h2>
             <p className="text-gray-400 text-sm">Create an account, add your practice details, and submit your first claim today.</p>
@@ -439,23 +471,27 @@ function MarketingPage() {
 
 function Dashboard() {
   const [userName, setUserName] = useState("")
-  const [setup, setSetup] = useState<{ practiceComplete: boolean; hasProviders: boolean; hasPatients: boolean } | null>(null)
+  const [setup, setSetup] = useState<{ practiceComplete: boolean; hasProviders: boolean; hasPatients: boolean; stripeConnected: boolean } | null>(null)
   const [briefing, setBriefing] = useState<BriefingData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [baaAccepted, setBaaAccepted] = useState(true)
 
   useEffect(() => {
     Promise.all([
       fetch("/api/auth/me").then(r => r.ok ? r.json() : null),
       fetch("/api/context").then(r => r.ok ? r.json() : null),
       fetch("/api/briefing").then(r => r.ok ? r.json() : null),
-    ]).then(([me, ctx, brief]) => {
+      fetch("/api/connect").then(r => r.ok ? r.json() : null),
+    ]).then(([me, ctx, brief, connect]) => {
       if (me?.user?.name) setUserName(me.user.name)
       if (ctx) {
         setSetup({
           practiceComplete: !ctx.practice?.npi?.startsWith("PENDING-"),
           hasProviders: (ctx.providers?.length ?? 0) > 0,
           hasPatients: (ctx.patients?.length ?? 0) > 0,
+          stripeConnected: connect?.status === "active",
         })
+        setBaaAccepted(!!ctx.practice?.baaAcceptedAt)
       }
       if (brief && !brief.error) setBriefing(brief)
     }).finally(() => setLoading(false))
@@ -470,10 +506,11 @@ function Dashboard() {
 
   const firstName = userName.split(" ").find(p => !p.startsWith("Dr")) ?? userName.split(" ")[0] ?? ""
   const fmt = (n: number) => n >= 1000 ? `$${(n / 1000).toFixed(1)}k` : `$${n.toFixed(0)}`
-  const setupIncomplete = setup && (!setup.practiceComplete || !setup.hasProviders || !setup.hasPatients)
+  const setupIncomplete = setup && (!setup.practiceComplete || !setup.hasProviders || !setup.hasPatients || !setup.stripeConnected)
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
+      <BaaGate baaAccepted={baaAccepted} />
       <NavBar />
       <main className="max-w-3xl mx-auto px-8 py-10">
         <div className="mb-8 flex items-start justify-between">
@@ -501,11 +538,12 @@ function Dashboard() {
               <div className="w-5 h-5 rounded bg-blue-600 flex items-center justify-center text-white text-xs font-bold shrink-0">C</div>
               <span className="text-sm font-semibold text-blue-900">Complete your setup to start submitting claims</span>
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[
                 { done: setup!.practiceComplete, label: "Practice details", desc: "NPI, Tax ID, address", href: "/settings" },
                 { done: setup!.hasProviders, label: "Add a provider", desc: "Rendering provider NPI", href: "/settings?tab=providers" },
                 { done: setup!.hasPatients, label: "Add a patient", desc: "Demographics & insurance", href: "/settings?tab=patients" },
+                { done: setup!.stripeConnected, label: "Connect Stripe", desc: "Receive patient payments", href: "/onboarding" },
               ].map((step) => (
                 <Link
                   key={step.label}

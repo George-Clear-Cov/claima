@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import Anthropic from "@anthropic-ai/sdk"
+import { aiComplete, isAIConfigured } from "@/lib/ai"
 import { getSession } from "@/lib/auth"
-
-const client = process.env.ANTHROPIC_API_KEY
-  ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-  : null
 
 export async function GET(req: NextRequest) {
   const session = await getSession()
@@ -146,7 +142,7 @@ export async function GET(req: NextRequest) {
 
   let insights: { title: string; detail: string; severity: "critical" | "warning" | "opportunity" | "info"; action: string }[] = []
 
-  if (client) {
+  if (isAIConfigured()) {
     try {
       const prompt = `You are a revenue cycle intelligence engine for a mental health practice. Generate 4-6 specific, actionable insights from this billing data.
 
@@ -170,12 +166,7 @@ Rules:
 - Be specific: "Aetna is paying in 47 days vs your 28-day average" not "one payer is slow"
 - Include at least one opportunity (something they could do to collect more)`
 
-      const message = await client.messages.create({
-        model: "claude-sonnet-4-6",
-        max_tokens: 1024,
-        messages: [{ role: "user", content: prompt }],
-      })
-      const text = message.content[0].type === "text" ? message.content[0].text : ""
+      const text = await aiComplete({ max_tokens: 1024, messages: [{ role: "user", content: prompt }] })
       const match = text.match(/\[[\s\S]*\]/)
       if (match) insights = JSON.parse(match[0])
     } catch {}

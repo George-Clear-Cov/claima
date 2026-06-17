@@ -392,6 +392,11 @@ export default function ClaimsPage() {
                               Call Script
                             </button>
                           )}
+                          {claim.claimStatus === "DENIED" && (
+                            <Link href="/denials" className="text-xs font-medium text-orange-600 hover:text-orange-700 transition-colors px-2.5 py-1 rounded-md hover:bg-orange-50 whitespace-nowrap">
+                              View Denial →
+                            </Link>
+                          )}
                           {["SUBMITTED", "ACCEPTED"].includes(claim.claimStatus) && (
                             <button
                               onClick={() => setDenyingClaimId(claim.id)}

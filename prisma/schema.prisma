@@ -8,13 +8,15 @@ datasource db {
 }
 
 model User {
-  id             String   @id @default(uuid())
-  email          String   @unique
-  name           String
-  hashedPassword String
-  practiceId     String
-  role           UserRole @default(BILLER)
-  createdAt      DateTime @default(now())
+  id                   String    @id @default(uuid())
+  email                String    @unique
+  name                 String
+  hashedPassword       String
+  practiceId           String
+  role                 UserRole  @default(BILLER)
+  failedLoginAttempts  Int       @default(0)
+  lockedUntil          DateTime?
+  createdAt            DateTime  @default(now())
 
   practice Practice @relation(fields: [practiceId], references: [id])
 }
@@ -38,13 +40,16 @@ model Practice {
   phone             String
   stripeAccountId   String?  // Stripe Connect connected account ID
   stripeOnboarded   Boolean  @default(false)
-  platformFeePercent Float   @default(5.0) // MediBill platform fee %
+  platformFeePercent Float   @default(5.0)
+  baaAcceptedAt     DateTime?
+  baaAcceptedIp     String?
   createdAt         DateTime @default(now())
 
-  providers Provider[]
-  patients  Patient[]
-  claims    Claim[]
-  users     User[]
+  providers               Provider[]
+  patients                Patient[]
+  claims                  Claim[]
+  users                   User[]
+  marketplaceSubscriptions MarketplaceSubscription[]
 }
 
 model Provider {
@@ -215,4 +220,48 @@ enum ClaimStatus {
   REJECTED
   DENIED
   PAID
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  practiceId String?
+  userId     String?
+  userEmail  String?
+  action     String   // e.g. "auth.login", "claim.create", "patient.view"
+  resource   String?  // e.g. "claim", "patient", "denial"
+  resourceId String?
+  ip         String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@index([practiceId, createdAt])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  email     String
+  token     String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+}
+
+model MarketplaceSubscription {
+  id             String    @id @default(uuid())
+  practiceId     String?
+  marketplace    String    // "aws" | "azure"
+  externalId     String    @unique // AWS customer ID or Azure subscription ID
+  productCode    String?   // AWS product code
+  planId         String?   // Azure plan ID or AWS dimension
+  status         String    // "pending" | "active" | "suspended" | "cancelled"
+  quantity       Int       @default(1)
+  activatedAt    DateTime?
+  cancelledAt    DateTime?
+  rawPayload     Json?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  practice Practice? @relation(fields: [practiceId], references: [id])
+
+  @@index([marketplace, externalId])
 }

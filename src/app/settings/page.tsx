@@ -679,9 +679,249 @@ function IntegrationsTab() {
   )
 }
 
+// ─── Data & Privacy Tab ──────────────────────────────────────────────────────
+
+function DataPrivacyTab() {
+  const [exporting, setExporting] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [confirmText, setConfirmText] = useState("")
+  const [deleteError, setDeleteError] = useState<string | null>(null)
+  const [showDeleteSection, setShowDeleteSection] = useState(false)
+
+  async function handleExport() {
+    setExporting(true)
+    try {
+      const res = await fetch("/api/admin/export")
+      if (!res.ok) {
+        const d = await res.json()
+        alert(d.error ?? "Export failed")
+        return
+      }
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      const disposition = res.headers.get("Content-Disposition") ?? ""
+      const match = disposition.match(/filename="([^"]+)"/)
+      a.download = match?.[1] ?? "claima-export.json"
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch {
+      alert("Export failed. Please try again.")
+    } finally {
+      setExporting(false)
+    }
+  }
+
+  async function handleDelete() {
+    if (confirmText !== "DELETE MY PRACTICE") return
+    setDeleting(true)
+    setDeleteError(null)
+    try {
+      const res = await fetch("/api/admin/practice", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirm: "DELETE MY PRACTICE" }),
+      })
+      const d = await res.json()
+      if (!res.ok) throw new Error(d.error ?? "Delete failed")
+      window.location.href = "/login?deleted=1"
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : "Delete failed")
+      setDeleting(false)
+    }
+  }
+
+  return (
+    <div className="max-w-2xl space-y-6">
+      {/* Export */}
+      <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+        <h3 className="font-semibold text-gray-900 text-sm mb-1">Export Practice Data</h3>
+        <p className="text-xs text-gray-500 mb-4 leading-relaxed">
+          Download a full JSON export of all your practice data — patients, claims, denials, statements, providers, and audit logs. Required for HIPAA offboarding.
+        </p>
+        <button
+          onClick={handleExport}
+          disabled={exporting}
+          className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-5 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm"
+        >
+          {exporting ? "Preparing export…" : "Download data export"}
+        </button>
+      </div>
+
+      {/* Delete */}
+      <div className="bg-white border border-red-200 rounded-xl p-5 shadow-sm">
+        <h3 className="font-semibold text-red-700 text-sm mb-1">Delete Practice & All Data</h3>
+        <p className="text-xs text-gray-500 mb-4 leading-relaxed">
+          Permanently deletes your practice account and all associated PHI — patients, claims, denials, providers, statements, and audit logs. This action cannot be undone. Export your data first.
+        </p>
+        {!showDeleteSection ? (
+          <button
+            onClick={() => setShowDeleteSection(true)}
+            className="text-red-600 hover:text-red-700 border border-red-200 hover:border-red-300 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+          >
+            I want to delete my practice
+          </button>
+        ) : (
+          <div className="space-y-3">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-xs text-red-700">
+              Type <strong>DELETE MY PRACTICE</strong> below to confirm. This will immediately and permanently delete all data.
+            </div>
+            <input
+              type="text"
+              value={confirmText}
+              onChange={(e) => setConfirmText(e.target.value)}
+              placeholder="DELETE MY PRACTICE"
+              className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/10 transition-all font-mono"
+            />
+            {deleteError && (
+              <div className="text-red-600 text-xs bg-red-50 border border-red-200 rounded-lg px-3 py-2">{deleteError}</div>
+            )}
+            <div className="flex gap-3">
+              <button
+                onClick={handleDelete}
+                disabled={deleting || confirmText !== "DELETE MY PRACTICE"}
+                className="bg-red-600 hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed text-white px-5 py-2 rounded-lg text-sm font-medium transition-colors"
+              >
+                {deleting ? "Deleting…" : "Permanently delete everything"}
+              </button>
+              <button
+                onClick={() => { setShowDeleteSection(false); setConfirmText(""); setDeleteError(null) }}
+                className="text-gray-500 hover:text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ─── Audit Log Tab ───────────────────────────────────────────────────────────
+
+interface AuditLogEntry {
+  id: string
+  userEmail: string | null
+  action: string
+  resource: string | null
+  resourceId: string | null
+  ip: string | null
+  createdAt: string
+}
+
+const ACTION_LABELS: Record<string, string> = {
+  "auth.login": "Sign in",
+  "auth.login_failed": "Failed sign-in attempt",
+  "auth.login_blocked": "Account locked (too many failures)",
+  "baa.accepted": "BAA accepted",
+  "claim.list": "Viewed claims",
+  "claim.create": "Submitted claim",
+  "denial.list": "Viewed denials",
+  "eligibility.check": "Eligibility check",
+  "patient.list": "Viewed patients",
+  "patient.create": "Added patient",
+  "provider.list": "Viewed providers",
+  "practice.view": "Viewed practice settings",
+  "practice.export": "Exported practice data",
+  "practice.delete": "Deleted practice",
+  "analytics.view": "Viewed analytics dashboard",
+  "statement.list": "Viewed statements",
+  "payment.create": "Recorded payment",
+}
+
+function AuditTab() {
+  const [logs, setLogs] = useState<AuditLogEntry[]>([])
+  const [loading, setLoading] = useState(true)
+  const [page, setPage] = useState(1)
+  const [pages, setPages] = useState(1)
+
+  useEffect(() => {
+    setLoading(true)
+    fetch(`/api/audit?page=${page}`)
+      .then(r => r.json())
+      .then(data => {
+        setLogs(Array.isArray(data.logs) ? data.logs : [])
+        setPages(data.pages ?? 1)
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [page])
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <h2 className="text-base font-semibold text-gray-900">Audit Log</h2>
+        <p className="text-sm text-gray-500 mt-0.5">All PHI access and data changes — required for HIPAA compliance.</p>
+      </div>
+
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        {loading ? (
+          <div className="p-8 text-center text-sm text-gray-400">Loading…</div>
+        ) : logs.length === 0 ? (
+          <div className="p-8 text-center text-sm text-gray-400">No audit events yet. Events will appear here as users interact with the system.</div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-100 bg-gray-50">
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Time</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">User</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Action</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide hidden md:table-cell">IP</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {logs.map(log => (
+                <tr key={log.id} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-4 py-3 text-gray-500 whitespace-nowrap font-mono text-xs">
+                    {new Date(log.createdAt).toLocaleString()}
+                  </td>
+                  <td className="px-4 py-3 text-gray-700 max-w-[160px] truncate">
+                    {log.userEmail ?? <span className="text-gray-400">—</span>}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={`inline-flex items-center gap-1.5 ${log.action === "auth.login_failed" ? "text-red-600" : "text-gray-800"}`}>
+                      {log.action === "auth.login_failed" && <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />}
+                      {ACTION_LABELS[log.action] ?? log.action}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-gray-400 font-mono text-xs hidden md:table-cell">
+                    {log.ip ?? "—"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {pages > 1 && (
+        <div className="flex items-center justify-between">
+          <button
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="text-sm text-blue-600 hover:text-blue-700 disabled:opacity-40 disabled:cursor-not-allowed font-medium"
+          >
+            ← Previous
+          </button>
+          <span className="text-sm text-gray-500">Page {page} of {pages}</span>
+          <button
+            onClick={() => setPage(p => Math.min(pages, p + 1))}
+            disabled={page === pages}
+            className="text-sm text-blue-600 hover:text-blue-700 disabled:opacity-40 disabled:cursor-not-allowed font-medium"
+          >
+            Next →
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Page ────────────────────────────────────────────────────────────────────
 
-type Tab = "practice" | "providers" | "patients" | "integrations"
+type Tab = "practice" | "providers" | "patients" | "integrations" | "audit" | "data"
 
 function SettingsInner() {
   const params = useSearchParams()
@@ -703,6 +943,8 @@ function SettingsInner() {
     { id: "providers", label: "Providers" },
     { id: "patients", label: "Patients" },
     { id: "integrations", label: "Integrations" },
+    { id: "audit", label: "Audit Log" },
+    { id: "data", label: "Data & Privacy" },
   ]
 
   return (
@@ -734,6 +976,8 @@ function SettingsInner() {
         {tab === "providers" && <ProvidersTab />}
         {tab === "patients" && <PatientsTab />}
         {tab === "integrations" && <IntegrationsTab />}
+        {tab === "audit" && <AuditTab />}
+        {tab === "data" && <DataPrivacyTab />}
       </div>
     </div>
   )

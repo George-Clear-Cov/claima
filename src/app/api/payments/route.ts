@@ -1,24 +1,27 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { stripe } from "@/lib/stripe"
+import { getSessionFromRequest } from "@/lib/auth"
+import { logAudit } from "@/lib/audit"
 
 const schema = z.object({
-  amount: z.number().positive(),       // dollars
+  amount: z.number().positive(),
   statementId: z.string(),
   patientName: z.string(),
   claimId: z.string(),
-  practiceId: z.string().uuid().optional(),
 })
 
 // POST /api/payments — create Stripe PaymentIntent via Connect
 // Money flows: patient → practice's Stripe account, Claima takes platform fee
 export async function POST(req: NextRequest) {
+  const session = await getSessionFromRequest(req)
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
   try {
     const body = await req.json()
     const input = schema.parse(body)
 
     if (!stripe) {
-      // Demo mode — no Stripe key
       return NextResponse.json({
         clientSecret: null,
         mock: true,
@@ -27,18 +30,17 @@ export async function POST(req: NextRequest) {
       })
     }
 
+    logAudit({ action: "payment.create", practiceId: session.practiceId, userId: session.userId, userEmail: session.email, resource: "statement", resourceId: input.statementId, req })
     const amountCents = Math.round(input.amount * 100)
     let connectedAccountId: string | undefined
     let platformFeeCents = 0
 
-    // Look up practice's connected account + fee %
-    if (input.practiceId) {
-      const { prisma } = await import("@/lib/prisma")
-      const practice = await prisma.practice.findUnique({ where: { id: input.practiceId } })
-      if (practice?.stripeAccountId && practice.stripeOnboarded) {
-        connectedAccountId = practice.stripeAccountId
-        platformFeeCents = Math.round(amountCents * (practice.platformFeePercent / 100))
-      }
+    // Look up practice's connected account + fee % from session
+    const { prisma } = await import("@/lib/prisma")
+    const practice = await prisma.practice.findUnique({ where: { id: session.practiceId } })
+    if (practice?.stripeAccountId && practice.stripeOnboarded) {
+      connectedAccountId = practice.stripeAccountId
+      platformFeeCents = Math.round(amountCents * (practice.platformFeePercent / 100))
     }
 
     const paymentIntentParams: Parameters<typeof stripe.paymentIntents.create>[0] = {
@@ -50,12 +52,11 @@ export async function POST(req: NextRequest) {
         statementId: input.statementId,
         patientName: input.patientName,
         claimId: input.claimId,
-        practiceId: input.practiceId ?? "",
+        practiceId: session.practiceId,
       },
     }
 
     if (connectedAccountId) {
-      // Connect: charge on behalf of practice, Claima collects platform fee
       paymentIntentParams.application_fee_amount = platformFeeCents
       paymentIntentParams.transfer_data = { destination: connectedAccountId }
     }

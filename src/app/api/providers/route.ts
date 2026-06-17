@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { getSession } from "@/lib/auth"
+import { logAudit } from "@/lib/audit"
 
 const createSchema = z.object({
   firstName: z.string().min(1),
@@ -10,13 +11,14 @@ const createSchema = z.object({
 })
 
 // GET /api/providers — list providers for current practice
-export async function GET() {
+export async function GET(req: NextRequest) {
   const session = await getSession()
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   if (!process.env.DATABASE_URL) return NextResponse.json([], { status: 200 })
 
   const { prisma } = await import("@/lib/prisma")
+  logAudit({ action: "provider.list", practiceId: session.practiceId, userId: session.userId, userEmail: session.email, resource: "provider", req })
   const providers = await prisma.provider.findMany({
     where: { practiceId: session.practiceId },
     orderBy: { lastName: "asc" },

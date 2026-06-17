@@ -1,9 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import Anthropic from "@anthropic-ai/sdk"
-
-const client = process.env.ANTHROPIC_API_KEY
-  ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-  : null
+import { aiComplete, isAIConfigured } from "@/lib/ai"
 
 interface InterpretRequest {
   patientName: string
@@ -34,7 +30,7 @@ export async function POST(req: NextRequest) {
       ? coverage.visitLimit - coverage.visitsUsed
       : null
 
-    if (!client) {
+    if (!isAIConfigured()) {
       return NextResponse.json(fallbackInterpret({ payerName, coverage, deductibleRemaining, visitsRemaining }))
     }
 
@@ -65,13 +61,7 @@ Respond ONLY with JSON:
   "patientOwesEstimate": <number, estimated patient responsibility in dollars for a standard 60-min therapy session>
 }`
 
-    const msg = await client.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 512,
-      messages: [{ role: "user", content: prompt }],
-    })
-
-    const text = msg.content[0].type === "text" ? msg.content[0].text : ""
+    const text = await aiComplete({ max_tokens: 512, messages: [{ role: "user", content: prompt }] })
     const raw = text.replace(/```json\s*/gi, "").replace(/```\s*/g, "")
     const match = raw.match(/\{[\s\S]*\}/)
     if (!match) throw new Error("No JSON")

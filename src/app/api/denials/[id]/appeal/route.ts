@@ -1,24 +1,23 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { generateAppealLetter } from "@/lib/appeal-generator"
+import { getSessionFromRequest } from "@/lib/auth"
 
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = await getSessionFromRequest(req)
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
   try {
     const { id } = await params
 
     const denial = await prisma.denial.findUniqueOrThrow({
-      where: { id },
+      where: { id, claim: { practiceId: session.practiceId } },
       include: {
         claim: {
-          include: {
-            patient: true,
-            provider: true,
-            practice: true,
-            lineItems: true,
-          },
+          include: { patient: true, provider: true, practice: true, lineItems: true },
         },
       },
     })
@@ -50,11 +49,7 @@ export async function POST(
 
     const updated = await prisma.denial.update({
       where: { id },
-      data: {
-        appealLetter: letter,
-        appealStatus: "IN_PROGRESS",
-        appealedAt: new Date(),
-      },
+      data: { appealLetter: letter, appealStatus: "IN_PROGRESS", appealedAt: new Date() },
     })
 
     return NextResponse.json({ letter, denial: updated })
@@ -64,26 +59,25 @@ export async function POST(
   }
 }
 
-// PATCH: update appeal status (submitted, won, lost, write_off)
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = await getSessionFromRequest(req)
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
   const { id } = await params
   const body = await req.json()
 
   const denial = await prisma.denial.update({
-    where: { id },
+    where: { id, claim: { practiceId: session.practiceId } },
     data: {
       appealStatus: body.appealStatus,
       resolution: body.resolution,
-      resolvedAt: body.appealStatus === "WON" || body.appealStatus === "LOST" || body.appealStatus === "WRITE_OFF"
-        ? new Date()
-        : undefined,
+      resolvedAt: ["WON", "LOST", "WRITE_OFF"].includes(body.appealStatus) ? new Date() : undefined,
     },
   })
 
-  // If won, update claim status back to SUBMITTED for re-processing
   if (body.appealStatus === "WON") {
     await prisma.claim.update({
       where: { id: denial.claimId },

@@ -1,97 +1,135 @@
 import { NextRequest, NextResponse } from "next/server"
-import { z } from "zod"
-import { stripe } from "@/lib/stripe"
+import { stripeClient } from "@/lib/stripe"
 import { getSessionFromRequest } from "@/lib/auth"
 
-// POST /api/connect — create or resume Stripe Connect onboarding for the current practice
+// POST /api/connect — create or resume Stripe Connect onboarding (V2 API)
 export async function POST(req: NextRequest) {
   const session = await getSessionFromRequest(req)
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  if (!stripe) {
-    return NextResponse.json({ error: "Stripe not configured" }, { status: 503 })
+  if (!stripeClient) {
+    return NextResponse.json({ error: "Stripe not configured — add STRIPE_SECRET_KEY to environment variables" }, { status: 503 })
   }
 
+  const { prisma } = await import("@/lib/prisma")
+  const practice = await prisma.practice.findUniqueOrThrow({ where: { id: session.practiceId } })
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
+
   try {
-    const body = await req.json().catch(() => ({}))
-    const returnUrl = typeof body.returnUrl === "string" ? body.returnUrl : undefined
-    const practiceId = session.practiceId
-
-    const { prisma } = await import("@/lib/prisma")
-    const practice = await prisma.practice.findUniqueOrThrow({ where: { id: practiceId } })
-
-    // Create connected account if not exists
     let accountId = practice.stripeAccountId
+
     if (!accountId) {
-      const account = await stripe.accounts.create({
-        type: "express",
-        country: "US",
-        email: undefined, // will be collected during onboarding
-        capabilities: {
-          card_payments: { requested: true },
-          transfers: { requested: true },
+      // Create a V2 connected account where Claima (the platform) is responsible
+      // for collecting fees and absorbing losses — practice is the recipient
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const account = await (stripeClient as any).v2.core.accounts.create({
+        display_name: practice.name,
+        contact_email: session.email,
+        identity: { country: "us" },
+        // Express dashboard so the practice can view payouts without a full Stripe account
+        dashboard: "express",
+        defaults: {
+          responsibilities: {
+            // Claima collects platform fees and is responsible for disputes/losses
+            fees_collector: "application",
+            losses_collector: "application",
+          },
         },
-        business_type: "individual",
-        metadata: {
-          practiceId,
-          practiceName: practice.name,
-          npi: practice.npi,
+        configuration: {
+          recipient: {
+            capabilities: {
+              stripe_balance: {
+                // Request the ability to receive transfers from the platform
+                stripe_transfers: { requested: true },
+              },
+            },
+          },
         },
       })
+
       accountId = account.id
+
+      // Store the connected account ID on the practice record
       await prisma.practice.update({
-        where: { id: practiceId },
+        where: { id: session.practiceId },
         data: { stripeAccountId: accountId },
       })
     }
 
-    // Generate onboarding link
-    const baseUrl = returnUrl ?? process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
-    const accountLink = await stripe.accountLinks.create({
+    // Generate a V2 Account Link — sends the practice through Stripe's hosted onboarding
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const accountLink = await (stripeClient as any).v2.core.accountLinks.create({
       account: accountId,
-      refresh_url: `${baseUrl}/api/connect/refresh?practiceId=${practiceId}`,
-      return_url: `${baseUrl}/onboarding/complete?practiceId=${practiceId}`,
-      type: "account_onboarding",
+      use_case: {
+        type: "account_onboarding",
+        account_onboarding: {
+          // Only configure the "recipient" (payout) capability — we handle billing
+          configurations: ["recipient"],
+          // If the session expires, send them back to start onboarding again
+          refresh_url: `${baseUrl}/onboarding?retry=1`,
+          // On success, send them to the completion page with their account ID
+          return_url: `${baseUrl}/onboarding/complete?accountId=${accountId}`,
+        },
+      },
     })
 
     return NextResponse.json({ url: accountLink.url, accountId })
   } catch (err) {
-    console.error(err)
+    console.error("Connect account creation failed:", err)
     return NextResponse.json({ error: "Failed to create Connect account" }, { status: 500 })
   }
 }
 
-// GET /api/connect — check onboarding status for current practice
+// GET /api/connect — fetch live onboarding status from Stripe V2 API
 export async function GET(req: NextRequest) {
   const session = await getSessionFromRequest(req)
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  if (!stripe) return NextResponse.json({ configured: false })
-
-  const practiceId = session.practiceId
+  if (!stripeClient) return NextResponse.json({ configured: false, status: "not_configured" })
 
   const { prisma } = await import("@/lib/prisma")
-  const practice = await prisma.practice.findUniqueOrThrow({ where: { id: practiceId } })
+  const practice = await prisma.practice.findUniqueOrThrow({ where: { id: session.practiceId } })
 
   if (!practice.stripeAccountId) {
-    return NextResponse.json({ status: "not_started", practiceId })
+    return NextResponse.json({ status: "not_started" })
   }
 
-  const account = await stripe.accounts.retrieve(practice.stripeAccountId)
-  const onboarded = account.details_submitted && account.charges_enabled
+  try {
+    // Fetch the V2 account with recipient config and requirements included
+    // Always fetch fresh from Stripe — never rely on cached DB status for UI
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const account = await (stripeClient as any).v2.core.accounts.retrieve(
+      practice.stripeAccountId,
+      { include: ["configuration.recipient", "requirements"] }
+    )
 
-  if (onboarded && !practice.stripeOnboarded) {
-    await prisma.practice.update({
-      where: { id: practiceId },
-      data: { stripeOnboarded: true },
+    // The practice can receive payments when stripe_transfers capability is active
+    const readyToReceivePayments =
+      account?.configuration?.recipient?.capabilities?.stripe_balance?.stripe_transfers?.status === "active"
+
+    // Check if there are any outstanding requirements blocking onboarding
+    const requirementsStatus = account?.requirements?.summary?.minimum_deadline?.status
+    const onboardingComplete =
+      requirementsStatus !== "currently_due" && requirementsStatus !== "past_due"
+
+    // Sync the DB flag if the practice just completed onboarding
+    if (readyToReceivePayments && !practice.stripeOnboarded) {
+      await prisma.practice.update({
+        where: { id: session.practiceId },
+        data: { stripeOnboarded: true },
+      })
+    }
+
+    return NextResponse.json({
+      status: readyToReceivePayments ? "active" : onboardingComplete ? "pending_capability" : "onboarding_required",
+      accountId: practice.stripeAccountId,
+      readyToReceivePayments,
+      onboardingComplete,
+      requirementsStatus,
+      platformFeePercent: practice.platformFeePercent,
     })
+  } catch (err) {
+    console.error("Failed to retrieve Connect account:", err)
+    return NextResponse.json({ error: "Failed to retrieve account status" }, { status: 500 })
   }
-
-  return NextResponse.json({
-    status: onboarded ? "active" : "pending",
-    accountId: practice.stripeAccountId,
-    chargesEnabled: account.charges_enabled,
-    detailsSubmitted: account.details_submitted,
-    platformFeePercent: practice.platformFeePercent,
-  })
 }

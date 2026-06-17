@@ -1,16 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
-import Anthropic from "@anthropic-ai/sdk"
+import { aiComplete, isAIConfigured } from "@/lib/ai"
 import { getSession } from "@/lib/auth"
-
-const client = process.env.ANTHROPIC_API_KEY
-  ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-  : null
 
 export async function POST(req: NextRequest) {
   const session = await getSession()
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  if (!client) return NextResponse.json({ error: "ANTHROPIC_API_KEY required" }, { status: 503 })
+  if (!isAIConfigured()) return NextResponse.json({ error: "ANTHROPIC_API_KEY required" }, { status: 503 })
 
   const { text, patients, providers } = await req.json()
   if (!text?.trim()) return NextResponse.json({ error: "text required" }, { status: 400 })
@@ -59,12 +55,7 @@ Respond ONLY with valid JSON:
 }`
 
   try {
-    const message = await client.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 512,
-      messages: [{ role: "user", content: prompt }],
-    })
-    const raw = message.content[0].type === "text" ? message.content[0].text : ""
+    const raw = await aiComplete({ max_tokens: 512, messages: [{ role: "user", content: prompt }] })
     const match = raw.match(/\{[\s\S]*\}/)
     if (!match) throw new Error("No JSON")
     return NextResponse.json(JSON.parse(match[0]))

@@ -9,10 +9,25 @@ const PUBLIC_PATHS = [
   "/privacy",
   "/terms",
   "/security",
+  "/store",               // public storefront — customers don't need an account
+  "/api/store",          // public product listing for the storefront
+  "/api/checkout",       // customers initiate checkout without being logged in
+  "/forgot-password",
+  "/reset-password",
+  "/baa",
   "/api/auth/login",
+  "/api/auth/logout",
   "/api/auth/register",
   "/api/auth/azure",
+  "/api/auth/forgot-password",
+  "/api/auth/reset-password",
   "/api/webhooks/stripe",
+  "/marketplace/aws",          // AWS Marketplace landing page
+  "/marketplace/azure",        // Azure Marketplace / AppSource landing page
+  "/api/marketplace/aws",      // AWS activate endpoint
+  "/api/marketplace/azure",    // Azure activate endpoint
+  "/api/webhooks/aws-marketplace",
+  "/api/webhooks/azure-marketplace",
 ]
 
 function isPublic(pathname: string) {

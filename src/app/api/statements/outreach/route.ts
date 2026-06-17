@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import Anthropic from "@anthropic-ai/sdk"
+import { aiComplete, isAIConfigured } from "@/lib/ai"
 import { getSession } from "@/lib/auth"
-
-const client = process.env.ANTHROPIC_API_KEY
-  ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-  : null
 
 export async function POST(req: NextRequest) {
   const session = await getSession()
@@ -54,7 +50,7 @@ export async function POST(req: NextRequest) {
     payer: statement.patient.payerName,
   }
 
-  if (!client) {
+  if (!isAIConfigured()) {
     const sms = `Hi ${context.patientFirst}, you have a $${balanceDue.toFixed(2)} balance from your ${new Date(context.serviceDate).toLocaleDateString()} session at ${context.practiceName}. Please call ${context.practicePhone} to pay. Thank you.`
     return NextResponse.json({
       sms,
@@ -87,12 +83,7 @@ Write THREE versions. Respond ONLY with valid JSON:
 Tone: warm, non-judgmental, understanding that mental health care is important. Do not use collection agency language. Never say 'past due' or 'delinquent'. ${daysOverdue > 60 ? "This is the third outreach — be slightly more direct about needing resolution." : ""}`
 
   try {
-    const message = await client.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 1024,
-      messages: [{ role: "user", content: prompt }],
-    })
-    const text = message.content[0].type === "text" ? message.content[0].text : ""
+    const text = await aiComplete({ max_tokens: 1024, messages: [{ role: "user", content: prompt }] })
     const match = text.match(/\{[\s\S]*\}/)
     if (!match) throw new Error("No JSON")
     return NextResponse.json(JSON.parse(match[0]))

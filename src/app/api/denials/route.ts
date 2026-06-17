@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { prisma } from "@/lib/prisma"
 import { classifyDenial } from "@/lib/denial-codes"
+import { getSessionFromRequest } from "@/lib/auth"
+import { logAudit } from "@/lib/audit"
 
 const eraSchema = z.object({
   claimId: z.string().uuid(),
@@ -9,25 +11,27 @@ const eraSchema = z.object({
   denialReason: z.string(),
 })
 
-// POST: receive a denial from ERA processing (or manual entry)
 export async function POST(req: NextRequest) {
+  const session = await getSessionFromRequest(req)
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
   try {
     const body = await req.json()
     const input = eraSchema.parse(body)
 
     const classification = classifyDenial(input.carcCode)
 
-    // Update claim status to DENIED
+    // Verify claim belongs to this practice
+    const claim = await prisma.claim.findUnique({ where: { id: input.claimId } })
+    if (!claim || claim.practiceId !== session.practiceId) {
+      return NextResponse.json({ error: "Claim not found" }, { status: 404 })
+    }
+
     await prisma.claim.update({
       where: { id: input.claimId },
-      data: {
-        claimStatus: "DENIED",
-        denialCode: input.carcCode,
-        denialReason: input.denialReason,
-      },
+      data: { claimStatus: "DENIED", denialCode: input.carcCode, denialReason: input.denialReason },
     })
 
-    // Create denial record
     const denial = await prisma.denial.create({
       data: {
         claimId: input.claimId,
@@ -39,13 +43,7 @@ export async function POST(req: NextRequest) {
         appealable: classification.appealable,
       },
       include: {
-        claim: {
-          include: {
-            patient: true,
-            provider: true,
-            lineItems: true,
-          },
-        },
+        claim: { include: { patient: true, provider: true, lineItems: true } },
       },
     })
 
@@ -59,9 +57,13 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// GET: list all denials sorted by priority
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const session = await getSessionFromRequest(req)
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
+  logAudit({ action: "denial.list", practiceId: session.practiceId, userId: session.userId, userEmail: session.email, resource: "denial", req })
   const denials = await prisma.denial.findMany({
+    where: { claim: { practiceId: session.practiceId } },
     include: {
       claim: {
         include: {
@@ -71,10 +73,7 @@ export async function GET() {
         },
       },
     },
-    orderBy: [
-      { priority: "desc" },
-      { createdAt: "asc" },
-    ],
+    orderBy: [{ priority: "desc" }, { createdAt: "asc" }],
   })
 
   return NextResponse.json(denials)

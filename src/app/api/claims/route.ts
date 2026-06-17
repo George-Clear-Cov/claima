@@ -3,6 +3,8 @@ import { z } from "zod"
 import { prisma } from "@/lib/prisma"
 import { generate837P } from "@/lib/837p"
 import { submitClaimToStedi } from "@/lib/stedi"
+import { getSessionFromRequest } from "@/lib/auth"
+import { logAudit } from "@/lib/audit"
 
 const lineItemSchema = z.object({
   cptCode: z.string().min(5).max(5),
@@ -14,7 +16,6 @@ const lineItemSchema = z.object({
 })
 
 const submitClaimSchema = z.object({
-  practiceId: z.string().uuid(),
   providerId: z.string().uuid(),
   patientId: z.string().uuid(),
   serviceDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -22,14 +23,17 @@ const submitClaimSchema = z.object({
 })
 
 export async function POST(req: NextRequest) {
+  const session = await getSessionFromRequest(req)
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
   try {
     const body = await req.json()
     const input = submitClaimSchema.parse(body)
 
     const [practice, provider, patient] = await Promise.all([
-      prisma.practice.findUniqueOrThrow({ where: { id: input.practiceId } }),
-      prisma.provider.findUniqueOrThrow({ where: { id: input.providerId } }),
-      prisma.patient.findUniqueOrThrow({ where: { id: input.patientId } }),
+      prisma.practice.findUniqueOrThrow({ where: { id: session.practiceId } }),
+      prisma.provider.findUniqueOrThrow({ where: { id: input.providerId, practiceId: session.practiceId } }),
+      prisma.patient.findUniqueOrThrow({ where: { id: input.patientId, practiceId: session.practiceId } }),
     ])
 
     const totalCharge = input.lineItems.reduce(
@@ -37,7 +41,6 @@ export async function POST(req: NextRequest) {
       0
     )
 
-    // Generate 837P EDI
     const edi = generate837P({
       practice: {
         npi: practice.npi,
@@ -75,13 +78,12 @@ export async function POST(req: NextRequest) {
       totalCharge,
     })
 
-    // Submit to Stedi clearinghouse
     const stediResult = await submitClaimToStedi(edi)
 
-    // Persist claim
+    logAudit({ action: "claim.create", practiceId: session.practiceId, userId: session.userId, userEmail: session.email, resource: "claim", req })
     const claim = await prisma.claim.create({
       data: {
-        practiceId: input.practiceId,
+        practiceId: session.practiceId,
         providerId: input.providerId,
         patientId: input.patientId,
         serviceDate: new Date(input.serviceDate),
@@ -118,8 +120,13 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const session = await getSessionFromRequest(req)
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
+  logAudit({ action: "claim.list", practiceId: session.practiceId, userId: session.userId, userEmail: session.email, resource: "claim", req })
   const claims = await prisma.claim.findMany({
+    where: { practiceId: session.practiceId },
     include: {
       patient: { select: { firstName: true, lastName: true } },
       provider: { select: { firstName: true, lastName: true } },

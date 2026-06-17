@@ -4,6 +4,34 @@ import { useState, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { LogoMark } from "@/components/Logo"
+import { PASSWORD_RULES, validatePassword } from "@/lib/password"
+
+function PasswordStrength({ password }: { password: string }) {
+  if (!password) return null
+  const check = validatePassword(password)
+  const passed = PASSWORD_RULES.length - check.errors.length
+  const pct = (passed / PASSWORD_RULES.length) * 100
+  const color = pct === 100 ? "bg-green-500" : pct >= 50 ? "bg-amber-400" : "bg-red-400"
+
+  return (
+    <div className="mt-2 space-y-1">
+      <div className="h-1 bg-gray-100 rounded-full overflow-hidden">
+        <div className={`h-full rounded-full transition-all ${color}`} style={{ width: `${pct}%` }} />
+      </div>
+      <ul className="space-y-0.5">
+        {PASSWORD_RULES.map((rule) => {
+          const ok = !check.errors.includes(rule)
+          return (
+            <li key={rule} className={`text-xs flex items-center gap-1 ${ok ? "text-green-600" : "text-gray-400"}`}>
+              <span>{ok ? "✓" : "·"}</span>
+              {rule}
+            </li>
+          )
+        })}
+      </ul>
+    </div>
+  )
+}
 
 function SignupForm() {
   const router = useRouter()
@@ -13,18 +41,28 @@ function SignupForm() {
   const [email, setEmail] = useState(params.get("email") ?? "")
   const [password, setPassword] = useState("")
   const [practiceName, setPracticeName] = useState("")
+  const [baaAccepted, setBaaAccepted] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (!baaAccepted) {
+      setError("You must accept the Business Associate Agreement to create an account.")
+      return
+    }
+    const pwCheck = validatePassword(password)
+    if (!pwCheck.valid) {
+      setError(`Password requirements not met: ${pwCheck.errors.join(", ")}`)
+      return
+    }
     setLoading(true)
     setError(null)
     try {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password, practiceName }),
+        body: JSON.stringify({ name, email, password, practiceName, baaAccepted }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? "Registration failed")
@@ -99,10 +137,29 @@ function SignupForm() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                placeholder="8+ characters"
-                minLength={8}
+                placeholder="Create a strong password"
                 className={inputClass}
               />
+              <PasswordStrength password={password} />
+            </div>
+
+            <div className="pt-1">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={baaAccepted}
+                  onChange={(e) => { setBaaAccepted(e.target.checked); setError(null) }}
+                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-xs text-gray-600 leading-relaxed">
+                  I accept the{" "}
+                  <Link href="/baa" target="_blank" className="text-blue-600 hover:underline font-medium">
+                    Business Associate Agreement
+                  </Link>
+                  {" "}(required for HIPAA compliance) and{" "}
+                  <Link href="/terms" className="text-blue-600 hover:underline">Terms of Service</Link>.
+                </span>
+              </label>
             </div>
 
             {error && (
@@ -114,7 +171,7 @@ function SignupForm() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !baaAccepted}
               className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white py-2.5 rounded-xl font-semibold text-sm transition-all shadow-sm active:scale-[0.99] mt-1"
             >
               {loading ? (
@@ -133,13 +190,6 @@ function SignupForm() {
         <p className="text-center text-sm text-gray-500 mt-5">
           Already have an account?{" "}
           <Link href="/login" className="text-blue-600 hover:text-blue-700 font-medium">Sign in</Link>
-        </p>
-
-        <p className="text-center text-xs text-gray-400 mt-3">
-          By creating an account you agree to our{" "}
-          <Link href="/terms" className="underline hover:text-gray-600">Terms</Link>{" "}
-          and{" "}
-          <Link href="/privacy" className="underline hover:text-gray-600">Privacy Policy</Link>.
         </p>
       </div>
     </div>

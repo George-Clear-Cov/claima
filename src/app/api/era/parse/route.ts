@@ -1,9 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import Anthropic from "@anthropic-ai/sdk"
-
-const client = process.env.ANTHROPIC_API_KEY
-  ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-  : null
+import { aiComplete, isAIConfigured } from "@/lib/ai"
 
 export async function POST(req: NextRequest) {
   const { text } = await req.json()
@@ -12,7 +8,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "EOB text is required" }, { status: 400 })
   }
 
-  if (!client) {
+  if (!isAIConfigured()) {
     return NextResponse.json({ error: "AI parsing requires ANTHROPIC_API_KEY", parsed: false }, { status: 503 })
   }
 
@@ -36,13 +32,7 @@ Extract the values and respond ONLY with valid JSON:
 If a value is not present in the text, use 0 for numbers and null for strings. Be precise with dollar amounts — use the exact figures from the document.`
 
   try {
-    const message = await client.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 512,
-      messages: [{ role: "user", content: prompt }],
-    })
-
-    const responseText = message.content[0].type === "text" ? message.content[0].text : ""
+    const responseText = await aiComplete({ max_tokens: 512, messages: [{ role: "user", content: prompt }] })
     const match = responseText.match(/\{[\s\S]*\}/)
     if (!match) throw new Error("No JSON in response")
 

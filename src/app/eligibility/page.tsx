@@ -63,7 +63,8 @@ export default function EligibilityPage() {
   const [tab, setTab] = useState<"eligibility" | "prior-auth">("eligibility")
 
   // Eligibility state
-  const [form, setForm] = useState({ firstName: "", lastName: "", dob: "", memberId: "", payerId: "00431", npi: "1234567890" })
+  const [providers, setProviders] = useState<{ id: string; firstName: string; lastName: string; npi: string }[]>([])
+  const [form, setForm] = useState({ firstName: "", lastName: "", dob: "", memberId: "", payerId: "00431", patientId: "", npi: "" })
   const [checking, setChecking] = useState(false)
   const [result, setResult] = useState<EligibilityResult | null>(null)
   const [interpretation, setInterpretation] = useState<{ summary: string; actions: string[]; sessionNote: string; patientOwesEstimate: number } | null>(null)
@@ -83,6 +84,10 @@ export default function EligibilityPage() {
       if (d?.patients) {
         setPatients(d.patients)
         if (d.patients.length > 0) setAuthPatientId(d.patients[0].id)
+      }
+      if (d?.providers) {
+        setProviders(d.providers)
+        if (d.providers.length > 0) setForm(f => ({ ...f, npi: d.providers[0].npi }))
       }
     }).catch(() => {})
   }, [])
@@ -116,7 +121,7 @@ export default function EligibilityPage() {
     setResult(null)
     setInterpretation(null)
     try {
-      const res = await fetch("/api/eligibility", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) })
+      const res = await fetch("/api/eligibility", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...form, patientId: form.patientId || undefined }) })
       const data = await res.json()
       setResult(data)
       if (data.coverage) {
@@ -173,6 +178,21 @@ export default function EligibilityPage() {
           <div className="col-span-2">
             <form onSubmit={handleCheck} className="bg-white border border-gray-200 rounded-xl p-5 space-y-4 shadow-sm">
               <h2 className="text-xs text-gray-500 uppercase tracking-widest font-medium">Patient & Insurance</h2>
+              {patients.length > 0 && (
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1.5">Auto-fill from patient</label>
+                  <select
+                    className={inputClass}
+                    onChange={e => {
+                      const p = patients.find(p => p.id === e.target.value)
+                      if (p) setForm(f => ({ ...f, firstName: p.firstName, lastName: p.lastName, memberId: p.memberId, payerId: p.payerId || f.payerId, patientId: p.id }))
+                    }}
+                  >
+                    <option value="">— select patient —</option>
+                    {patients.map(p => <option key={p.id} value={p.id}>{p.lastName}, {p.firstName} · {p.payerName}</option>)}
+                  </select>
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-3">
                 <div><label className="block text-xs font-medium text-gray-500 mb-1.5">First Name</label><input value={form.firstName} onChange={(e) => setForm({ ...form, firstName: e.target.value })} required placeholder="Sarah" className={inputClass} /></div>
                 <div><label className="block text-xs font-medium text-gray-500 mb-1.5">Last Name</label><input value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} required placeholder="Johnson" className={inputClass} /></div>
@@ -185,7 +205,15 @@ export default function EligibilityPage() {
                   {COMMON_PAYERS.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
                 </select>
               </div>
-              <button type="submit" disabled={checking} className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white py-2.5 rounded-xl text-sm font-semibold transition-all shadow-sm active:scale-[0.99]">
+              {providers.length > 0 && (
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1.5">Rendering Provider</label>
+                  <select value={form.npi} onChange={e => setForm({ ...form, npi: e.target.value })} className={inputClass}>
+                    {providers.map(p => <option key={p.id} value={p.npi}>{p.firstName} {p.lastName} · NPI {p.npi}</option>)}
+                  </select>
+                </div>
+              )}
+              <button type="submit" disabled={checking || !form.npi} className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white py-2.5 rounded-xl text-sm font-semibold transition-all shadow-sm active:scale-[0.99]">
                 {checking ? <span className="flex items-center justify-center gap-2"><svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>Checking…</span> : "Check Eligibility →"}
               </button>
             </form>

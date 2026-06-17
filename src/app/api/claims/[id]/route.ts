@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { prisma } from "@/lib/prisma"
+import { getSessionFromRequest } from "@/lib/auth"
 
 const eraSchema = z.object({
   insurancePaid: z.number().min(0),
@@ -13,13 +14,16 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = await getSessionFromRequest(req)
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
   try {
     const { id } = await params
     const body = await req.json()
     const input = eraSchema.parse(body)
 
     const claim = await prisma.claim.findUniqueOrThrow({
-      where: { id },
+      where: { id, practiceId: session.practiceId },
       include: { statement: { select: { id: true } } },
     })
 
@@ -33,11 +37,7 @@ export async function PATCH(
     const [updatedClaim, statement] = await prisma.$transaction([
       prisma.claim.update({
         where: { id },
-        data: {
-          claimStatus: "PAID",
-          paidAmount: input.insurancePaid,
-          paidAt: new Date(),
-        },
+        data: { claimStatus: "PAID", paidAmount: input.insurancePaid, paidAt: new Date() },
       }),
       prisma.patientStatement.create({
         data: {
@@ -54,12 +54,7 @@ export async function PATCH(
         },
         include: {
           patient: { select: { firstName: true, lastName: true } },
-          claim: {
-            include: {
-              lineItems: true,
-              provider: { select: { firstName: true, lastName: true } },
-            },
-          },
+          claim: { include: { lineItems: true, provider: { select: { firstName: true, lastName: true } } } },
         },
       }),
     ])

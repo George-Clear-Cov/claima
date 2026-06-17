@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import Anthropic from "@anthropic-ai/sdk"
+import { aiComplete, isAIConfigured } from "@/lib/ai"
 import { getSession } from "@/lib/auth"
-
-const client = process.env.ANTHROPIC_API_KEY
-  ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-  : null
 
 export async function POST(req: NextRequest) {
   const session = await getSession()
@@ -40,7 +36,7 @@ export async function POST(req: NextRequest) {
     } catch {}
   }
 
-  if (!client) {
+  if (!isAIConfigured()) {
     return NextResponse.json({
       authRequired: null,
       confidence: "low",
@@ -84,12 +80,7 @@ For session count context:
 - ${sessionCount} sessions already billed — flag if approaching typical limits`
 
   try {
-    const message = await client.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 1024,
-      messages: [{ role: "user", content: prompt }],
-    })
-    const text = message.content[0].type === "text" ? message.content[0].text : ""
+    const text = await aiComplete({ max_tokens: 1024, messages: [{ role: "user", content: prompt }] })
     // Strip code fences if present, then extract JSON object
     const stripped = text.replace(/```json\s*/gi, "").replace(/```\s*/g, "")
     const match = stripped.match(/\{[\s\S]*\}/)

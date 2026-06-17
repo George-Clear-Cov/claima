@@ -10,6 +10,7 @@ function LoginForm() {
   const params = useSearchParams()
   const from = params.get("from") ?? "/"
 
+  const didReset = params.get("reset") === "1"
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
@@ -49,7 +50,13 @@ function LoginForm() {
 
         <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-8">
           <h1 className="text-xl font-bold tracking-tight text-gray-900 mb-1">Sign in</h1>
-          <p className="text-gray-500 text-sm mb-6">Access your practice billing dashboard</p>
+          {didReset ? (
+            <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-green-700 text-sm mb-4">
+              Password updated — sign in with your new password.
+            </div>
+          ) : (
+            <p className="text-gray-500 text-sm mb-6">Access your practice billing dashboard</p>
+          )}
 
           <a
             href="/api/auth/azure"
@@ -84,7 +91,10 @@ function LoginForm() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1.5 uppercase tracking-wide">Password</label>
+              <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-medium text-gray-600 uppercase tracking-wide">Password</label>
+              <Link href="/forgot-password" className="text-xs text-blue-600 hover:text-blue-700">Forgot password?</Link>
+            </div>
               <input
                 type="password"
                 value={password}
@@ -124,12 +134,6 @@ function LoginForm() {
           Don&apos;t have an account?{" "}
           <Link href="/signup" className="text-blue-600 hover:text-blue-700 font-medium">Create one free</Link>
         </p>
-
-        <div className="mt-4 p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
-          <div className="text-xs text-gray-400 font-medium uppercase tracking-widest mb-2">Demo credentials</div>
-          <div className="text-sm font-mono text-gray-700">admin@clearviewmentalhealth.com</div>
-          <div className="text-sm font-mono text-gray-500">claima2026</div>
-        </div>
 
         <p className="text-center text-xs text-gray-400 mt-5">
           Claima · HIPAA-compliant billing platform ·{" "}

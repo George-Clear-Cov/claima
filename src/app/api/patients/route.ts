@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { getSession } from "@/lib/auth"
+import { logAudit } from "@/lib/audit"
 
 const createSchema = z.object({
   firstName: z.string().min(1),
@@ -27,6 +28,7 @@ export async function GET(req: NextRequest) {
   const search = req.nextUrl.searchParams.get("q")?.trim()
 
   const { prisma } = await import("@/lib/prisma")
+  logAudit({ action: "patient.list", practiceId: session.practiceId, userId: session.userId, userEmail: session.email, req })
   const patients = await prisma.patient.findMany({
     where: {
       practiceId: session.practiceId,
@@ -57,6 +59,7 @@ export async function POST(req: NextRequest) {
     const data = createSchema.parse(body)
 
     const { prisma } = await import("@/lib/prisma")
+    logAudit({ action: "patient.create", practiceId: session.practiceId, userId: session.userId, userEmail: session.email, resource: "patient", req })
     const patient = await prisma.patient.create({
       data: {
         ...data,

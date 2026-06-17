@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getSessionFromRequest } from "@/lib/auth"
-import Anthropic from "@anthropic-ai/sdk"
-
-const client = process.env.ANTHROPIC_API_KEY
-  ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-  : null
+import { aiComplete, isAIConfigured } from "@/lib/ai"
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSessionFromRequest(req)
@@ -35,7 +31,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const serviceDate = new Date(claim.serviceDate).toLocaleDateString("en-US")
   const submittedDate = claim.submittedAt ? new Date(claim.submittedAt).toLocaleDateString("en-US") : "unknown"
 
-  if (!client) {
+  if (!isAIConfigured()) {
     return NextResponse.json(fallbackScript({ claim, daysPending, cptCodes, serviceDate, submittedDate }))
   }
 
@@ -71,13 +67,7 @@ Respond ONLY with JSON:
 }`
 
   try {
-    const msg = await client.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 1500,
-      messages: [{ role: "user", content: prompt }],
-    })
-
-    const text = msg.content[0].type === "text" ? msg.content[0].text : ""
+    const text = await aiComplete({ max_tokens: 1500, messages: [{ role: "user", content: prompt }] })
     const raw = text.replace(/```json\s*/gi, "").replace(/```\s*/g, "")
     const match = raw.match(/\{[\s\S]*\}/)
     if (!match) throw new Error("No JSON")

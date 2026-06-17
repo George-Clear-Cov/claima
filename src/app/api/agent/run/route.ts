@@ -1,11 +1,7 @@
 import { NextResponse } from "next/server"
-import Anthropic from "@anthropic-ai/sdk"
+import { aiComplete, isAIConfigured } from "@/lib/ai"
 import { getSession } from "@/lib/auth"
 import { generateAppealLetter } from "@/lib/appeal-generator"
-
-const client = process.env.ANTHROPIC_API_KEY
-  ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-  : null
 
 const PAYER_RATES: Record<string, { insRate: number; adjRate: number }> = {
   "Aetna":                { insRate: 0.70, adjRate: 0.10 },
@@ -195,7 +191,7 @@ export async function POST() {
   let narrative = `Agent ran: posted ${summary.erasPosted} ERAs ($${summary.erasAmount.toFixed(2)}), drafted ${summary.appealsGenerated} appeal letters.`
   let nextActions: string[] = []
 
-  if (client && (summary.timelyRisks > 0 || summary.agingClaims > 0 || summary.erasPosted > 0)) {
+  if (isAIConfigured() && (summary.timelyRisks > 0 || summary.agingClaims > 0 || summary.erasPosted > 0)) {
     try {
       const prompt = `You are an autonomous billing agent. Summarize what you just did and what still needs human attention.
 
@@ -215,12 +211,7 @@ Provide ONLY valid JSON:
 
 nextActions should be specific and ordered by urgency. Max 4 items.`
 
-      const message = await client.messages.create({
-        model: "claude-sonnet-4-6",
-        max_tokens: 512,
-        messages: [{ role: "user", content: prompt }],
-      })
-      const raw = message.content[0].type === "text" ? message.content[0].text : ""
+      const raw = await aiComplete({ max_tokens: 512, messages: [{ role: "user", content: prompt }] })
       const stripped = raw.replace(/```json\s*/gi, "").replace(/```\s*/g, "")
       const match = stripped.match(/\{[\s\S]*\}/)
       if (match) {
