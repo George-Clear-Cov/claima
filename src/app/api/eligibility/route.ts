@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { checkEligibility } from "@/lib/eligibility"
+import { getServiceTypeForCPT } from "@/lib/specialty"
 import { getSessionFromRequest } from "@/lib/auth"
 import { logAudit } from "@/lib/audit"
 
@@ -12,6 +13,8 @@ const schema = z.object({
   lastName: z.string(),
   dob: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   npi: z.string(),
+  cptCodes: z.array(z.string()).optional(),    // auto-computes serviceType from CPT codes
+  serviceType: z.string().max(4).optional(),   // direct override from UI dropdown
 })
 
 export async function POST(req: NextRequest) {
@@ -22,6 +25,10 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const input = schema.parse(body)
 
+    const serviceType = input.cptCodes?.length
+      ? getServiceTypeForCPT(input.cptCodes)
+      : (input.serviceType ?? "98")
+
     const result = await checkEligibility({
       payerId: input.payerId,
       memberId: input.memberId,
@@ -29,6 +36,7 @@ export async function POST(req: NextRequest) {
       lastName: input.lastName,
       dob: input.dob,
       npi: input.npi,
+      serviceType,
     })
 
     if (input.patientId) {

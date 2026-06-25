@@ -1,11 +1,11 @@
-/**
- * Insurance eligibility verification via Stedi 270/271 transactions.
- * 270 = provider asks insurer: "is this patient covered?"
- * 271 = insurer responds with coverage details
- */
+// Insurance eligibility verification via Claim.MD 270/271 transactions.
+// Use getServiceTypeForCPT() from ./specialty to compute the correct serviceType
+// before calling checkEligibility — it maps CPT codes → X12 service type codes.
+export { getServiceTypeForCPT } from "./specialty"
 
-const STEDI_API_KEY = process.env.STEDI_API_KEY || ""
-const STEDI_BASE_URL = "https://healthcare.us.stedi.com/2024-04-01"
+const CLAIMMD_ACCOUNT_KEY = process.env.CLAIMMD_ACCOUNT_KEY || ""
+const CLAIMMD_API_KEY = process.env.CLAIMMD_API_KEY || ""
+const CLAIMMD_BASE_URL = "https://www.claimmd.com/api"
 
 export interface EligibilityRequest {
   payerId: string
@@ -14,7 +14,7 @@ export interface EligibilityRequest {
   lastName: string
   dob: string // YYYY-MM-DD
   npi: string  // rendering provider NPI
-  serviceType?: string // default "30" = mental health
+  serviceType?: string // X12 service type code — "30" behavioral health, "98" professional physician visit, "1" medical care (generic)
 }
 
 export interface CoverageDetail {
@@ -43,7 +43,7 @@ export interface EligibilityResult {
   errors?: string[]
 }
 
-// Mock payer responses for dev mode — realistic mental health coverage data
+// Mock payer responses for dev mode
 const MOCK_RESPONSES: Record<string, EligibilityResult> = {
   default: {
     eligible: true,
@@ -130,32 +130,28 @@ function getMockResponse(payerId: string): EligibilityResult {
 }
 
 export async function checkEligibility(req: EligibilityRequest): Promise<EligibilityResult> {
-  if (!STEDI_API_KEY) {
+  if (!CLAIMMD_ACCOUNT_KEY || !CLAIMMD_API_KEY) {
     // Simulate 300ms network latency in dev
     await new Promise((r) => setTimeout(r, 300))
     return getMockResponse(req.payerId)
   }
 
   try {
-    const res = await fetch(`${STEDI_BASE_URL}/eligibility`, {
+    const res = await fetch(`${CLAIMMD_BASE_URL}/eligibility/`, {
       method: "POST",
       headers: {
-        Authorization: `Key ${STEDI_API_KEY}`,
         "Content-Type": "application/json",
+        "X-Account-Key": CLAIMMD_ACCOUNT_KEY,
+        "X-API-Key": CLAIMMD_API_KEY,
       },
       body: JSON.stringify({
-        controlNumber: Math.floor(Math.random() * 999999999).toString().padStart(9, "0"),
-        tradingPartnerServiceId: req.payerId,
-        provider: { npi: req.npi },
-        subscriber: {
-          memberId: req.memberId,
-          firstName: req.firstName,
-          lastName: req.lastName,
-          dateOfBirth: req.dob.replace(/-/g, ""),
-        },
-        encounter: {
-          serviceTypeCodes: [req.serviceType ?? "30"], // 30 = Mental Health
-        },
+        payer_id: req.payerId,
+        provider_npi: req.npi,
+        member_id: req.memberId,
+        first_name: req.firstName,
+        last_name: req.lastName,
+        dob: req.dob.replace(/-/g, ""),
+        service_type: req.serviceType ?? "1",
       }),
     })
 
@@ -168,11 +164,11 @@ export async function checkEligibility(req: EligibilityRequest): Promise<Eligibi
         coverage: null,
         rawResponse: data,
         checkedAt: new Date().toISOString(),
-        errors: [data.message ?? "Eligibility check failed"],
+        errors: [data.message ?? data.error ?? "Eligibility check failed"],
       }
     }
 
-    return parseStediResponse(data)
+    return parseClearinghouseResponse(data)
   } catch (err) {
     return {
       eligible: false,
@@ -185,8 +181,8 @@ export async function checkEligibility(req: EligibilityRequest): Promise<Eligibi
   }
 }
 
-function parseStediResponse(data: Record<string, unknown>): EligibilityResult {
-  // Parse Stedi 271 response format into our normalized structure
+function parseClearinghouseResponse(data: Record<string, unknown>): EligibilityResult {
+  // Parse 271 response format into our normalized structure
   const benefits = (data.benefitsInformation as Record<string, unknown>[] | undefined) ?? []
 
   const active = benefits.some(

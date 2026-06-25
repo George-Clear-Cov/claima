@@ -37,6 +37,7 @@ interface Patient {
   zip: string
   payerId: string
   payerName: string
+  relationshipToSubscriber?: string
 }
 
 interface LineItem {
@@ -54,6 +55,9 @@ interface ClaimData {
   serviceDate: Date
   lineItems: LineItem[]
   totalCharge: number
+  placeOfService?: string
+  referringProviderNpi?: string
+  authNumber?: string
 }
 
 function pad(s: string, len: number) {
@@ -90,7 +94,7 @@ export function generate837P(data: ClaimData): string {
   // ST - Transaction Set Header
   segments.push(`ST*837*0001*005010X222A2`)
 
-  // BPR - Beginning of Hierarchical Transaction
+  // BHT - Beginning of Hierarchical Transaction
   segments.push(`BHT*0019*00*${icn}*${ediDate(today)}*${ediTime()}*CH`)
 
   // NM1 - Submitter (practice)
@@ -114,9 +118,11 @@ export function generate837P(data: ClaimData): string {
   segments.push(`REF*EI*${data.practice.taxId}`)
   segments.push(`PRV*BI*PXC*${data.practice.taxonomy}`)
 
-  // HL - Subscriber (patient as subscriber for simplicity)
+  // HL - Subscriber
   segments.push(`HL*2*1*22*0`)
-  segments.push(`SBR*P*18*${data.patient.groupNumber || ""}*${data.patient.payerName}*****CI`)
+  segments.push(
+    `SBR*P*${data.patient.relationshipToSubscriber ?? "18"}*${data.patient.groupNumber || ""}*${data.patient.payerName}*****CI`
+  )
 
   // NM1 - Subscriber
   segments.push(
@@ -133,14 +139,32 @@ export function generate837P(data: ClaimData): string {
 
   // CLM - Claim Information
   const claimId = uuidv4().replace(/-/g, "").slice(0, 12).toUpperCase()
+  const pos = data.placeOfService ?? "11"
   segments.push(
-    `CLM*${claimId}*${data.totalCharge.toFixed(2)}***11:B:1*Y*A*Y*I`
+    `CLM*${claimId}*${data.totalCharge.toFixed(2)}***${pos}:B:1*Y*A*Y*I`
   )
+
+  // REF*G1 - Prior Authorization Number
+  if (data.authNumber) {
+    segments.push(`REF*G1*${data.authNumber}`)
+  }
+
+  // HI - Diagnosis Codes
+  const diagCodes = [...new Set(data.lineItems.flatMap((l) => l.icd10Codes))].slice(0, 12)
+  if (diagCodes.length > 0) {
+    const hiCodes = diagCodes.map((c) => `ABK:${c.replace(".", "")}`).join("*")
+    segments.push(`HI*${hiCodes}`)
+  }
 
   // DTP - Service Date
   segments.push(`DTP*472*D8*${ediDate(data.serviceDate)}`)
 
-  // NM1 - Rendering Provider
+  // NM1 - Referring Provider (2310A) — before rendering provider
+  if (data.referringProviderNpi) {
+    segments.push(`NM1*DN*1*****XX*${data.referringProviderNpi}`)
+  }
+
+  // NM1 - Rendering Provider (2310B)
   segments.push(
     `NM1*82*1*${data.provider.lastName}*${data.provider.firstName}****XX*${data.provider.npi}`
   )
@@ -164,17 +188,6 @@ export function generate837P(data: ClaimData): string {
     )
     segments.push(`DTP*472*D8*${ediDate(data.serviceDate)}`)
   })
-
-  // Diagnosis codes (HI segment)
-  const diagCodes = [
-    ...new Set(data.lineItems.flatMap((l) => l.icd10Codes)),
-  ].slice(0, 12)
-  if (diagCodes.length > 0) {
-    const hiCodes = diagCodes.map((c) => `ABK:${c.replace(".", "")}`).join("*")
-    // Insert HI after CLM — rebuild by finding CLM position
-    const clmIdx = segments.findIndex((s) => s.startsWith("CLM*"))
-    segments.splice(clmIdx + 2, 0, `HI*${hiCodes}`)
-  }
 
   // SE - Transaction Set Trailer
   const segCount = segments.length - 2 + 1 // exclude ISA/GS, +1 for SE itself

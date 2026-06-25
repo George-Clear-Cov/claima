@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { generate837P } from "@/lib/837p"
-import { submitClaimToStedi } from "@/lib/stedi"
+import { submitClaim } from "@/lib/claimmd"
 import { getSessionFromRequest } from "@/lib/auth"
 import { logAudit } from "@/lib/audit"
 
@@ -19,6 +19,9 @@ const submitClaimSchema = z.object({
   patientId: z.string().uuid(),
   serviceDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   lineItems: z.array(lineItemSchema).min(1),
+  placeOfService: z.string().max(2).optional(),
+  referringProviderNpi: z.string().max(10).optional(),
+  priorAuthId: z.string().uuid().optional(),
 })
 
 export async function POST(req: NextRequest) {
@@ -35,6 +38,16 @@ export async function POST(req: NextRequest) {
       prisma.provider.findUniqueOrThrow({ where: { id: input.providerId, practiceId: session.practiceId } }),
       prisma.patient.findUniqueOrThrow({ where: { id: input.patientId, practiceId: session.practiceId } }),
     ])
+
+    // Look up prior auth number if provided
+    let authNumber: string | undefined
+    if (input.priorAuthId) {
+      const pa = await prisma.priorAuthorization.findUnique({
+        where: { id: input.priorAuthId, practiceId: session.practiceId },
+        select: { authNumber: true },
+      })
+      authNumber = pa?.authNumber ?? undefined
+    }
 
     const totalCharge = input.lineItems.reduce(
       (sum, l) => sum + l.chargeAmount * l.units,
@@ -72,13 +85,17 @@ export async function POST(req: NextRequest) {
         zip: patient.zip,
         payerId: patient.payerId,
         payerName: patient.payerName,
+        relationshipToSubscriber: patient.relationshipToSubscriber,
       },
       serviceDate: new Date(input.serviceDate),
       lineItems: input.lineItems,
       totalCharge,
+      placeOfService: input.placeOfService,
+      referringProviderNpi: input.referringProviderNpi,
+      authNumber,
     })
 
-    const stediResult = await submitClaimToStedi(edi)
+    const clearinghouseResult = await submitClaim(edi)
 
     logAudit({ action: "claim.create", practiceId: session.practiceId, userId: session.userId, userEmail: session.email, resource: "claim", req })
     const claim = await prisma.claim.create({
@@ -88,9 +105,12 @@ export async function POST(req: NextRequest) {
         patientId: input.patientId,
         serviceDate: new Date(input.serviceDate),
         totalCharge,
-        claimStatus: stediResult.status === "accepted" ? "SUBMITTED" : "REJECTED",
-        stediClaimId: stediResult.claimId || null,
-        stediResponse: stediResult.raw as object,
+        placeOfService: input.placeOfService ?? "11",
+        referringProviderNpi: input.referringProviderNpi,
+        priorAuthId: input.priorAuthId,
+        claimStatus: clearinghouseResult.status === "accepted" ? "SUBMITTED" : "REJECTED",
+        stediClaimId: clearinghouseResult.claimId || null,
+        stediResponse: clearinghouseResult.raw as object,
         submittedAt: new Date(),
         lineItems: {
           create: input.lineItems.map((l) => ({
@@ -108,8 +128,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       claim,
-      stediStatus: stediResult.status,
-      errors: stediResult.errors,
+      clearinghouseStatus: clearinghouseResult.status,
+      errors: clearinghouseResult.errors,
     })
   } catch (err) {
     if (err instanceof z.ZodError) {

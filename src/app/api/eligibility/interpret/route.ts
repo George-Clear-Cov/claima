@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(fallbackInterpret({ payerName, coverage, deductibleRemaining, visitsRemaining }))
     }
 
-    const prompt = `You are a medical billing expert helping a mental health practice prepare for a therapy session.
+    const prompt = `You are a medical billing expert helping an outpatient practice prepare for a patient visit.
 
 Patient: ${patientName}
 Payer: ${payerName}
@@ -62,7 +62,7 @@ Respond ONLY with JSON:
   "summary": "<2-3 sentence plain English summary, starting with the patient's financial responsibility for today's session>",
   "actions": ["<concise action>", "<concise action>"],
   "sessionNote": "<one-sentence note for the chart, e.g.: 'Patient has $X deductible remaining; collected $Y copay.'>",
-  "patientOwesEstimate": <number, estimated patient responsibility in dollars for a standard 60-min therapy session>
+  "patientOwesEstimate": <number, estimated patient responsibility in dollars for a standard outpatient visit>
 }`
 
     const text = await aiComplete({ max_tokens: 512, messages: [{ role: "user", content: prompt }] })
