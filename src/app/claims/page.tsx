@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import NavBar from "@/components/NavBar"
+import AppLayout from "@/components/AppLayout"
 
 interface Claim {
   id: string
@@ -301,8 +301,7 @@ export default function ClaimsPage() {
 
   return (
     <>
-    <div className="min-h-screen bg-gray-50 text-gray-900">
-      <NavBar />
+    <AppLayout>
       <div className="max-w-5xl mx-auto px-8 py-10">
         <div className="flex items-center justify-between mb-8">
           <div>
@@ -415,7 +414,7 @@ export default function ClaimsPage() {
           </div>
         )}
       </div>
-    </div>
+    </AppLayout>
     {callScriptClaimId && (
       <CallScriptModal claimId={callScriptClaimId} onClose={() => setCallScriptClaimId(null)} />
     )}

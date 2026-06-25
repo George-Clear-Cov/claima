@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import NavBar from "@/components/NavBar"
+import AppLayout from "@/components/AppLayout"
 import { COMMON_CPT_CODES } from "@/types/claim"
 
 interface CoverageDetail {
@@ -43,6 +43,19 @@ const AUTH_CONFIDENCE_CONFIG = {
   low:    { text: "text-gray-600",  bg: "bg-gray-50 border-gray-200",   label: "Verify directly" },
 }
 
+const SERVICE_TYPES = [
+  { code: "98", label: "Professional / General" },
+  { code: "93", label: "Behavioral Health" },
+  { code: "97", label: "Physical / Occupational Therapy" },
+  { code: "95", label: "Speech-Language Pathology" },
+  { code: "33", label: "Chiropractic" },
+  { code: "82", label: "OB/GYN" },
+  { code: "88", label: "Podiatry" },
+  { code: "50", label: "Gastroenterology / Endoscopy" },
+  { code: "2",  label: "Specialty Surgery" },
+  { code: "1",  label: "Medical Care (generic)" },
+]
+
 const COMMON_PAYERS = [
   { id: "00431", name: "Aetna" }, { id: "00050", name: "BlueCross BlueShield" },
   { id: "87726", name: "United Healthcare" }, { id: "00192", name: "Cigna" },
@@ -64,7 +77,7 @@ export default function EligibilityPage() {
 
   // Eligibility state
   const [providers, setProviders] = useState<{ id: string; firstName: string; lastName: string; npi: string }[]>([])
-  const [form, setForm] = useState({ firstName: "", lastName: "", dob: "", memberId: "", payerId: "00431", patientId: "", npi: "" })
+  const [form, setForm] = useState({ firstName: "", lastName: "", dob: "", memberId: "", payerId: "00431", patientId: "", npi: "", serviceType: "98" })
   const [checking, setChecking] = useState(false)
   const [result, setResult] = useState<EligibilityResult | null>(null)
   const [interpretation, setInterpretation] = useState<{ summary: string; actions: string[]; sessionNote: string; patientOwesEstimate: number } | null>(null)
@@ -73,7 +86,7 @@ export default function EligibilityPage() {
   // Prior Auth state
   const [patients, setPatients] = useState<Patient[]>([])
   const [authPatientId, setAuthPatientId] = useState("")
-  const [authCptCode, setAuthCptCode] = useState("90837")
+  const [authCptCode, setAuthCptCode] = useState("99213")
   const [authDate, setAuthDate] = useState(new Date().toISOString().slice(0, 10))
   const [authLoading, setAuthLoading] = useState(false)
   const [authResult, setAuthResult] = useState<AuthResult | null>(null)
@@ -152,8 +165,7 @@ export default function EligibilityPage() {
   const inputClass = "w-full bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all placeholder-gray-300"
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900">
-      <NavBar />
+    <AppLayout>
       <div className="max-w-4xl mx-auto px-8 py-10">
         <div className="mb-6">
           <h1 className="text-2xl font-bold tracking-tight">Eligibility & Prior Auth</h1>
@@ -203,6 +215,12 @@ export default function EligibilityPage() {
                 <label className="block text-xs font-medium text-gray-500 mb-1.5">Insurance Payer</label>
                 <select value={form.payerId} onChange={(e) => setForm({ ...form, payerId: e.target.value })} className={inputClass}>
                   {COMMON_PAYERS.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1.5">Service Type</label>
+                <select value={form.serviceType} onChange={e => setForm({ ...form, serviceType: e.target.value })} className={inputClass}>
+                  {SERVICE_TYPES.map(s => <option key={s.code} value={s.code}>{s.label}</option>)}
                 </select>
               </div>
               {providers.length > 0 && (
@@ -301,7 +319,7 @@ export default function EligibilityPage() {
 
                     {cov.visitLimit != null && (
                       <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
-                        <h3 className="text-xs text-gray-400 uppercase tracking-widest font-medium mb-4">Mental Health Visit Limit</h3>
+                        <h3 className="text-xs text-gray-400 uppercase tracking-widest font-medium mb-4">Annual Visit Limit</h3>
                         <div className="flex justify-between text-xs mb-1"><span className="text-gray-500">Annual visits</span><span className="font-mono text-gray-400">{cov.visitsUsed} / {cov.visitLimit} used</span></div>
                         <ProgressBar value={cov.visitsUsed ?? 0} max={cov.visitLimit} color={(visitsRemaining ?? 0) <= 5 ? "bg-red-500" : "bg-green-500"} />
                         <div className="text-xs mt-1.5">{visitsRemaining === 0 ? <span className="text-red-600 font-medium">⚠ Visit limit exhausted — patient may be liable for full cost</span> : <span className={`font-medium ${(visitsRemaining ?? 0) <= 5 ? "text-orange-600" : "text-green-600"}`}>{visitsRemaining} visits remaining</span>}</div>
@@ -311,14 +329,14 @@ export default function EligibilityPage() {
                     {cov.priorAuthRequired && (
                       <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
                         <div className="font-semibold text-amber-800 text-sm mb-1">⚠ Prior Authorization Required</div>
-                        <p className="text-amber-700 text-xs leading-relaxed">This payer requires prior authorization for mental health services. Obtain authorization before the appointment to avoid denial (CARC-197).</p>
+                        <p className="text-amber-700 text-xs leading-relaxed">This payer requires prior authorization for the requested services. Obtain authorization before the appointment to avoid denial (CARC-197).</p>
                       </div>
                     )}
 
                     <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
                       <h3 className="text-xs text-gray-400 uppercase tracking-widest font-medium mb-3">Patient Responsibility Estimate</h3>
                       <div className="text-xs text-gray-500 space-y-1.5 leading-relaxed">
-                        {deductibleRemaining > 0 ? <p>Patient owes <span className="text-gray-900 font-medium">${Math.min(deductibleRemaining, 200).toFixed(2)}</span> toward deductible on a typical $200 therapy session</p> : <p>Deductible met — patient owes <span className="text-gray-900 font-medium">{cov.copay > 0 ? `$${cov.copay} copay` : `${cov.coinsurance}% coinsurance`}</span></p>}
+                        {deductibleRemaining > 0 ? <p>Patient owes <span className="text-gray-900 font-medium">${Math.min(deductibleRemaining, 200).toFixed(2)}</span> toward deductible on a typical $200 visit</p> : <p>Deductible met — patient owes <span className="text-gray-900 font-medium">{cov.copay > 0 ? `$${cov.copay} copay` : `${cov.coinsurance}% coinsurance`}</span></p>}
                         <p className="text-gray-400">Effective {cov.effectiveDate}{cov.terminationDate ? ` · terminates ${cov.terminationDate}` : ""}</p>
                       </div>
                     </div>
@@ -468,6 +486,6 @@ export default function EligibilityPage() {
           </div>
         )}
       </div>
-    </div>
+    </AppLayout>
   )
 }

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import NavBar from "@/components/NavBar"
+import AppLayout from "@/components/AppLayout"
 import { LogoMark } from "@/components/Logo"
 import HeroDashboardMockup from "@/components/HeroDashboardMockup"
 import SweepMockup from "@/components/SweepMockup"
@@ -469,9 +470,14 @@ function MarketingPage() {
   )
 }
 
+interface OnboardingStatus {
+  steps: Record<string, boolean>
+  complete: boolean
+}
+
 function Dashboard() {
   const [userName, setUserName] = useState("")
-  const [setup, setSetup] = useState<{ practiceComplete: boolean; hasProviders: boolean; hasPatients: boolean; stripeConnected: boolean } | null>(null)
+  const [onboarding, setOnboarding] = useState<OnboardingStatus | null>(null)
   const [briefing, setBriefing] = useState<BriefingData | null>(null)
   const [loading, setLoading] = useState(true)
   const [baaAccepted, setBaaAccepted] = useState(true)
@@ -481,19 +487,12 @@ function Dashboard() {
       fetch("/api/auth/me").then(r => r.ok ? r.json() : null),
       fetch("/api/context").then(r => r.ok ? r.json() : null),
       fetch("/api/briefing").then(r => r.ok ? r.json() : null),
-      fetch("/api/connect").then(r => r.ok ? r.json() : null),
-    ]).then(([me, ctx, brief, connect]) => {
+      fetch("/api/onboarding/status").then(r => r.ok ? r.json() : null),
+    ]).then(([me, ctx, brief, onb]) => {
       if (me?.user?.name) setUserName(me.user.name)
-      if (ctx) {
-        setSetup({
-          practiceComplete: !ctx.practice?.npi?.startsWith("PENDING-"),
-          hasProviders: (ctx.providers?.length ?? 0) > 0,
-          hasPatients: (ctx.patients?.length ?? 0) > 0,
-          stripeConnected: connect?.status === "active",
-        })
-        setBaaAccepted(!!ctx.practice?.baaAcceptedAt)
-      }
+      if (ctx) setBaaAccepted(!!ctx.practice?.baaAcceptedAt)
       if (brief && !brief.error) setBriefing(brief)
+      if (onb) setOnboarding(onb)
     }).finally(() => setLoading(false))
   }, [])
 
@@ -506,12 +505,12 @@ function Dashboard() {
 
   const firstName = userName.split(" ").find(p => !p.startsWith("Dr")) ?? userName.split(" ")[0] ?? ""
   const fmt = (n: number) => n >= 1000 ? `$${(n / 1000).toFixed(1)}k` : `$${n.toFixed(0)}`
-  const setupIncomplete = setup && (!setup.practiceComplete || !setup.hasProviders || !setup.hasPatients || !setup.stripeConnected)
+  const completedSteps = onboarding ? Object.values(onboarding.steps).filter(Boolean).length : 0
+  const totalSteps = 6
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900">
+    <AppLayout>
       <BaaGate baaAccepted={baaAccepted} />
-      <NavBar />
       <main className="max-w-3xl mx-auto px-8 py-10">
         <div className="mb-8 flex items-start justify-between">
           <div>
@@ -532,37 +531,29 @@ function Dashboard() {
           </Link>
         </div>
 
-        {setupIncomplete && (
-          <div className="mb-8 bg-blue-50 border border-blue-200 rounded-xl p-5">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-5 h-5 rounded bg-blue-600 flex items-center justify-center text-white text-xs font-bold shrink-0">C</div>
-              <span className="text-sm font-semibold text-blue-900">Complete your setup to start submitting claims</span>
+        {onboarding && !onboarding.complete && (
+          <Link href="/onboarding" className="block mb-8 bg-blue-50 border border-blue-200 rounded-xl p-5 hover:border-blue-300 transition-colors">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                  {completedSteps}/{totalSteps}
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-blue-900">Complete your setup</div>
+                  <div className="text-xs text-blue-600 mt-0.5">{completedSteps} of {totalSteps} steps done — click to continue</div>
+                </div>
+              </div>
+              <div className="flex-1 max-w-32">
+                <div className="bg-blue-200 rounded-full h-1.5">
+                  <div
+                    className="bg-blue-600 h-1.5 rounded-full"
+                    style={{ width: `${(completedSteps / totalSteps) * 100}%` }}
+                  />
+                </div>
+              </div>
+              <span className="text-blue-600 text-sm shrink-0">→</span>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {[
-                { done: setup!.practiceComplete, label: "Practice details", desc: "NPI, Tax ID, address", href: "/settings" },
-                { done: setup!.hasProviders, label: "Add a provider", desc: "Rendering provider NPI", href: "/settings?tab=providers" },
-                { done: setup!.hasPatients, label: "Add a patient", desc: "Demographics & insurance", href: "/settings?tab=patients" },
-                { done: setup!.stripeConnected, label: "Connect Stripe", desc: "Receive patient payments", href: "/onboarding" },
-              ].map((step) => (
-                <Link
-                  key={step.label}
-                  href={step.href}
-                  className={`flex items-start gap-3 p-3 rounded-lg border transition-all ${
-                    step.done ? "bg-green-50 border-green-200 pointer-events-none" : "bg-white border-blue-200 hover:border-blue-400 hover:shadow-sm"
-                  }`}
-                >
-                  <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5 text-xs font-bold ${
-                    step.done ? "bg-green-500 text-white" : "bg-blue-100 text-blue-600"
-                  }`}>{step.done ? "✓" : "→"}</div>
-                  <div>
-                    <div className={`text-sm font-medium ${step.done ? "text-green-800 line-through" : "text-blue-900"}`}>{step.label}</div>
-                    <div className="text-xs text-blue-600 opacity-70 mt-0.5">{step.desc}</div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
+          </Link>
         )}
 
         {loading && (
@@ -632,9 +623,8 @@ function Dashboard() {
                   { label: "Timely Risk", value: String(briefing.timelyRisks), sub: fmt(briefing.timelyRisksAmount), accent: briefing.timelyRisks > 0 ? "bg-red-500" : "bg-gray-300", color: briefing.timelyRisks > 0 ? "text-red-700" : "text-gray-600" },
                   { label: "Overdue AR", value: fmt(briefing.overdueAmount), sub: `${briefing.overdueStatements} stmts`, accent: "bg-amber-500", color: "text-amber-700" },
                 ].map((stat) => (
-                  <div key={stat.label} className="bg-white border border-gray-200 rounded-xl p-4 relative overflow-hidden shadow-sm">
-                    <div className={`absolute inset-x-0 top-0 h-0.5 ${stat.accent}`} />
-                    <div className="text-xs text-gray-500 uppercase tracking-wider mb-1.5">{stat.label}</div>
+                  <div key={stat.label} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+                    <div className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-2">{stat.label}</div>
                     <div className={`text-xl font-bold font-mono ${stat.color}`}>{stat.value}</div>
                     <div className="text-xs text-gray-400 mt-0.5">{stat.sub}</div>
                   </div>
@@ -665,7 +655,7 @@ function Dashboard() {
           </div>
         )}
       </main>
-    </div>
+    </AppLayout>
   )
 }
 

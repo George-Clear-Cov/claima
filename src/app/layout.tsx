@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Claima — AI Medical Billing",
-  description: "AI-native medical billing platform for mental health practices. 837P claim submission, denial management, eligibility verification, and patient billing.",
+  description: "AI-native medical billing platform for outpatient practices. 837P claim submission, denial management, eligibility verification, and patient billing.",
 }
 
 export default function RootLayout({

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
-import NavBar from "@/components/NavBar"
+import AppLayout from "@/components/AppLayout"
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -47,13 +47,47 @@ interface Patient {
 }
 
 const COMMON_TAXONOMIES = [
-  { code: "193200000X", label: "Group Counseling" },
-  { code: "101YA0400X", label: "Addiction Counselor" },
-  { code: "101YM0800X", label: "Mental Health Counselor" },
+  { code: "193200000X", label: "Group Practice" },
+  // Primary Care
+  { code: "207Q00000X", label: "Family Medicine" },
+  { code: "207R00000X", label: "Internal Medicine" },
+  { code: "208000000X", label: "Pediatrics" },
+  { code: "207V00000X", label: "Obstetrics & Gynecology" },
+  // Mental & Behavioral Health
+  { code: "2084P0800X", label: "Psychiatrist" },
   { code: "103T00000X", label: "Psychologist" },
+  { code: "101YM0800X", label: "Mental Health Counselor" },
+  { code: "104100000X", label: "Social Worker" },
   { code: "1041C0700X", label: "Clinical Social Worker" },
   { code: "106H00000X", label: "Marriage & Family Therapist" },
-  { code: "2084P0800X", label: "Psychiatry" },
+  { code: "101YA0400X", label: "Addiction Counselor" },
+  { code: "363LP0808X", label: "Psychiatric/Mental Health Nurse Practitioner" },
+  // Mid-level Providers
+  { code: "363L00000X", label: "Nurse Practitioner" },
+  { code: "363LF0000X", label: "Family Nurse Practitioner" },
+  { code: "363A00000X", label: "Physician Assistant" },
+  // Medical Specialties
+  { code: "207RC0000X", label: "Cardiology" },
+  { code: "2084N0400X", label: "Neurology" },
+  { code: "207RG0100X", label: "Gastroenterology" },
+  { code: "207RE0101X", label: "Endocrinology" },
+  { code: "207RR0500X", label: "Rheumatology" },
+  { code: "207RP1001X", label: "Pulmonology" },
+  { code: "207RN0300X", label: "Nephrology" },
+  { code: "207K00000X", label: "Allergy & Immunology" },
+  { code: "213E00000X", label: "Podiatry" },
+  { code: "208800000X", label: "Urology" },
+  { code: "207N00000X", label: "Dermatology" },
+  // Physical Medicine
+  { code: "225100000X", label: "Physical Therapist" },
+  { code: "225X00000X", label: "Occupational Therapist" },
+  { code: "235Z00000X", label: "Speech-Language Pathologist" },
+  { code: "111N00000X", label: "Chiropractor" },
+  { code: "207X00000X", label: "Orthopedic Surgery" },
+  { code: "208100000X", label: "Physical Medicine & Rehabilitation" },
+  // Vision
+  { code: "152W00000X", label: "Optometry" },
+  { code: "207W00000X", label: "Ophthalmology" },
 ]
 
 const COMMON_PAYERS = [
@@ -558,7 +592,7 @@ function PatientsTab() {
 
 interface IntegrationStatus {
   stripeConfigured: boolean
-  stediConfigured: boolean
+  clearinghouseConfigured: boolean
   anthropicConfigured: boolean
   dbConfigured: boolean
 }
@@ -574,7 +608,7 @@ function IntegrationsTab() {
         if (data) {
           setStatus({
             stripeConfigured: !!data.stripeConfigured,
-            stediConfigured: !!data.stediConfigured,
+            clearinghouseConfigured: !!data.clearinghouseConfigured,
             anthropicConfigured: !!data.anthropicConfigured,
             dbConfigured: !!data.dbConfigured,
           })
@@ -595,13 +629,13 @@ function IntegrationsTab() {
       note: "Use test mode keys (prefix sk_test_) during development.",
     },
     {
-      name: "Stedi Clearinghouse",
-      description: "837P electronic claim submission to insurance payers.",
-      configured: status?.stediConfigured ?? false,
-      envVars: ["STEDI_API_KEY"],
-      docsUrl: "https://www.stedi.com/app/keys",
-      docsLabel: "Get API key →",
-      note: "Without this key, claims submit in mock mode (accepted locally, not sent to payers).",
+      name: "Claim.MD Clearinghouse",
+      description: "837P electronic claim submission and 270/271 eligibility verification.",
+      configured: status?.clearinghouseConfigured ?? false,
+      envVars: ["CLAIMMD_ACCOUNT_KEY", "CLAIMMD_API_KEY"],
+      docsUrl: "https://www.claimmd.com/developers",
+      docsLabel: "Get API keys →",
+      note: "Without these keys, claims and eligibility run in mock mode (not sent to payers).",
     },
     {
       name: "Anthropic (Claude)",
@@ -919,9 +953,149 @@ function AuditTab() {
   )
 }
 
+// ─── Payers Tab ──────────────────────────────────────────────────────────────
+
+interface PayerEnrollment {
+  id: string
+  payerId: string
+  payerName: string
+  enrollmentStatus: "PENDING" | "ACTIVE" | "INACTIVE"
+  claimMdPayerId: string | null
+  enrolledAt: string | null
+  notes: string | null
+}
+
+function PayersTab() {
+  const [enrollments, setEnrollments] = useState<PayerEnrollment[]>([])
+  const [loading, setLoading] = useState(true)
+  const [updating, setUpdating] = useState<string | null>(null)
+
+  const load = useCallback(async () => {
+    try {
+      const res = await fetch("/api/practices/payers")
+      if (res.ok) {
+        const data = await res.json()
+        setEnrollments(data.enrollments ?? [])
+      }
+    } catch {} finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { load() }, [load])
+
+  async function updateStatus(payerId: string, enrollmentStatus: "PENDING" | "ACTIVE" | "INACTIVE") {
+    setUpdating(payerId)
+    try {
+      await fetch(`/api/practices/payers/${payerId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enrollmentStatus }),
+      })
+      await load()
+    } catch {} finally {
+      setUpdating(null)
+    }
+  }
+
+  async function remove(payerId: string) {
+    if (!confirm("Remove this payer enrollment?")) return
+    setUpdating(payerId)
+    try {
+      await fetch(`/api/practices/payers/${payerId}`, { method: "DELETE" })
+      await load()
+    } catch {} finally {
+      setUpdating(null)
+    }
+  }
+
+  const STATUS_COLORS = {
+    ACTIVE: "bg-green-50 text-green-700 border-green-200",
+    PENDING: "bg-amber-50 text-amber-700 border-amber-200",
+    INACTIVE: "bg-gray-50 text-gray-500 border-gray-200",
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold">Payer enrollments</h2>
+          <p className="text-sm text-gray-500 mt-0.5">Payers your practice is enrolled with through Claim.MD</p>
+        </div>
+        <a
+          href="/onboarding/payers"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+        >
+          + Add payers
+        </a>
+      </div>
+
+      {loading ? (
+        <div className="text-sm text-gray-400 py-8 text-center">Loading…</div>
+      ) : enrollments.length === 0 ? (
+        <div className="border border-dashed border-gray-200 rounded-xl p-10 text-center">
+          <p className="text-sm text-gray-500 mb-3">No payer enrollments yet.</p>
+          <a href="/onboarding/payers" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+            Add your first payer →
+          </a>
+        </div>
+      ) : (
+        <div className="border border-gray-200 rounded-xl overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Payer</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide hidden md:table-cell">Claim.MD ID</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide hidden lg:table-cell">Enrolled</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {enrollments.map((e) => (
+                <tr key={e.id} className="hover:bg-gray-50">
+                  <td className="px-4 py-3">
+                    <div className="font-medium text-gray-900">{e.payerName}</div>
+                    <div className="text-xs text-gray-400">{e.payerId}</div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <select
+                      value={e.enrollmentStatus}
+                      disabled={updating === e.payerId}
+                      onChange={(ev) => updateStatus(e.payerId, ev.target.value as "PENDING" | "ACTIVE" | "INACTIVE")}
+                      className={`text-xs font-medium px-2 py-1 rounded-md border ${STATUS_COLORS[e.enrollmentStatus]} focus:outline-none cursor-pointer`}
+                    >
+                      <option value="PENDING">Pending</option>
+                      <option value="ACTIVE">Active</option>
+                      <option value="INACTIVE">Inactive</option>
+                    </select>
+                  </td>
+                  <td className="px-4 py-3 text-gray-500 text-xs hidden md:table-cell">{e.claimMdPayerId ?? "—"}</td>
+                  <td className="px-4 py-3 text-gray-400 text-xs hidden lg:table-cell">
+                    {e.enrolledAt ? new Date(e.enrolledAt).toLocaleDateString() : "—"}
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <button
+                      onClick={() => remove(e.payerId)}
+                      disabled={updating === e.payerId}
+                      className="text-xs text-red-400 hover:text-red-600 disabled:opacity-40"
+                    >
+                      Remove
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Page ────────────────────────────────────────────────────────────────────
 
-type Tab = "practice" | "providers" | "patients" | "integrations" | "audit" | "data"
+type Tab = "practice" | "providers" | "patients" | "integrations" | "audit" | "data" | "payers"
 
 function SettingsInner() {
   const params = useSearchParams()
@@ -942,15 +1116,15 @@ function SettingsInner() {
     { id: "practice", label: "Practice Info" },
     { id: "providers", label: "Providers" },
     { id: "patients", label: "Patients" },
+    { id: "payers", label: "Payers" },
     { id: "integrations", label: "Integrations" },
     { id: "audit", label: "Audit Log" },
     { id: "data", label: "Data & Privacy" },
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900">
-      <NavBar />
-      <div className="max-w-4xl mx-auto p-8">
+    <AppLayout>
+      <div className="max-w-4xl mx-auto px-8 py-10">
         <div className="mb-8">
           <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
           <p className="text-gray-500 text-sm mt-0.5">Manage your practice, providers, and patients</p>
@@ -975,11 +1149,12 @@ function SettingsInner() {
         {tab === "practice" && <PracticeTab practice={practice} onSaved={loadPractice} />}
         {tab === "providers" && <ProvidersTab />}
         {tab === "patients" && <PatientsTab />}
+        {tab === "payers" && <PayersTab />}
         {tab === "integrations" && <IntegrationsTab />}
         {tab === "audit" && <AuditTab />}
         {tab === "data" && <DataPrivacyTab />}
       </div>
-    </div>
+    </AppLayout>
   )
 }
 

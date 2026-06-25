@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import NavBar from "@/components/NavBar"
+import AppLayout from "@/components/AppLayout"
 import { COMMON_CPT_CODES, COMMON_ICD10_CODES } from "@/types/claim"
 
 interface Patient { id: string; firstName: string; lastName: string; payerName: string; memberId: string }
@@ -58,6 +58,7 @@ export default function NoteIntakePage() {
   const [modifier, setModifier] = useState("")
   const [chargeAmount, setChargeAmount] = useState("")
 
+  const [placeOfService, setPlaceOfService] = useState("11")
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
@@ -86,10 +87,11 @@ export default function NoteIntakePage() {
       setPatientId(data.patientId ?? "")
       setProviderId(data.providerId ?? "")
       setServiceDate(data.serviceDate ?? new Date().toISOString().slice(0, 10))
-      setCptCode(data.cptCode ?? "90837")
+      setCptCode(data.cptCode ?? "99213")
       setIcd10Codes(data.icd10Codes ?? [])
       setModifier(data.modifier ?? "")
       setChargeAmount(String(data.chargeAmount ?? ""))
+      setPlaceOfService(data.telehealth ? "10" : "11")
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to extract")
     } finally {
@@ -110,6 +112,7 @@ export default function NoteIntakePage() {
           providerId,
           patientId,
           serviceDate,
+          placeOfService,
           lineItems: [{
             cptCode,
             icd10Codes,
@@ -138,8 +141,7 @@ export default function NoteIntakePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900">
-      <NavBar />
+    <AppLayout>
       <div className="max-w-5xl mx-auto px-8 py-10">
         <div className="mb-8">
           <div className="text-xs text-gray-400 mb-1">
@@ -295,6 +297,23 @@ export default function NoteIntakePage() {
                   </div>
                 </div>
 
+                {/* Place of Service */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1.5">Place of Service</label>
+                  <select value={placeOfService} onChange={(e) => setPlaceOfService(e.target.value)} className={inputClass}>
+                    <option value="11">11 — Office</option>
+                    <option value="10">10 — Telehealth (Patient Home)</option>
+                    <option value="02">02 — Telehealth (Provider Site)</option>
+                    <option value="22">22 — On-Campus Outpatient Hospital</option>
+                    <option value="19">19 — Off-Campus Outpatient Hospital</option>
+                    <option value="49">49 — Independent Clinic</option>
+                    <option value="12">12 — Home</option>
+                  </select>
+                  {extracted.telehealth && placeOfService === "10" && (
+                    <p className="mt-1 text-xs text-blue-600">Auto-set to 10 (telehealth detected)</p>
+                  )}
+                </div>
+
                 {extracted.clinicalSummary && (
                   <div className="text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
                     <span className="font-medium">Note:</span> {extracted.clinicalSummary}
@@ -317,6 +336,6 @@ export default function NoteIntakePage() {
           )}
         </div>
       </div>
-    </div>
+    </AppLayout>
   )
 }

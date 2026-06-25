@@ -15,9 +15,14 @@ const NAV_LINKS = [
   { href: "/", label: "Dashboard" },
   { href: "/claims", label: "Claims" },
   { href: "/denials", label: "Denials" },
+  { href: "/prior-auth", label: "Prior Auth" },
+  { href: "/ccm", label: "CCM" },
+  { href: "/credentialing", label: "Credentialing" },
+  { href: "/oig", label: "OIG Check" },
   { href: "/eligibility", label: "Eligibility" },
   { href: "/billing", label: "Billing" },
   { href: "/analytics", label: "Analytics" },
+  { href: "/payer-intelligence", label: "Payer Intel" },
   { href: "/assistant", label: "AI Assistant" },
   { href: "/agent", label: "Agent" },
 ]
@@ -41,23 +46,24 @@ export default function NavBar() {
   }
 
   return (
-    <header className="border-b border-gray-200 bg-white px-6 h-14 flex items-center justify-between sticky top-0 z-30 shadow-sm">
-      <div className="flex items-center gap-5 h-full">
-        <Link href="/" className="flex items-center gap-2.5 shrink-0">
-          <LogoMark size={28} />
-          <span className="font-semibold tracking-tight text-sm text-gray-900">Claima</span>
-        </Link>
+    <header className="border-b border-gray-200 bg-white h-14 flex items-center justify-between sticky top-0 z-30 shadow-sm">
+      <div className="flex items-center h-full min-w-0 flex-1">
+        <div className="flex items-center gap-3 pl-4 shrink-0">
+          <Link href="/" className="flex items-center gap-2 shrink-0">
+            <LogoMark size={26} />
+            <span className="font-semibold tracking-tight text-sm text-gray-900">Claima</span>
+          </Link>
+          <div className="w-px h-4 bg-gray-200" />
+        </div>
 
-        <div className="w-px h-4 bg-gray-200" />
-
-        <nav className="flex items-center gap-0.5 h-full">
+        <nav className="flex items-center gap-0.5 h-full overflow-x-auto scrollbar-hide px-1">
           {NAV_LINKS.map(({ href, label }) => {
             const active = href === "/" ? pathname === "/" : pathname.startsWith(href)
             return (
               <Link
                 key={href}
                 href={href}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                className={`whitespace-nowrap px-2.5 py-1.5 rounded-md text-xs font-medium transition-all shrink-0 ${
                   active
                     ? "bg-gray-100 text-gray-900"
                     : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
@@ -80,6 +86,9 @@ export default function NavBar() {
           </div>
         )}
         <div className="w-px h-4 bg-gray-200" />
+        <Link href="/support" className="text-xs text-gray-500 hover:text-gray-700 transition-colors px-2 py-1 rounded-md hover:bg-gray-50">
+          Help
+        </Link>
         <Link href="/settings" className="text-xs text-gray-500 hover:text-gray-700 transition-colors px-2 py-1 rounded-md hover:bg-gray-50">
           Settings
         </Link>

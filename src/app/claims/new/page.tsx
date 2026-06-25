@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { COMMON_CPT_CODES, COMMON_ICD10_CODES } from "@/types/claim"
-import NavBar from "@/components/NavBar"
+import AppLayout from "@/components/AppLayout"
 
 interface LineItem {
   cptCode: string
@@ -52,6 +52,7 @@ const US_STATES = ["AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","
 const emptyNewPatient = () => ({
   firstName: "", lastName: "", dob: "", gender: "U" as "M" | "F" | "U",
   memberId: "", groupNumber: "", payerId: "", payerName: "",
+  relationshipToSubscriber: "18",
   addressLine1: "", city: "", state: "", zip: "",
 })
 
@@ -76,6 +77,8 @@ export default function NewClaimPage() {
   const [providerId, setProviderId] = useState("")
   const [patientId, setPatientId] = useState("")
   const [lines, setLines] = useState<LineItem[]>([emptyLine()])
+  const [placeOfService, setPlaceOfService] = useState("11")
+  const [referringProviderNpi, setReferringProviderNpi] = useState("")
   const [submitting, setSubmitting] = useState(false)
   const [result, setResult] = useState<{ status: string; errors?: string[] } | null>(null)
 
@@ -244,6 +247,8 @@ export default function NewClaimPage() {
           providerId,
           patientId,
           serviceDate,
+          placeOfService,
+          referringProviderNpi: referringProviderNpi || undefined,
           lineItems: lines.map((l) => ({
             cptCode: l.cptCode,
             icd10Codes: l.icd10Codes,
@@ -260,8 +265,8 @@ export default function NewClaimPage() {
       if (!res.ok) {
         setResult({ status: "error", errors: [JSON.stringify(data.error)] })
       } else {
-        setResult({ status: data.stediStatus, errors: data.errors })
-        if (data.stediStatus === "accepted") {
+        setResult({ status: data.clearinghouseStatus, errors: data.errors })
+        if (data.clearinghouseStatus === "accepted") {
           setTimeout(() => router.push("/claims"), 1500)
         }
       }
@@ -275,12 +280,11 @@ export default function NewClaimPage() {
   const selectedPatient = ctx?.patients.find((p) => p.id === patientId)
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900">
-      <NavBar />
-      <div className="max-w-3xl mx-auto p-8">
+    <AppLayout>
+      <div className="max-w-3xl mx-auto px-8 py-10">
         <div className="mb-8">
           <h1 className="text-2xl font-bold tracking-tight">Submit New Claim</h1>
-          <p className="text-gray-500 text-sm mt-0.5">Mental health practice — 837P via Stedi clearinghouse</p>
+          <p className="text-gray-500 text-sm mt-0.5">837P EDI via Claim.MD clearinghouse</p>
         </div>
 
         {ctxLoading ? (
@@ -366,6 +370,31 @@ export default function NewClaimPage() {
                 </div>
               </div>
 
+              <div className="grid grid-cols-2 gap-4 mt-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1.5">Place of Service</label>
+                  <select value={placeOfService} onChange={(e) => setPlaceOfService(e.target.value)} className={inputClass}>
+                    <option value="11">11 — Office</option>
+                    <option value="10">10 — Telehealth (Patient Home)</option>
+                    <option value="02">02 — Telehealth (Provider Site)</option>
+                    <option value="22">22 — On-Campus Outpatient Hospital</option>
+                    <option value="19">19 — Off-Campus Outpatient Hospital</option>
+                    <option value="49">49 — Independent Clinic</option>
+                    <option value="21">21 — Inpatient Hospital</option>
+                    <option value="12">12 — Home</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1.5">Referring Provider NPI <span className="text-gray-400 font-normal">(optional)</span></label>
+                  <input
+                    value={referringProviderNpi}
+                    onChange={(e) => setReferringProviderNpi(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                    placeholder="1234567890"
+                    className={inputClass}
+                  />
+                </div>
+              </div>
+
               <div className="mt-4">
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="block text-xs font-medium text-gray-500">Patient</label>
@@ -426,19 +455,31 @@ export default function NewClaimPage() {
                       </div>
                     </div>
 
-                    <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1">Insurance Payer</label>
-                      <select
-                        value={newPatient.payerId}
-                        onChange={e => {
-                          const payer = COMMON_PAYERS.find(p => p.id === e.target.value)
-                          setNewPatient(p => ({ ...p, payerId: e.target.value, payerName: payer?.name ?? "" }))
-                        }}
-                        className={inputClass}
-                      >
-                        <option value="">Select payer…</option>
-                        {COMMON_PAYERS.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                      </select>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">Insurance Payer</label>
+                        <select
+                          value={newPatient.payerId}
+                          onChange={e => {
+                            const payer = COMMON_PAYERS.find(p => p.id === e.target.value)
+                            setNewPatient(p => ({ ...p, payerId: e.target.value, payerName: payer?.name ?? "" }))
+                          }}
+                          className={inputClass}
+                        >
+                          <option value="">Select payer…</option>
+                          {COMMON_PAYERS.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">Relationship to Subscriber</label>
+                        <select value={newPatient.relationshipToSubscriber} onChange={e => setNewPatient(p => ({ ...p, relationshipToSubscriber: e.target.value }))} className={inputClass}>
+                          <option value="18">Self</option>
+                          <option value="01">Spouse</option>
+                          <option value="19">Child</option>
+                          <option value="53">Life Partner</option>
+                          <option value="G8">Other</option>
+                        </select>
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
@@ -758,6 +799,6 @@ export default function NewClaimPage() {
           </form>
         )}
       </div>
-    </div>
+    </AppLayout>
   )
 }

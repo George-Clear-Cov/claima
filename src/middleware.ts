@@ -28,7 +28,32 @@ const PUBLIC_PATHS = [
   "/api/marketplace/azure",    // Azure activate endpoint
   "/api/webhooks/aws-marketplace",
   "/api/webhooks/azure-marketplace",
+  "/api/cron",
+  "/pay",
+  "/api/pay",
 ]
+
+// Rate limits for public unauthenticated routes — per IP, 1-minute window
+// Module-level map persists within a warm serverless instance
+const _rl = new Map<string, { n: number; t: number }>()
+const RATE_LIMITS: [string, number][] = [
+  ["/api/checkout", 10],
+  ["/api/store", 200],
+]
+
+function isRateLimited(ip: string, pathname: string): boolean {
+  const rule = RATE_LIMITS.find(([p]) => pathname.startsWith(p))
+  if (!rule) return false
+  const key = `${ip}::${rule[0]}`
+  const now = Date.now()
+  const entry = _rl.get(key)
+  if (!entry || now > entry.t + 60_000) {
+    _rl.set(key, { n: 1, t: now })
+    return false
+  }
+  entry.n++
+  return entry.n > rule[1]
+}
 
 function isPublic(pathname: string) {
   return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"))
@@ -41,7 +66,13 @@ function isPublic(pathname: string) {
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
 
-  if (isPublic(pathname)) return NextResponse.next()
+  if (isPublic(pathname)) {
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? "unknown"
+    if (isRateLimited(ip, pathname)) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 })
+    }
+    return NextResponse.next()
+  }
 
   const token = req.cookies.get(COOKIE_NAME)?.value
 

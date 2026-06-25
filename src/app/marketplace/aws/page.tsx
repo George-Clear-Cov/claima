@@ -1,11 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
 
 type Step = "loading" | "activating" | "success" | "error"
 
-export default function AwsMarketplacePage() {
+function AwsMarketplaceContent() {
   const params = useSearchParams()
   const token = params.get("x-amzn-marketplace-token")
 
@@ -113,5 +113,17 @@ export default function AwsMarketplacePage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function AwsMarketplacePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full" />
+      </div>
+    }>
+      <AwsMarketplaceContent />
+    </Suspense>
   )
 }

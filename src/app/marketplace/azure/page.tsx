@@ -1,11 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
 
 type Step = "loading" | "activating" | "success" | "error"
 
-export default function AzureMarketplacePage() {
+function AzureMarketplaceContent() {
   const params = useSearchParams()
   const token = params.get("token")
 
@@ -126,5 +126,17 @@ export default function AzureMarketplacePage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function AzureMarketplacePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full" />
+      </div>
+    }>
+      <AzureMarketplaceContent />
+    </Suspense>
   )
 }

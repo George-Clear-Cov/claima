@@ -19,6 +19,14 @@ function InProgress() {
   )
 }
 
+function Planned() {
+  return (
+    <svg className="w-5 h-5 text-gray-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+    </svg>
+  )
+}
+
 export default function SecurityPage() {
   return (
     <div className="min-h-screen bg-gray-50">
@@ -54,15 +62,18 @@ export default function SecurityPage() {
               { label: "TLS 1.2+ encryption in transit", status: "live" },
               { label: "AES-256 encryption at rest", status: "live" },
               { label: "SOC 2 Type II", status: "progress" },
-              { label: "HITRUST CSF", status: "progress" },
               { label: "Microsoft AppSource Certified", status: "progress" },
+              { label: "HITRUST CSF", status: "planned" },
             ].map((item) => (
               <div key={item.label} className="flex items-start gap-2.5">
-                {item.status === "live" ? <Check /> : <InProgress />}
+                {item.status === "live" ? <Check /> : item.status === "progress" ? <InProgress /> : <Planned />}
                 <div>
                   <span className="text-sm text-gray-800">{item.label}</span>
                   {item.status === "progress" && (
                     <span className="ml-2 text-xs text-amber-600 font-medium">In progress</span>
+                  )}
+                  {item.status === "planned" && (
+                    <span className="ml-2 text-xs text-gray-400 font-medium">Planned 2027</span>
                   )}
                 </div>
               </div>
@@ -136,7 +147,7 @@ export default function SecurityPage() {
             </p>
             <ul className="list-disc pl-5 space-y-1.5 text-sm">
               <li><strong>Anthropic (Claude):</strong> PHI is processed under a Business Associate Agreement with Anthropic. PHI is never used to train general-purpose models.</li>
-              <li><strong>Stedi:</strong> EDI claim transmission is handled by Stedi under BAA as a HIPAA-compliant clearinghouse.</li>
+              <li><strong>Claim.MD:</strong> EDI claim transmission is handled by Claim.MD under BAA as a HIPAA-compliant clearinghouse.</li>
               <li><strong>Stripe:</strong> Payment processing is PCI-DSS Level 1 compliant. Claima does not store full card numbers.</li>
               <li><strong>Supabase / AWS:</strong> Database hosted on AWS infrastructure with SOC 2 Type II and HIPAA compliance.</li>
             </ul>
