@@ -3,9 +3,9 @@
 import { useEffect, useState, useCallback } from "react"
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
-  PieChart, Pie, Cell,
+  PieChart, Pie, Cell, LineChart, Line, ReferenceLine,
 } from "recharts"
-import NavBar from "@/components/NavBar"
+import AppLayout from "@/components/AppLayout"
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -49,6 +49,7 @@ interface Summary {
 interface AnalyticsData {
   summary: Summary
   monthlyRevenue: { month: string; billed: number; insurancePaid: number; patientCollected: number }[]
+  monthlyDenialRate: { month: string; denialRate: number; denied: number; total: number }[]
   claimsByStatus: { status: string; count: number; amount: number }[]
   arAging: { bucket: string; count: number; amount: number }[]
   byPayer: { payerName: string; claimCount: number; billed: number; collected: number; collectionRate: number }[]
@@ -93,11 +94,10 @@ function StatusTooltip({ active, payload }: { active?: boolean; payload?: { name
 function fmt(n: number) { return `$${n.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}` }
 function fmtK(n: number) { return n >= 1000 ? `$${(n / 1000).toFixed(1)}k` : fmt(n) }
 
-function KPI({ label, value, sub, color = "text-gray-900", accent = "bg-gray-400" }: { label: string; value: string; sub: string; color?: string; accent?: string }) {
+function KPI({ label, value, sub, color = "text-gray-900" }: { label: string; value: string; sub: string; color?: string; accent?: string }) {
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-5 relative overflow-hidden shadow-sm">
-      <div className={`absolute inset-x-0 top-0 h-0.5 ${accent}`} />
-      <div className="text-xs text-gray-500 uppercase tracking-wider font-medium mb-2">{label}</div>
+    <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+      <div className="text-xs text-gray-400 font-medium mb-3 uppercase tracking-wider">{label}</div>
       <div className={`text-2xl font-bold font-mono ${color}`}>{value}</div>
       <div className="text-xs text-gray-400 mt-1">{sub}</div>
     </div>
@@ -174,8 +174,7 @@ export default function AnalyticsPage() {
   const s = data?.summary
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900">
-      <NavBar />
+    <AppLayout>
       <div className="max-w-6xl mx-auto px-8 py-10">
 
         {/* Header */}
@@ -301,6 +300,37 @@ export default function AnalyticsPage() {
                 </ResponsiveContainer>
               )}
             </div>
+
+            {/* Denial rate trend */}
+            {data.monthlyDenialRate.length > 1 && (
+              <div className="mb-6">
+                <SectionLabel>Denial Rate Trend</SectionLabel>
+                <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+                  <ResponsiveContainer width="100%" height={200}>
+                    <LineChart data={data.monthlyDenialRate} margin={{ top: 4, right: 16, left: 8, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
+                      <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
+                      <YAxis tickFormatter={(v) => `${v}%`} tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} width={36} domain={[0, "auto"]} />
+                      <ReferenceLine y={10} stroke="#f97316" strokeDasharray="4 4" strokeWidth={1} label={{ value: "10% target", position: "right", fontSize: 10, fill: "#f97316" }} />
+                      <Tooltip
+                        content={({ active, payload, label }) => {
+                          if (!active || !payload?.length) return null
+                          const d = data.monthlyDenialRate.find(m => m.month === label)
+                          return (
+                            <div className="bg-white border border-gray-200 rounded-xl p-3 shadow-lg text-xs">
+                              <div className="font-semibold text-gray-700 mb-1">{label}</div>
+                              <div className="text-gray-500">{payload[0].value}% denial rate · {d?.denied}/{d?.total} claims</div>
+                            </div>
+                          )
+                        }}
+                        cursor={{ stroke: "#e5e7eb" }}
+                      />
+                      <Line type="monotone" dataKey="denialRate" stroke="#ef4444" strokeWidth={2} dot={{ r: 3, fill: "#ef4444" }} activeDot={{ r: 5 }} name="Denial Rate %" />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
 
             {/* Status breakdown + AR Aging side by side */}
             <div className="grid grid-cols-2 gap-6 mb-6">
@@ -466,6 +496,6 @@ export default function AnalyticsPage() {
           </>
         )}
       </div>
-    </div>
+    </AppLayout>
   )
 }

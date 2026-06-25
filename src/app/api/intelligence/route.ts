@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from "next/server"
 import { aiComplete, isAIConfigured } from "@/lib/ai"
-import { getSession } from "@/lib/auth"
+import { getSessionFromRequest } from "@/lib/auth"
+import { logAudit } from "@/lib/audit"
 
 export async function GET(req: NextRequest) {
-  const session = await getSession()
+  const session = await getSessionFromRequest(req)
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   if (!process.env.DATABASE_URL) return NextResponse.json({ error: "No database" }, { status: 503 })
 
   const { prisma } = await import("@/lib/prisma")
+  logAudit({ action: "intelligence.view", practiceId: session.practiceId, userId: session.userId, userEmail: session.email, req })
 
   const [claims, denials, statements] = await Promise.all([
     prisma.claim.findMany({
@@ -144,7 +146,7 @@ export async function GET(req: NextRequest) {
 
   if (isAIConfigured()) {
     try {
-      const prompt = `You are a revenue cycle intelligence engine for a mental health practice. Generate 4-6 specific, actionable insights from this billing data.
+      const prompt = `You are a revenue cycle intelligence engine for an outpatient medical practice. Generate 4-6 specific, actionable insights from this billing data.
 
 Data:
 ${JSON.stringify(summary, null, 2)}

@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getSession } from "@/lib/auth"
+import { getSessionFromRequest } from "@/lib/auth"
 import { logAudit } from "@/lib/audit"
 
 export async function GET(req: NextRequest) {
-  const session = await getSession()
+  const session = await getSessionFromRequest(req)
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   if (!process.env.DATABASE_URL) {
@@ -111,6 +111,24 @@ export async function GET(req: NextRequest) {
   }
   const arAging = Object.entries(aging).map(([bucket, vals]) => ({ bucket, ...vals }))
 
+  // ── Monthly denial rate ─────────────────────────────────────────────────────
+  const monthlyDenialMap = new Map<string, { total: number; denied: number }>()
+  for (const c of claims) {
+    const d = new Date(c.serviceDate)
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
+    if (!monthlyDenialMap.has(key)) monthlyDenialMap.set(key, { total: 0, denied: 0 })
+    const m = monthlyDenialMap.get(key)!
+    m.total++
+    if (c.claimStatus === "DENIED") m.denied++
+  }
+  const monthlyDenialRate = Array.from(monthlyDenialMap.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, vals]) => {
+      const [year, month] = key.split("-")
+      const label = new Date(Number(year), Number(month) - 1, 1).toLocaleString("default", { month: "short", year: "2-digit" })
+      return { month: label, denialRate: vals.total > 0 ? Math.round((vals.denied / vals.total) * 100) : 0, denied: vals.denied, total: vals.total }
+    })
+
   // ── By payer ────────────────────────────────────────────────────────────────
   const payerMap = new Map<string, { claimCount: number; billed: number; insurancePaid: number; patientPaid: number }>()
   for (const c of claims) {
@@ -156,6 +174,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     summary: { totalBilled, insurancePaid, patientCollected, totalCollected, collectionRate, openDenials, denialRate, avgDaysToPayment },
     monthlyRevenue,
+    monthlyDenialRate,
     claimsByStatus,
     arAging,
     byPayer,
