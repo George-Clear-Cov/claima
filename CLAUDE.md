@@ -1,10 +1,10 @@
-# MediBill — AI-Native Medical Billing (claima.io)
+# Claima — AI-Native Medical Billing (claima.io)
 
 ## Product
-AI-native medical billing platform. Sells outcomes (% of collections), not software seats. Targets small/mid mental health practices currently outsourcing to RCM firms. HIPAA compliance required on every PR.
+AI-native medical billing platform. Sells outcomes (% of collections), not software seats. Targets small/mid outpatient practices across all specialties (Family Medicine, Cardiology, Physical Therapy, Psychiatry, etc.) currently outsourcing to RCM firms. HIPAA compliance required on every PR.
 
 Deployed at: **https://claima.io** (Vercel)
-Local dev: `cd /Users/georgenagib/medibill && ~/.bun/bin/bun run dev`
+Local dev: `cd /Users/georgenagib/claima && ~/.bun/bin/bun run dev`
 Deploy: `npx vercel --prod --yes`
 
 ---
@@ -15,7 +15,7 @@ Deploy: `npx vercel --prod --yes`
 - **PostgreSQL** on Supabase (project ref: `cocfvcqmwnvuxqzmngpy`, region: us-west-2)
 - **Bun** as package manager (`~/.bun/bin/bun`)
 - **Stripe Connect** for payments (5% platform fee)
-- **Stedi** clearinghouse for 837P EDI + 270/271 eligibility
+- **Claim.MD** clearinghouse for 837P EDI + 270/271 eligibility (`src/lib/claimmd.ts`)
 - **Anthropic API** (claude-sonnet-4-6) for AI features
 
 ---
@@ -67,11 +67,11 @@ if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 
 |---|---|---|
 | Auth (email/password) | ✅ Live | — |
 | Azure AD SSO | ✅ Live | — |
-| Claim submission | ⚠️ Mock | `STEDI_API_KEY` |
-| Eligibility verification | ⚠️ Mock | `STEDI_API_KEY` |
-| Stripe payments | ⚠️ Mock | `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` |
-| Stripe Connect onboarding | ⚠️ Mock | Same as above |
-| Stripe webhooks | ❌ Not wired | `STRIPE_WEBHOOK_SECRET` + register in Stripe dashboard |
+| Claim submission | ⚠️ Mock | `CLAIMMD_ACCOUNT_KEY` + `CLAIMMD_API_KEY` |
+| Eligibility verification | ⚠️ Mock | `CLAIMMD_ACCOUNT_KEY` + `CLAIMMD_API_KEY` |
+| Stripe payments | ✅ Live | — |
+| Stripe Connect onboarding | ✅ Live | — |
+| Stripe webhooks | ✅ Live | — |
 | AI features (appeals, briefing, assistant) | ✅ Live | — |
 | Patient statements | ✅ Live | — |
 | Denial management | ✅ Live | — |
@@ -79,9 +79,9 @@ if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 
 ---
 
 ## Workflows Built
-1. ✅ Claim submission — 837P EDI via Stedi, AI scrub, denial risk scoring
+1. ✅ Claim submission — 837P EDI via Claim.MD, AI scrub, denial risk scoring
 2. ✅ Denial management — CARC triage, AI appeal letters (claude-sonnet-4-6), appeal tracking
-3. ✅ Eligibility verification — 270/271 via Stedi, AI interpretation
+3. ✅ Eligibility verification — 270/271 via Claim.MD, AI interpretation
 4. ✅ Patient billing & statements — balance tracking, Stripe PaymentIntents, Connect
 
 ---
@@ -112,9 +112,12 @@ Full project docs live at: `/Users/georgenagib/.claude/projects/-Users-georgenag
 ---
 
 ## Seeded Data
-- **Practice:** Clearview Mental Health
-- **Provider:** Dr. Emily Chen
-- **Patients:** Sarah Johnson, Marcus Rivera, Amanda Torres, David Kim
+- **Practice:** Riverside Medical Group (multi-specialty: Family Medicine + Physical Therapy)
+- **Providers:** Dr. Emily Chen (Family Med), Dr. Marcus Rivera (Physical Therapy)
+- **Patients:** Sarah Johnson, James Rivera, Amanda Torres, David Kim, Lisa Park
+- **Login:** admin@riversidemedgroup.com / claima2026
+- **CPTs:** 99213/99214/99215/99395/99203 (E&M), 97110/97140/97530 (PT)
+- **ICD-10:** I10 (hypertension), E11.9 (diabetes), M54.50 (low back pain), M25.511 (shoulder), Z00.00 (wellness)
 
 ---
 

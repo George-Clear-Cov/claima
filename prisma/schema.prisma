@@ -38,7 +38,7 @@ model Practice {
   state             String
   zip               String
   phone             String
-  stripeAccountId   String?  // Stripe Connect connected account ID
+  stripeAccountId   String?
   stripeOnboarded   Boolean  @default(false)
   platformFeePercent Float   @default(5.0)
   baaAcceptedAt     DateTime?
@@ -50,68 +50,129 @@ model Practice {
   claims                  Claim[]
   users                   User[]
   marketplaceSubscriptions MarketplaceSubscription[]
+  eras                    ERA[]
+  payerEnrollments        PracticePayerEnrollment[]
+  priorAuths              PriorAuthorization[]
+  ccmTimeLogs             CcmTimeLog[]
+  providerCredentials     ProviderCredential[]
+  oigChecks               OigCheck[]
 }
 
 model Provider {
-  id         String   @id @default(uuid())
-  practiceId String
-  firstName  String
-  lastName   String
-  npi        String   @unique
-  taxonomy   String
-  createdAt  DateTime @default(now())
+  id                   String    @id @default(uuid())
+  practiceId           String
+  firstName            String
+  lastName             String
+  npi                  String    @unique
+  taxonomy             String
+  deaNumber            String?
+  deaExpiry            DateTime?
+  stateLicense         String?
+  stateLicenseState    String?
+  stateLicenseExpiry   DateTime?
+  boardCertExpiry      DateTime?
+  malpracticeCarrier   String?
+  malpracticeExpiry    DateTime?
+  caqhProviderId       String?
+  caqhLastUpdated      DateTime?
+  createdAt            DateTime  @default(now())
+
+  practice            Practice             @relation(fields: [practiceId], references: [id])
+  claims              Claim[]
+  payerCredentials    ProviderCredential[]
+  oigChecks           OigCheck[]
+}
+
+model ProviderCredential {
+  id              String           @id @default(uuid())
+  practiceId      String
+  providerId      String
+  payerId         String
+  payerName       String
+  status          CredentialStatus @default(PENDING)
+  applicationDate DateTime?
+  approvedDate    DateTime?
+  expiryDate      DateTime?
+  notes           String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 
   practice Practice @relation(fields: [practiceId], references: [id])
-  claims   Claim[]
+  provider Provider @relation(fields: [providerId], references: [id])
+
+  @@unique([providerId, payerId])
+  @@index([practiceId])
+}
+
+enum CredentialStatus {
+  PENDING
+  IN_REVIEW
+  APPROVED
+  DENIED
+  EXPIRED
+  RE_CREDENTIALING
 }
 
 model Patient {
-  id           String   @id @default(uuid())
-  practiceId   String
-  firstName    String
-  lastName     String
-  dob          DateTime
-  gender       String
-  memberId     String
-  groupNumber  String?
-  payerId      String
-  payerName    String
-  addressLine1 String
-  city         String
-  state        String
-  zip          String
-  createdAt    DateTime @default(now())
+  id                       String   @id @default(uuid())
+  practiceId               String
+  firstName                String
+  lastName                 String
+  dob                      DateTime
+  gender                   String
+  memberId                 String
+  groupNumber              String?
+  payerId                  String
+  payerName                String
+  relationshipToSubscriber String   @default("18")
+  addressLine1             String
+  city                     String
+  state                    String
+  zip                      String
+  email                    String?
+  phone                    String?
+  ccmEnrolled              Boolean  @default(false)
+  ccmEnrolledAt            DateTime?
+  ccmConsentedAt           DateTime?
+  createdAt                DateTime @default(now())
 
   practice          Practice           @relation(fields: [practiceId], references: [id])
   claims            Claim[]
   eligibilityChecks EligibilityCheck[]
   statements        PatientStatement[]
+  priorAuths        PriorAuthorization[]
+  ccmTimeLogs       CcmTimeLog[]
 }
 
 model Claim {
-  id            String      @id @default(uuid())
-  practiceId    String
-  providerId    String
-  patientId     String
-  serviceDate   DateTime
-  claimStatus   ClaimStatus @default(DRAFT)
-  totalCharge   Decimal     @db.Decimal(10, 2)
-  stediClaimId  String?
-  stediResponse Json?
-  denialCode    String?
-  denialReason  String?
-  submittedAt   DateTime?
-  paidAmount    Decimal?    @db.Decimal(10, 2)
-  paidAt        DateTime?
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  id                   String      @id @default(uuid())
+  practiceId           String
+  providerId           String
+  patientId            String
+  serviceDate          DateTime
+  claimStatus          ClaimStatus @default(DRAFT)
+  totalCharge          Decimal     @db.Decimal(10, 2)
+  placeOfService       String      @default("11")
+  referringProviderNpi String?
+  priorAuthId          String?
+  stediClaimId         String?
+  stediResponse        Json?
+  denialCode           String?
+  denialReason         String?
+  submittedAt          DateTime?
+  paidAmount           Decimal?    @db.Decimal(10, 2)
+  paidAt               DateTime?
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
 
-  practice   Practice          @relation(fields: [practiceId], references: [id])
-  provider   Provider          @relation(fields: [providerId], references: [id])
-  patient    Patient           @relation(fields: [patientId], references: [id])
+  practice   Practice               @relation(fields: [practiceId], references: [id])
+  provider   Provider               @relation(fields: [providerId], references: [id])
+  patient    Patient                @relation(fields: [patientId], references: [id])
+  priorAuth  PriorAuthorization?    @relation(fields: [priorAuthId], references: [id])
   lineItems  ClaimLine[]
   denial     Denial?
   statement  PatientStatement?
+  era        ERA?
 }
 
 model Denial {
@@ -147,6 +208,8 @@ model PatientStatement {
   statementStatus  StatementStatus @default(PENDING)
   dueDate          DateTime?
   paidAt           DateTime?
+  outreachSentAt   DateTime?
+  outreachCount    Int             @default(0)
   notes            String?
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
@@ -227,8 +290,8 @@ model AuditLog {
   practiceId String?
   userId     String?
   userEmail  String?
-  action     String   // e.g. "auth.login", "claim.create", "patient.view"
-  resource   String?  // e.g. "claim", "patient", "denial"
+  action     String
+  resource   String?
   resourceId String?
   ip         String?
   userAgent  String?
@@ -246,14 +309,66 @@ model PasswordResetToken {
   createdAt DateTime @default(now())
 }
 
+model ERA {
+  id                    String    @id @default(cuid())
+  practiceId            String
+  claimId               String?   @unique
+  claimMdEraId          String
+  checkNumber           String?
+  payerId               String
+  payerName             String
+  claimMdClaimId        String?
+  patientFirstName      String?
+  patientLastName       String?
+  serviceDate           DateTime?
+  chargeAmount          Decimal?  @db.Decimal(10, 2)
+  insurancePaid         Decimal   @db.Decimal(10, 2)
+  adjustments           Decimal   @db.Decimal(10, 2)
+  patientResponsibility Decimal   @db.Decimal(10, 2)
+  carcCodes             String[]
+  rawData               Json
+  matchedAt             DateTime?
+  processedAt           DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  practice Practice @relation(fields: [practiceId], references: [id])
+  claim    Claim?   @relation(fields: [claimId], references: [id])
+
+  @@index([practiceId, createdAt])
+}
+
+model PracticePayerEnrollment {
+  id               String           @id @default(cuid())
+  practiceId       String
+  payerId          String
+  payerName        String
+  enrollmentStatus EnrollmentStatus @default(PENDING)
+  claimMdPayerId   String?
+  enrolledAt       DateTime?
+  notes            String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  practice Practice @relation(fields: [practiceId], references: [id])
+
+  @@unique([practiceId, payerId])
+}
+
+enum EnrollmentStatus {
+  PENDING
+  ACTIVE
+  INACTIVE
+}
+
 model MarketplaceSubscription {
   id             String    @id @default(uuid())
   practiceId     String?
-  marketplace    String    // "aws" | "azure"
-  externalId     String    @unique // AWS customer ID or Azure subscription ID
-  productCode    String?   // AWS product code
-  planId         String?   // Azure plan ID or AWS dimension
-  status         String    // "pending" | "active" | "suspended" | "cancelled"
+  marketplace    String
+  externalId     String    @unique
+  productCode    String?
+  planId         String?
+  status         String
   quantity       Int       @default(1)
   activatedAt    DateTime?
   cancelledAt    DateTime?
@@ -264,4 +379,77 @@ model MarketplaceSubscription {
   practice Practice? @relation(fields: [practiceId], references: [id])
 
   @@index([marketplace, externalId])
+}
+
+enum PAStatus {
+  PENDING
+  APPROVED
+  DENIED
+  EXPIRED
+  CANCELLED
+}
+
+model PriorAuthorization {
+  id               String    @id @default(uuid())
+  practiceId       String
+  patientId        String
+  payerId          String
+  payerName        String
+  cptCodes         String[]
+  authNumber       String?
+  status           PAStatus  @default(PENDING)
+  requestedAt      DateTime  @default(now())
+  approvedAt       DateTime?
+  expiresAt        DateTime?
+  sessionsApproved Int?
+  sessionsUsed     Int       @default(0)
+  notes            String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  practice Practice @relation(fields: [practiceId], references: [id])
+  patient  Patient  @relation(fields: [patientId], references: [id])
+  claims   Claim[]
+
+  @@index([practiceId])
+  @@index([patientId])
+}
+
+enum OigStatus {
+  CLEAR
+  EXCLUDED
+  ERROR
+}
+
+model OigCheck {
+  id           String    @id @default(uuid())
+  practiceId   String
+  providerId   String
+  checkedAt    DateTime  @default(now())
+  status       OigStatus @default(CLEAR)
+  matchFound   Boolean   @default(false)
+  matchDetails Json?
+  error        String?
+
+  practice Practice @relation(fields: [practiceId], references: [id])
+  provider Provider @relation(fields: [providerId], references: [id])
+
+  @@index([practiceId])
+  @@index([providerId, checkedAt])
+}
+
+model CcmTimeLog {
+  id          String   @id @default(uuid())
+  practiceId  String
+  patientId   String
+  logDate     DateTime @default(now())
+  minutes     Int
+  description String?
+  createdAt   DateTime @default(now())
+
+  practice Practice @relation(fields: [practiceId], references: [id])
+  patient  Patient  @relation(fields: [patientId], references: [id])
+
+  @@index([practiceId])
+  @@index([patientId, logDate])
 }

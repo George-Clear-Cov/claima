@@ -1,4 +1,6 @@
-import "dotenv/config"
+import { config } from "dotenv"
+config({ path: ".env.local", override: false })
+config({ path: ".env", override: false })
 import { PrismaClient } from "@prisma/client"
 import { PrismaPg } from "@prisma/adapter-pg"
 import bcrypt from "bcryptjs"
@@ -17,12 +19,12 @@ async function main() {
   // ── Practice ─────────────────────────────────────────────────────────────
   const practice = await prisma.practice.upsert({
     where: { npi: "9876543210" },
-    update: {},
+    update: { name: "Riverside Medical Group" },
     create: {
-      name: "Clearview Mental Health",
+      name: "Riverside Medical Group",
       npi: "9876543210",
       taxId: "12-3456789",
-      taxonomy: "193200000X",
+      taxonomy: "193400000X",
       addressLine1: "123 Main St",
       city: "New York",
       state: "NY",
@@ -35,15 +37,15 @@ async function main() {
   // ── Providers ────────────────────────────────────────────────────────────
   const prov1 = await prisma.provider.upsert({
     where: { npi: "1234567890" },
-    update: {},
-    create: { practiceId: practice.id, firstName: "Emily", lastName: "Chen", npi: "1234567890", taxonomy: "103T00000X" },
+    update: { taxonomy: "207Q00000X" },
+    create: { practiceId: practice.id, firstName: "Emily", lastName: "Chen", npi: "1234567890", taxonomy: "207Q00000X" },
   })
   const prov2 = await prisma.provider.upsert({
     where: { npi: "0987654321" },
-    update: {},
-    create: { practiceId: practice.id, firstName: "Marcus", lastName: "Rivera", npi: "0987654321", taxonomy: "101YM0800X" },
+    update: { taxonomy: "225100000X" },
+    create: { practiceId: practice.id, firstName: "Marcus", lastName: "Rivera", npi: "0987654321", taxonomy: "225100000X" },
   })
-  console.log("Providers:", prov1.firstName, prov1.lastName, "/", prov2.firstName, prov2.lastName)
+  console.log("Providers:", prov1.firstName, prov1.lastName, "(Family Med) /", prov2.firstName, prov2.lastName, "(Physical Therapy)")
 
   // ── Patients ─────────────────────────────────────────────────────────────
   type PatientInput = { firstName: string; lastName: string; dob: Date; gender: string; memberId: string; payerId: string; payerName: string; addressLine1: string; city: string; state: string; zip: string }
@@ -64,21 +66,30 @@ async function main() {
 
   // ── User ─────────────────────────────────────────────────────────────────
   const hashedPassword = await bcrypt.hash("claima2026", 12)
-  const existingUser = await prisma.user.findUnique({ where: { email: "admin@clearviewmentalhealth.com" } })
+  const existingUser = await prisma.user.findUnique({ where: { email: "admin@riversidemedgroup.com" } })
   if (!existingUser) {
-    await prisma.user.create({
-      data: { email: "admin@clearviewmentalhealth.com", name: "Dr. Emily Chen", hashedPassword, practiceId: practice.id, role: "ADMIN" },
-    })
-    console.log("User created: admin@clearviewmentalhealth.com / claima2026")
+    // Also check for old email from previous seed
+    const oldUser = await prisma.user.findUnique({ where: { email: "admin@clearviewmentalhealth.com" } })
+    if (oldUser) {
+      await prisma.user.update({ where: { email: "admin@clearviewmentalhealth.com" }, data: { email: "admin@riversidemedgroup.com", name: "Dr. Emily Chen" } })
+      console.log("User updated: admin@riversidemedgroup.com")
+    } else {
+      await prisma.user.create({
+        data: { email: "admin@riversidemedgroup.com", name: "Dr. Emily Chen", hashedPassword, practiceId: practice.id, role: "ADMIN" },
+      })
+      console.log("User created: admin@riversidemedgroup.com / claima2026")
+    }
   }
 
   // ── Claims + Statements ──────────────────────────────────────────────────
-  // Skip if substantial history already exists
+  // Always reset claims so seed data stays consistent with the current spec
   const existingClaims = await prisma.claim.count({ where: { practiceId: practice.id } })
-  if (existingClaims >= 10) {
-    console.log(`Skipping claim seed — ${existingClaims} claims already exist`)
-    console.log("\n✅ Seed complete.")
-    return
+  if (existingClaims > 0) {
+    console.log(`Resetting ${existingClaims} existing claims…`)
+    await prisma.patientStatement.deleteMany({ where: { claim: { practiceId: practice.id } } })
+    await prisma.denial.deleteMany({ where: { claim: { practiceId: practice.id } } })
+    await prisma.claimLine.deleteMany({ where: { claim: { practiceId: practice.id } } })
+    await prisma.claim.deleteMany({ where: { practiceId: practice.id } })
   }
 
   type ClaimSpec = {
@@ -90,40 +101,42 @@ async function main() {
   }
 
   const SPECS: ClaimSpec[] = [
-    // ── PAID (6+ months, complete billing history) ────────────────────────
-    { providerId: prov1.id, patientId: pat1.id, daysBack: 175, cpt: "90837", icd10: ["F32.1", "F41.1"], charge: 200, description: "60 min psychotherapy", status: "PAID", insPaid: 140, adj: 20, patPaid: 40 },
-    { providerId: prov1.id, patientId: pat2.id, daysBack: 168, cpt: "90834", icd10: ["F33.0"], charge: 160, description: "45 min psychotherapy", status: "PAID", insPaid: 120, adj: 15, patPaid: 25 },
-    { providerId: prov2.id, patientId: pat3.id, daysBack: 160, cpt: "90837", icd10: ["F40.10", "F41.1"], charge: 200, description: "60 min psychotherapy", status: "PAID", insPaid: 150, adj: 25, patPaid: 25 },
-    { providerId: prov2.id, patientId: pat4.id, daysBack: 155, cpt: "90791", icd10: ["F32.9"], charge: 300, description: "Psychiatric diagnostic eval", status: "PAID", insPaid: 240, adj: 30, patPaid: 30 },
-    { providerId: prov1.id, patientId: pat5.id, daysBack: 148, cpt: "90837", icd10: ["F43.10"], charge: 200, description: "60 min psychotherapy", status: "PAID", insPaid: 155, adj: 20, patPaid: 25 },
+    // ── PAID — Family Medicine (E&M + preventive) ────────────────────────
+    { providerId: prov1.id, patientId: pat1.id, daysBack: 175, cpt: "99214", icd10: ["I10", "E78.5"], charge: 175, description: "Office visit — hypertension & hyperlipidemia mgmt", status: "PAID", insPaid: 130, adj: 20, patPaid: 25 },
+    { providerId: prov1.id, patientId: pat3.id, daysBack: 168, cpt: "99395", icd10: ["Z00.00"], charge: 220, description: "Annual wellness exam, established patient", status: "PAID", insPaid: 180, adj: 25, patPaid: 15 },
+    { providerId: prov1.id, patientId: pat4.id, daysBack: 160, cpt: "99203", icd10: ["E11.9", "I10"], charge: 185, description: "New patient office visit — type 2 diabetes", status: "PAID", insPaid: 140, adj: 20, patPaid: 25 },
+    { providerId: prov1.id, patientId: pat5.id, daysBack: 155, cpt: "99213", icd10: ["J06.9"], charge: 130, description: "Office visit — acute upper respiratory infection", status: "PAID", insPaid: 100, adj: 15, patPaid: 15 },
+    { providerId: prov1.id, patientId: pat2.id, daysBack: 148, cpt: "99214", icd10: ["M54.50", "M51.16"], charge: 175, description: "Office visit — low back pain with radiculopathy", status: "PAID", insPaid: 130, adj: 20, patPaid: 25 },
 
-    { providerId: prov1.id, patientId: pat1.id, daysBack: 140, cpt: "90837", icd10: ["F32.1", "F41.1"], charge: 200, description: "60 min psychotherapy", status: "PAID", insPaid: 140, adj: 20, patPaid: 40 },
-    { providerId: prov2.id, patientId: pat2.id, daysBack: 133, cpt: "90834", icd10: ["F33.0"], charge: 160, description: "45 min psychotherapy", status: "PAID", insPaid: 120, adj: 15, patPaid: 25 },
-    { providerId: prov1.id, patientId: pat3.id, daysBack: 126, cpt: "90837", icd10: ["F40.10"], charge: 200, description: "60 min psychotherapy", status: "PAID", insPaid: 150, adj: 25, patPaid: 25 },
-    { providerId: prov2.id, patientId: pat5.id, daysBack: 119, cpt: "90837", icd10: ["F43.10", "F41.1"], charge: 200, description: "60 min psychotherapy", status: "PAID", insPaid: 155, adj: 20, patPaid: 25 },
-    { providerId: prov1.id, patientId: pat4.id, daysBack: 112, cpt: "90847", icd10: ["Z63.0", "F32.9"], charge: 240, description: "Family psychotherapy w/ patient", status: "PAID", insPaid: 185, adj: 25, patPaid: 30 },
+    // ── PAID — Physical Therapy ───────────────────────────────────────────
+    { providerId: prov2.id, patientId: pat2.id, daysBack: 140, cpt: "97110", icd10: ["M54.50"], charge: 90, description: "Therapeutic exercise, 15 min — lumbar stabilization", status: "PAID", insPaid: 68, adj: 12, patPaid: 10 },
+    { providerId: prov2.id, patientId: pat5.id, daysBack: 133, cpt: "97140", icd10: ["M25.511"], charge: 95, description: "Manual therapy — right shoulder", status: "PAID", insPaid: 72, adj: 13, patPaid: 10 },
+    { providerId: prov2.id, patientId: pat2.id, daysBack: 126, cpt: "97530", icd10: ["M54.50"], charge: 85, description: "Therapeutic activities — functional mobility", status: "PAID", insPaid: 64, adj: 11, patPaid: 10 },
+    { providerId: prov2.id, patientId: pat5.id, daysBack: 119, cpt: "97110", icd10: ["M25.511"], charge: 90, description: "Therapeutic exercise, 15 min — rotator cuff", status: "PAID", insPaid: 68, adj: 12, patPaid: 10 },
 
-    { providerId: prov1.id, patientId: pat1.id, daysBack: 105, cpt: "90837", icd10: ["F32.1", "F41.1"], charge: 200, description: "60 min psychotherapy", status: "PAID", insPaid: 140, adj: 20, patPaid: 40 },
-    { providerId: prov2.id, patientId: pat3.id, daysBack: 98,  cpt: "90837", icd10: ["F40.10"], charge: 200, description: "60 min psychotherapy", status: "PAID", insPaid: 150, adj: 25, patPaid: 25 },
-    { providerId: prov1.id, patientId: pat2.id, daysBack: 91,  cpt: "90834", icd10: ["F33.0"], charge: 160, description: "45 min psychotherapy", status: "PAID", insPaid: 120, adj: 15, patPaid: 25 },
-    { providerId: prov2.id, patientId: pat5.id, daysBack: 84,  cpt: "90837", icd10: ["F43.10"], charge: 200, description: "60 min psychotherapy", status: "PAID", insPaid: 155, adj: 20, patPaid: 25 },
+    // ── PAID — Mixed follow-ups ───────────────────────────────────────────
+    { providerId: prov1.id, patientId: pat1.id, daysBack: 112, cpt: "99213", icd10: ["I10"], charge: 130, description: "Office visit — blood pressure follow-up", status: "PAID", insPaid: 100, adj: 15, patPaid: 15 },
+    { providerId: prov1.id, patientId: pat4.id, daysBack: 105, cpt: "99213", icd10: ["E11.9"], charge: 130, description: "Office visit — diabetes management", status: "PAID", insPaid: 100, adj: 15, patPaid: 15 },
+    { providerId: prov2.id, patientId: pat2.id, daysBack: 98,  cpt: "97140", icd10: ["M54.50"], charge: 95, description: "Manual therapy — lumbar spine", status: "PAID", insPaid: 72, adj: 13, patPaid: 10 },
+    { providerId: prov1.id, patientId: pat3.id, daysBack: 91,  cpt: "99214", icd10: ["E11.9", "E78.5"], charge: 175, description: "Office visit — diabetes & lipids quarterly review", status: "PAID", insPaid: 130, adj: 20, patPaid: 25 },
+    { providerId: prov2.id, patientId: pat5.id, daysBack: 84,  cpt: "97530", icd10: ["M25.511"], charge: 85, description: "Therapeutic activities — ADL training", status: "PAID", insPaid: 64, adj: 11, patPaid: 10 },
 
     // ── DENIED (recent, needs appeals) ───────────────────────────────────
-    { providerId: prov1.id, patientId: pat2.id, daysBack: 77, cpt: "90837", icd10: ["F33.0", "F41.1"], charge: 200, description: "60 min psychotherapy", status: "DENIED",
-      denial: { carcCode: "197", denialReason: "Prior authorization required for ongoing psychotherapy", category: "Prior Auth", priority: "High", action: "Obtain retro auth or appeal with clinical notes", appealable: true } },
-    { providerId: prov2.id, patientId: pat4.id, daysBack: 63, cpt: "90791", icd10: ["F32.9"], charge: 300, description: "Psychiatric diagnostic eval", status: "DENIED",
-      denial: { carcCode: "4", denialReason: "Service not covered under patient's benefit plan", category: "Coverage", priority: "Medium", action: "Verify benefits and submit corrected claim", appealable: true } },
-    { providerId: prov1.id, patientId: pat5.id, daysBack: 42, cpt: "90837", icd10: ["F43.10"], charge: 200, description: "60 min psychotherapy", status: "DENIED",
-      denial: { carcCode: "16", denialReason: "Claim lacks information required for adjudication — missing NPI", category: "Administrative", priority: "Low", action: "Resubmit with complete rendering provider NPI", appealable: false } },
+    { providerId: prov1.id, patientId: pat3.id, daysBack: 77, cpt: "99215", icd10: ["E11.9", "I10", "E78.5"], charge: 230, description: "High complexity office visit — multiple chronic conditions", status: "DENIED",
+      denial: { carcCode: "50", denialReason: "Medical necessity not established for high-complexity visit code", category: "Medical Necessity", priority: "High", action: "Submit clinical notes documenting time/complexity or downcode to 99214", appealable: true } },
+    { providerId: prov2.id, patientId: pat4.id, daysBack: 63, cpt: "97110", icd10: ["M54.50"], charge: 90, description: "Therapeutic exercise — lumbar", status: "DENIED",
+      denial: { carcCode: "197", denialReason: "Prior authorization required for physical therapy services", category: "Prior Auth", priority: "High", action: "Obtain retro authorization or submit appeal with plan of care", appealable: true } },
+    { providerId: prov1.id, patientId: pat5.id, daysBack: 42, cpt: "99395", icd10: ["Z00.00"], charge: 220, description: "Annual wellness exam", status: "DENIED",
+      denial: { carcCode: "4", denialReason: "Preventive service not covered under patient benefit plan", category: "Coverage", priority: "Medium", action: "Verify patient benefits and resubmit or bill patient directly", appealable: true } },
 
     // ── SUBMITTED / ACCEPTED (in-flight) ─────────────────────────────────
-    { providerId: prov1.id, patientId: pat1.id, daysBack: 35, cpt: "90837", icd10: ["F32.1", "F41.1"], charge: 200, description: "60 min psychotherapy", status: "SUBMITTED" },
-    { providerId: prov2.id, patientId: pat3.id, daysBack: 28, cpt: "90834", icd10: ["F40.10"], charge: 160, description: "45 min psychotherapy", status: "ACCEPTED" },
-    { providerId: prov1.id, patientId: pat2.id, daysBack: 21, cpt: "90837", icd10: ["F33.0"], charge: 200, description: "60 min psychotherapy", status: "SUBMITTED" },
-    { providerId: prov2.id, patientId: pat5.id, daysBack: 14, cpt: "90847", icd10: ["Z63.0", "F43.10"], charge: 240, description: "Family psychotherapy w/ patient", status: "ACCEPTED" },
+    { providerId: prov1.id, patientId: pat1.id, daysBack: 35, cpt: "99214", icd10: ["I10", "E78.5"], charge: 175, description: "Office visit — chronic disease management", status: "SUBMITTED" },
+    { providerId: prov2.id, patientId: pat2.id, daysBack: 28, cpt: "97110", icd10: ["M54.50"], charge: 90, description: "Therapeutic exercise — core strengthening", status: "ACCEPTED" },
+    { providerId: prov1.id, patientId: pat4.id, daysBack: 21, cpt: "99213", icd10: ["E11.9"], charge: 130, description: "Office visit — diabetes follow-up", status: "SUBMITTED" },
+    { providerId: prov2.id, patientId: pat5.id, daysBack: 14, cpt: "97140", icd10: ["M25.511"], charge: 95, description: "Manual therapy — shoulder mobilization", status: "ACCEPTED" },
 
     // ── DRAFT ─────────────────────────────────────────────────────────────
-    { providerId: prov1.id, patientId: pat4.id, daysBack: 3, cpt: "90837", icd10: ["F32.9"], charge: 200, description: "60 min psychotherapy", status: "DRAFT" },
+    { providerId: prov1.id, patientId: pat3.id, daysBack: 3, cpt: "99214", icd10: ["E11.9", "I10"], charge: 175, description: "Office visit — quarterly chronic disease review", status: "DRAFT" },
   ]
 
   for (const spec of SPECS) {
@@ -155,7 +168,6 @@ async function main() {
       },
     })
 
-    // Statement for PAID claims
     if (spec.status === "PAID" && spec.insPaid !== undefined) {
       const patientOwes = Math.max(spec.charge - spec.insPaid - (spec.adj ?? 0), 0)
       const patientPaid = spec.patPaid ?? 0
@@ -176,7 +188,6 @@ async function main() {
       })
     }
 
-    // Denial for DENIED claims
     if (spec.status === "DENIED" && spec.denial) {
       await prisma.denial.create({
         data: {
@@ -190,7 +201,7 @@ async function main() {
 
   console.log(`Created ${SPECS.length} claims with statements and denials`)
   console.log("\n✅ Seed complete.")
-  console.log("Login: admin@clearviewmentalhealth.com / claima2026")
+  console.log("Login: admin@riversidemedgroup.com / claima2026")
 }
 
 main()
