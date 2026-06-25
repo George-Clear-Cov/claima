@@ -1,0 +1,17 @@
+name: Code Audit
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Run claima code audit (CLAUDE.md non-negotiables)
+        run: bun scripts/audit.ts

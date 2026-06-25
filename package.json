@@ -1,5 +1,5 @@
 {
-  "name": "medibill",
+  "name": "claima",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -7,12 +7,15 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
+    "audit": "bun scripts/audit.ts",
+    "prepare": "git config core.hooksPath .githooks || true",
     "setup:webhook": "bun run scripts/setup-stripe-webhook.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.100.1",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
+    "@sentry/nextjs": "^10.58.0",
     "@stedi/sdk": "^0.0.5",
     "@stripe/react-stripe-js": "^6.6.0",
     "@stripe/stripe-js": "^9.7.0",

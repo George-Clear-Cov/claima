@@ -1,0 +1,16 @@
+#!/bin/sh
+# claima pre-commit — runs the code audit, blocks on CRITICAL/HIGH violations.
+# Bypass once with:  git commit --no-verify
+
+BUN="$(command -v bun 2>/dev/null || true)"
+[ -z "$BUN" ] && [ -x "$HOME/.bun/bin/bun" ] && BUN="$HOME/.bun/bin/bun"
+
+if [ -n "$BUN" ]; then
+  "$BUN" scripts/audit.ts || {
+    echo ""
+    echo "✗ Commit blocked by code audit. Fix the issues above, or bypass with: git commit --no-verify"
+    exit 1
+  }
+else
+  echo "audit: bun not found on PATH — skipping pre-commit audit."
+fi
