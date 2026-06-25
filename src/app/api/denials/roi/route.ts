@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { aiComplete, isAIConfigured } from "@/lib/ai"
-import { getSession } from "@/lib/auth"
+import { getSessionFromRequest } from "@/lib/auth"
 
 export interface ROIResult {
   winProbability: number
@@ -17,7 +17,7 @@ export interface ROIResult {
 const HOURLY_RATE = 35 // biller labor cost per hour
 
 export async function POST(req: NextRequest) {
-  const session = await getSession()
+  const session = await getSessionFromRequest(req)
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const { denialId, carcCode, denialReason, claimAmount, payerName, cptCode, appealable, category } = await req.json()

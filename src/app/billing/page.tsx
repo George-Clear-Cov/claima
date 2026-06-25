@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react"
 import { loadStripe } from "@stripe/stripe-js"
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js"
-import NavBar from "@/components/NavBar"
+import AppLayout from "@/components/AppLayout"
 
 const STRIPE_PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? ""
 const stripePromise = STRIPE_PUBLISHABLE_KEY ? loadStripe(STRIPE_PUBLISHABLE_KEY) : null
@@ -654,6 +654,77 @@ function StatementModal({ stmt, onClose, onPaid }: {
   )
 }
 
+// ─── Send Statement Email Button ─────────────────────────────────────────────
+
+function SendStatementButton({ statementId }: { statementId: string }) {
+  const [state, setState] = useState<"idle" | "loading" | "sent" | "error">("idle")
+
+  async function handleSend() {
+    setState("loading")
+    try {
+      const res = await fetch(`/api/statements/${statementId}/send-outreach`, { method: "POST" })
+      if (!res.ok) { setState("error"); setTimeout(() => setState("idle"), 2500); return }
+      setState("sent")
+      setTimeout(() => setState("idle"), 3000)
+    } catch {
+      setState("error")
+      setTimeout(() => setState("idle"), 2500)
+    }
+  }
+
+  const label = state === "loading" ? "…" : state === "sent" ? "Sent ✓" : state === "error" ? "No email" : "Send Statement"
+  const color = state === "sent" ? "text-green-600 hover:text-green-700 hover:bg-green-50" : state === "error" ? "text-red-500" : "text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+
+  return (
+    <button
+      onClick={handleSend}
+      disabled={state === "loading" || state === "sent"}
+      className={`text-xs font-medium transition-colors px-2.5 py-1 rounded-md whitespace-nowrap disabled:opacity-50 ${color}`}
+    >
+      {label}
+    </button>
+  )
+}
+
+// ─── Send Payment Link Button ────────────────────────────────────────────────
+
+function SendPaymentLinkButton({ statementId }: { statementId: string }) {
+  const [state, setState] = useState<"idle" | "loading" | "sent" | "copied" | "error">("idle")
+
+  async function handleSend() {
+    setState("loading")
+    try {
+      const res = await fetch(`/api/statements/${statementId}/payment-link`, { method: "POST" })
+      const data = await res.json()
+      if (!res.ok) { setState("error"); return }
+      if (data.emailSent) {
+        setState("sent")
+      } else {
+        // No patient email — copy link to clipboard
+        await navigator.clipboard.writeText(data.url)
+        setState("copied")
+      }
+      setTimeout(() => setState("idle"), 3000)
+    } catch {
+      setState("error")
+      setTimeout(() => setState("idle"), 2000)
+    }
+  }
+
+  const label = state === "loading" ? "…" : state === "sent" ? "Sent ✓" : state === "copied" ? "Copied ✓" : state === "error" ? "Error" : "Send Link"
+  const color = state === "sent" || state === "copied" ? "text-green-600 hover:text-green-700 hover:bg-green-50" : state === "error" ? "text-red-600" : "text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+
+  return (
+    <button
+      onClick={handleSend}
+      disabled={state === "loading"}
+      className={`text-xs font-medium transition-colors px-2.5 py-1 rounded-md whitespace-nowrap ${color}`}
+    >
+      {label}
+    </button>
+  )
+}
+
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 export default function BillingPage() {
@@ -722,8 +793,7 @@ export default function BillingPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900">
-      <NavBar />
+    <AppLayout>
       <div className="max-w-5xl mx-auto px-8 py-10">
         <div className="flex items-center justify-between mb-8">
           <div>
@@ -824,7 +894,11 @@ export default function BillingPage() {
                     </td>
                     <td className="px-5 py-3.5">
                       {parseFloat(stmt.balanceDue) > 0 && stmt.statementStatus !== "WRITE_OFF" && (
-                        <button onClick={() => setOutreachStmt(stmt)} className="text-xs font-medium text-purple-600 hover:text-purple-700 transition-colors px-2.5 py-1 rounded-md hover:bg-purple-50 whitespace-nowrap">Draft Message →</button>
+                        <div className="flex items-center gap-1">
+                          <SendStatementButton statementId={stmt.id} />
+                          <button onClick={() => setOutreachStmt(stmt)} className="text-xs font-medium text-purple-600 hover:text-purple-700 transition-colors px-2.5 py-1 rounded-md hover:bg-purple-50 whitespace-nowrap">Draft →</button>
+                          <SendPaymentLinkButton statementId={stmt.id} />
+                        </div>
                       )}
                     </td>
                   </tr>
@@ -837,6 +911,6 @@ export default function BillingPage() {
       {selected && <StatementModal stmt={selected} onClose={() => setSelected(null)} onPaid={handlePaid} />}
       {showERA && <ERAModal onClose={() => setShowERA(false)} onCreated={handleERACreated} />}
       {outreachStmt && <OutreachModal stmt={outreachStmt} onClose={() => setOutreachStmt(null)} />}
-    </div>
+    </AppLayout>
   )
 }

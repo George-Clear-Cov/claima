@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     daysOverdue,
     serviceDate: statement.claim.serviceDate.toISOString().slice(0, 10),
     cptCode: statement.claim.lineItems[0]?.cptCode ?? "",
-    description: statement.claim.lineItems[0]?.description ?? "therapy session",
+    description: statement.claim.lineItems[0]?.description ?? "medical services",
     providerName: `${statement.claim.provider.firstName} ${statement.claim.provider.lastName}`,
     practiceName: statement.claim.practice.name,
     practicePhone: statement.claim.practice.phone ?? "",
@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
 
   const urgency = daysOverdue > 60 ? "urgent (60+ days overdue)" : daysOverdue > 30 ? "overdue (30+ days)" : daysOverdue > 0 ? "recently overdue" : "due soon"
 
-  const prompt = `You are drafting patient billing outreach messages for a mental health practice. Write empathetic, professional messages — patients are dealing with mental health challenges.
+  const prompt = `You are drafting patient billing outreach messages for an outpatient medical practice. Write empathetic, professional messages.
 
 Patient: ${context.patientFirst} ${context.patientLast}
 Balance Due: $${balanceDue.toFixed(2)}
@@ -80,7 +80,7 @@ Write THREE versions. Respond ONLY with valid JSON:
   "portal": "<medium-length portal message, 2-3 sentences, warm tone, mention they can call with questions>"
 }
 
-Tone: warm, non-judgmental, understanding that mental health care is important. Do not use collection agency language. Never say 'past due' or 'delinquent'. ${daysOverdue > 60 ? "This is the third outreach — be slightly more direct about needing resolution." : ""}`
+Tone: warm, non-judgmental, understanding that patients are navigating both healthcare and billing. Do not use collection agency language. Never say 'past due' or 'delinquent'. ${daysOverdue > 60 ? "This is the third outreach — be slightly more direct about needing resolution." : ""}`
 
   try {
     const text = await aiComplete({ max_tokens: 1024, messages: [{ role: "user", content: prompt }] })

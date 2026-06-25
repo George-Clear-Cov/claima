@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getSession } from "@/lib/auth"
+import { getSessionFromRequest } from "@/lib/auth"
+import { logAudit } from "@/lib/audit"
 import { generateAppealLetter } from "@/lib/appeal-generator"
 
 export async function POST(req: NextRequest) {
-  const session = await getSession()
+  const session = await getSessionFromRequest(req)
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   if (!process.env.DATABASE_URL) return NextResponse.json({ error: "No database" }, { status: 503 })
@@ -27,6 +28,8 @@ export async function POST(req: NextRequest) {
       },
     },
   })
+
+  logAudit({ action: "denials.auto_process", practiceId: session.practiceId, userId: session.userId, userEmail: session.email, req })
 
   if (denials.length === 0) {
     return NextResponse.json({ processed: 0, results: [] })

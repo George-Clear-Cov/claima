@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { getSessionFromRequest } from "@/lib/auth"
 import { logAudit } from "@/lib/audit"
+import { sendEmail } from "@/lib/email"
 
 const createSchema = z.object({
   patientId: z.string().uuid(),
@@ -69,6 +70,19 @@ export async function POST(req: NextRequest) {
       },
       include: { patient: true, claim: { include: { lineItems: true } } },
     })
+
+    if (patientOwes > 0 && stmt.patient.email) {
+      const dueDate = stmt.dueDate ? new Date(stmt.dueDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) : "30 days"
+      void sendEmail({
+        to: stmt.patient.email,
+        subject: `Your statement is ready — $${patientOwes.toFixed(2)} due`,
+        html: `<p>Dear ${stmt.patient.firstName},</p>
+<p>A statement has been generated for your recent visit. Your patient balance is <strong>$${patientOwes.toFixed(2)}</strong>, due by ${dueDate}.</p>
+<p>Please contact our office if you have any questions about your bill.</p>
+<p>Thank you,<br>Billing Department</p>`,
+      }).catch((e) => console.error("[email] statement notification failed:", e))
+    }
+
     return NextResponse.json(stmt)
   } catch (err) {
     if (err instanceof z.ZodError) {

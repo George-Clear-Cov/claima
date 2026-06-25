@@ -9,10 +9,12 @@ export async function sendEmail({
   to,
   subject,
   html,
+  from,
 }: {
   to: string
   subject: string
   html: string
+  from?: string
 }): Promise<void> {
   if (!RESEND_API_KEY) {
     // [PLACEHOLDER] Add RESEND_API_KEY to Vercel env vars to enable real email delivery.
@@ -29,7 +31,7 @@ export async function sendEmail({
       Authorization: `Bearer ${RESEND_API_KEY}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ from: FROM_ADDRESS, to, subject, html }),
+    body: JSON.stringify({ from: from ?? FROM_ADDRESS, to, subject, html }),
   })
 
   if (!res.ok) {

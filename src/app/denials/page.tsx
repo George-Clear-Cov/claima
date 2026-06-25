@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import NavBar from "@/components/NavBar"
+import AppLayout from "@/components/AppLayout"
 
 interface ROIResult {
   winProbability: number
@@ -78,6 +78,7 @@ export default function DenialsPage() {
   const [autoResult, setAutoResult] = useState<{ processed: number; total: number } | null>(null)
   const [roi, setRoi] = useState<ROIResult | null>(null)
   const [roiLoading, setRoiLoading] = useState(false)
+  const [resubmitting, setResubmitting] = useState(false)
 
   useEffect(() => {
     fetch("/api/denials").then((r) => r.json()).then((data) => {
@@ -147,6 +148,18 @@ export default function DenialsPage() {
     finally { setAutoProcessing(false) }
   }
 
+  async function handleResubmit(denial: Denial) {
+    setResubmitting(true)
+    try {
+      const res = await fetch(`/api/denials/${denial.id}/resubmit`, { method: "POST" })
+      const data = await res.json()
+      if (data.claimId) {
+        window.location.href = `/claims?resubmit=${data.claimId}`
+      }
+    } catch {}
+    finally { setResubmitting(false) }
+  }
+
   async function handleUpdateStatus(denial: Denial, status: string) {
     try {
       await fetch(`/api/denials/${denial.id}/appeal`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ appealStatus: status }) })
@@ -163,9 +176,8 @@ export default function DenialsPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900">
-      <NavBar />
-      <div className="max-w-7xl mx-auto px-8 py-10">
+    <AppLayout>
+      <div className="max-w-6xl mx-auto px-8 py-10">
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Denial Management</h1>
@@ -190,9 +202,8 @@ export default function DenialsPage() {
 
         <div className="grid grid-cols-4 gap-4 mb-8">
           {statCards.map((stat) => (
-            <div key={stat.label} className="bg-white border border-gray-200 rounded-xl p-4 relative overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-              <div className={`absolute inset-x-0 top-0 h-0.5 ${stat.accent}`} />
-              <div className="text-xs text-gray-500 uppercase tracking-wider mb-2">{stat.label}</div>
+            <div key={stat.label} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
+              <div className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-3">{stat.label}</div>
               <div className={`text-3xl font-bold ${stat.valueColor}`}>{stat.value}</div>
             </div>
           ))}
@@ -347,6 +358,13 @@ export default function DenialsPage() {
 
                 {selected.appealable && (
                   <div className="mt-5 pt-5 border-t border-gray-200 space-y-3">
+                    <button
+                      onClick={() => handleResubmit(selected)}
+                      disabled={resubmitting}
+                      className="w-full bg-white hover:bg-amber-50 border border-amber-300 text-amber-700 py-2 rounded-xl text-sm font-medium transition-all shadow-sm"
+                    >
+                      {resubmitting ? "Creating draft…" : "Resubmit Corrected Claim →"}
+                    </button>
                     {!appealLetter ? (
                       <button onClick={() => handleGenerateAppeal(selected)} disabled={generatingAppeal}
                         className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white py-2.5 rounded-xl text-sm font-medium transition-all shadow-sm active:scale-[0.99]">
@@ -380,8 +398,17 @@ export default function DenialsPage() {
                 )}
 
                 {!selected.appealable && (
-                  <div className="mt-5 pt-5 border-t border-gray-200">
+                  <div className="mt-5 pt-5 border-t border-gray-200 space-y-2">
                     <div className="text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded-xl p-3 leading-relaxed">This denial type is not typically appealable. Follow the recommended action above.</div>
+                    {selected.category === "RESUBMIT" && (
+                      <button
+                        onClick={() => handleResubmit(selected)}
+                        disabled={resubmitting}
+                        className="w-full bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white py-2.5 rounded-xl text-sm font-medium transition-all shadow-sm"
+                      >
+                        {resubmitting ? "Creating draft…" : "Resubmit Corrected Claim →"}
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -389,6 +416,6 @@ export default function DenialsPage() {
           )}
         </div>
       </div>
-    </div>
+    </AppLayout>
   )
 }
