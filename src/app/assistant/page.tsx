@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import NavBar from "@/components/NavBar"
+import AppLayout from "@/components/AppLayout"
 
 interface Message {
   role: "user" | "assistant"
@@ -128,9 +128,8 @@ export default function AssistantPage() {
   const isEmpty = messages.length === 0
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <NavBar />
-      <div className="flex-1 flex flex-col max-w-3xl w-full mx-auto px-4 py-6">
+    <AppLayout>
+      <div className="flex flex-col h-full max-w-3xl w-full mx-auto px-4 py-6">
         {/* Header */}
         <div className="mb-6">
           <div className="flex items-center gap-3">
@@ -232,6 +231,6 @@ export default function AssistantPage() {
           Powered by Claude · Not a substitute for a licensed billing specialist
         </p>
       </div>
-    </div>
+    </AppLayout>
   )
 }

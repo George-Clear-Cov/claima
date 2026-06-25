@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { aiComplete, isAIConfigured } from "@/lib/ai"
-import { getSession } from "@/lib/auth"
+import { getSessionFromRequest } from "@/lib/auth"
+import { logAudit } from "@/lib/audit"
 import { generateAppealLetter } from "@/lib/appeal-generator"
 
 const PAYER_RATES: Record<string, { insRate: number; adjRate: number }> = {
@@ -12,12 +13,13 @@ const PAYER_RATES: Record<string, { insRate: number; adjRate: number }> = {
 }
 const DEFAULT_RATES = { insRate: 0.70, adjRate: 0.10 }
 
-export async function POST() {
-  const session = await getSession()
+export async function POST(req: NextRequest) {
+  const session = await getSessionFromRequest(req)
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   if (!process.env.DATABASE_URL) return NextResponse.json({ error: "No database" }, { status: 503 })
 
   const { prisma } = await import("@/lib/prisma")
+  logAudit({ action: "agent.run", practiceId: session.practiceId, userId: session.userId, userEmail: session.email, req })
   const startTime = Date.now()
   const now = new Date()
 

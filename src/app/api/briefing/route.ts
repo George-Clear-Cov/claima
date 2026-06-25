@@ -1,13 +1,15 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { aiComplete, isAIConfigured } from "@/lib/ai"
-import { getSession } from "@/lib/auth"
+import { getSessionFromRequest } from "@/lib/auth"
+import { logAudit } from "@/lib/audit"
 
-export async function GET() {
-  const session = await getSession()
+export async function GET(req: NextRequest) {
+  const session = await getSessionFromRequest(req)
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   if (!process.env.DATABASE_URL) return NextResponse.json({ error: "No database" }, { status: 503 })
 
   const { prisma } = await import("@/lib/prisma")
+  logAudit({ action: "briefing.view", practiceId: session.practiceId, userId: session.userId, userEmail: session.email, req })
 
   const now = new Date()
   const yesterday = new Date(now.getTime() - 86400000)
@@ -93,7 +95,7 @@ export async function GET() {
     })
   }
 
-  const prompt = `Generate a morning billing briefing for a mental health practice manager.
+  const prompt = `Generate a morning billing briefing for an outpatient practice manager.
 
 Date: ${data.date}
 Payments posted yesterday: ${data.paidYesterday} ($${data.totalPaidAmount.toFixed(2)})

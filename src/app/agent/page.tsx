@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import NavBar from "@/components/NavBar"
+import AppLayout from "@/components/AppLayout"
 import Link from "next/link"
 
 interface AgentResult {
@@ -26,11 +26,10 @@ interface AgentResult {
   automatedValue: number
 }
 
-function StatCard({ label, value, sub, accent, color }: { label: string; value: string; sub?: string; accent: string; color: string }) {
+function StatCard({ label, value, sub, color }: { label: string; value: string; sub?: string; accent?: string; color: string }) {
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-4 relative overflow-hidden shadow-sm">
-      <div className={`absolute inset-x-0 top-0 h-0.5 ${accent}`} />
-      <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">{label}</div>
+    <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+      <div className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-2">{label}</div>
       <div className={`text-2xl font-bold font-mono ${color}`}>{value}</div>
       {sub && <div className="text-xs text-gray-400 mt-0.5">{sub}</div>}
     </div>
@@ -61,8 +60,7 @@ export default function AgentPage() {
   const fmt = (n: number) => n >= 1000 ? `$${(n / 1000).toFixed(1)}k` : `$${n.toFixed(0)}`
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900">
-      <NavBar />
+    <AppLayout>
       <div className="max-w-4xl mx-auto px-8 py-10">
         <div className="mb-8">
           <h1 className="text-2xl font-bold tracking-tight">Autonomous Billing Agent</h1>
@@ -234,6 +232,6 @@ export default function AgentPage() {
           </div>
         )}
       </div>
-    </div>
+    </AppLayout>
   )
 }

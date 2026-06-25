@@ -1,10 +1,10 @@
-import { NextResponse } from "next/server"
-import { getSession } from "@/lib/auth"
+import { NextRequest, NextResponse } from "next/server"
+import { getSessionFromRequest } from "@/lib/auth"
 
 // GET /api/context — return practice, providers, and patients for the session
 // Used by claim submission and other forms that need real entity selectors
-export async function GET() {
-  const session = await getSession()
+export async function GET(req: NextRequest) {
+  const session = await getSessionFromRequest(req)
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   if (!process.env.DATABASE_URL) {
@@ -29,7 +29,7 @@ export async function GET() {
     providers,
     patients,
     stripeConfigured: !!process.env.STRIPE_SECRET_KEY,
-    stediConfigured: !!process.env.STEDI_API_KEY,
+    clearinghouseConfigured: !!(process.env.CLAIMMD_ACCOUNT_KEY && process.env.CLAIMMD_API_KEY),
     anthropicConfigured: !!process.env.ANTHROPIC_API_KEY,
     dbConfigured: !!process.env.DATABASE_URL,
   })
