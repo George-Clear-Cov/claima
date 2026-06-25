@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
-import { getSession } from "@/lib/auth"
+import { getSessionFromRequest } from "@/lib/auth"
 import { logAudit } from "@/lib/audit"
 
 const updateSchema = z.object({
@@ -19,7 +19,7 @@ const updateSchema = z.object({
 
 // GET /api/practices — return the current practice
 export async function GET(req: NextRequest) {
-  const session = await getSession()
+  const session = await getSessionFromRequest(req)
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   if (!process.env.DATABASE_URL) return NextResponse.json({ error: "No database" }, { status: 503 })
@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
 
 // PATCH /api/practices — update current practice details
 export async function PATCH(req: NextRequest) {
-  const session = await getSession()
+  const session = await getSessionFromRequest(req)
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   if (session.role !== "ADMIN") return NextResponse.json({ error: "Admin only" }, { status: 403 })
 
@@ -43,6 +43,7 @@ export async function PATCH(req: NextRequest) {
     const data = updateSchema.parse(body)
 
     const { prisma } = await import("@/lib/prisma")
+    logAudit({ action: "practice.update", practiceId: session.practiceId, userId: session.userId, userEmail: session.email, resource: "practice", req })
     const practice = await prisma.practice.update({ where: { id: session.practiceId }, data })
     return NextResponse.json(practice)
   } catch (err) {

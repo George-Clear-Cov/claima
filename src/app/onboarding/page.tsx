@@ -2,42 +2,93 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { LogoMark } from "@/components/Logo"
 
-type ConnectStatus = {
-  status: "not_started" | "onboarding_required" | "pending_capability" | "active" | "not_configured"
-  accountId?: string
-  readyToReceivePayments?: boolean
-  onboardingComplete?: boolean
-  requirementsStatus?: string
-  platformFeePercent?: number
-  configured?: boolean
+interface OnboardingSteps {
+  practiceSetup: boolean
+  stripeConnect: boolean
+  payerEnrollment: boolean
+  firstProvider: boolean
+  firstPatient: boolean
+  firstClaim: boolean
 }
 
-type NewProduct = { name: string; description: string; price: string }
+interface ConnectStatus {
+  status: "not_started" | "onboarding_required" | "pending_capability" | "active" | "not_configured"
+  readyToReceivePayments?: boolean
+  accountId?: string
+}
+
+const STEP_CONFIG = [
+  {
+    key: "practiceSetup" as keyof OnboardingSteps,
+    title: "Practice details",
+    description: "Name, NPI, Tax ID, address",
+    href: "/onboarding/setup",
+    action: "Set up practice →",
+  },
+  {
+    key: "stripeConnect" as keyof OnboardingSteps,
+    title: "Connect Stripe",
+    description: "Collect patient payments (5% platform fee)",
+    href: null, // handled inline
+    action: "Connect Stripe →",
+  },
+  {
+    key: "payerEnrollment" as keyof OnboardingSteps,
+    title: "Payer enrollment",
+    description: "Select which payers you're enrolled with through Claim.MD",
+    href: "/onboarding/payers",
+    action: "Add payers →",
+  },
+  {
+    key: "firstProvider" as keyof OnboardingSteps,
+    title: "Add a provider",
+    description: "At least one billing provider with NPI",
+    href: "/settings?tab=providers",
+    action: "Add provider →",
+  },
+  {
+    key: "firstPatient" as keyof OnboardingSteps,
+    title: "Add a patient",
+    description: "Patient demographics and insurance info",
+    href: "/settings?tab=patients",
+    action: "Add patient →",
+  },
+  {
+    key: "firstClaim" as keyof OnboardingSteps,
+    title: "Submit your first claim",
+    description: "837P claim — AI will scrub it before submission",
+    href: "/claims/new",
+    action: "Submit claim →",
+  },
+]
 
 export default function OnboardingPage() {
-  const [connectStatus, setConnectStatus] = useState<ConnectStatus | null>(null)
-  const [statusLoading, setStatusLoading] = useState(true)
+  const router = useRouter()
+  const [steps, setSteps] = useState<OnboardingSteps | null>(null)
+  const [loading, setLoading] = useState(true)
   const [connectLoading, setConnectLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [connectError, setConnectError] = useState<string | null>(null)
+  const [connectStatus, setConnectStatus] = useState<ConnectStatus | null>(null)
 
-  // Product creation state
-  const [product, setProduct] = useState<NewProduct>({ name: "", description: "", price: "" })
-  const [productLoading, setProductLoading] = useState(false)
-  const [productSuccess, setProductSuccess] = useState<string | null>(null)
-  const [productError, setProductError] = useState<string | null>(null)
-
-  // Fetch live Connect status from the V2 API on mount
   useEffect(() => {
-    fetch("/api/connect")
-      .then((r) => r.json())
-      .then((data) => { setConnectStatus(data); setStatusLoading(false) })
-      .catch(() => setStatusLoading(false))
+    Promise.all([
+      fetch("/api/onboarding/status").then((r) => r.json()),
+      fetch("/api/connect").then((r) => r.json()),
+    ])
+      .then(([statusData, connectData]) => {
+        setSteps(statusData.steps)
+        setConnectStatus(connectData)
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false))
   }, [])
 
-  async function handleConnect() {
+  async function handleStripeConnect() {
     setConnectLoading(true)
-    setError(null)
+    setConnectError(null)
     try {
       const res = await fetch("/api/connect", {
         method: "POST",
@@ -46,192 +97,125 @@ export default function OnboardingPage() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? "Failed")
-      // Redirect to Stripe-hosted onboarding
       window.location.href = data.url
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong")
+      setConnectError(err instanceof Error ? err.message : "Something went wrong")
       setConnectLoading(false)
     }
   }
 
-  async function handleCreateProduct(e: React.FormEvent) {
-    e.preventDefault()
-    setProductLoading(true)
-    setProductError(null)
-    setProductSuccess(null)
-    try {
-      const res = await fetch("/api/products", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: product.name,
-          description: product.description || undefined,
-          price: parseFloat(product.price),
-        }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error ?? "Failed")
-      setProductSuccess(`"${data.name}" created — visible in the storefront`)
-      setProduct({ name: "", description: "", price: "" })
-    } catch (err) {
-      setProductError(err instanceof Error ? err.message : "Something went wrong")
-    } finally {
-      setProductLoading(false)
-    }
-  }
-
-  const isActive = connectStatus?.status === "active"
-  const isPending = connectStatus?.status === "pending_capability"
-  const needsOnboarding =
-    !connectStatus ||
-    connectStatus.status === "not_started" ||
-    connectStatus.status === "onboarding_required"
-
-  const statusLabel = statusLoading
-    ? "Checking status…"
-    : isActive
-    ? "Active — ready to receive payments"
-    : isPending
-    ? "Onboarding complete — waiting for capability approval"
-    : connectStatus?.status === "not_started"
-    ? "Not started"
-    : "Onboarding required"
-
-  const statusColor = isActive
-    ? "text-green-700 bg-green-50 border-green-200"
-    : isPending
-    ? "text-amber-700 bg-amber-50 border-amber-200"
-    : "text-gray-600 bg-gray-50 border-gray-200"
+  const completedCount = steps ? Object.values(steps).filter(Boolean).length : 0
+  const totalCount = 6
+  const allComplete = completedCount === totalCount
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center p-8">
-      <div className="max-w-lg w-full space-y-6">
-        <Link href="/" className="text-gray-500 text-sm hover:text-gray-300">← Claima</Link>
-
-        {/* ── Connect Onboarding Card ── */}
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8">
-          <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-lg font-bold mb-6">C</div>
-          <h1 className="text-2xl font-bold">Connect your practice to Stripe</h1>
-          <p className="text-gray-400 mt-2 text-sm leading-relaxed">
-            Claima collects patient payments on your behalf and routes funds directly to your
-            bank account. Claima takes a <span className="text-white font-medium">5% platform fee</span> on patient
-            collections only.
-          </p>
-
-          {/* Fee breakdown */}
-          <div className="mt-6 space-y-3">
-            {[
-              ["Patient pays $75 copay", "$75.00"],
-              ["Claima platform fee (5%)", "−$3.75"],
-              ["You receive", "$71.25"],
-            ].map(([label, value]) => (
-              <div key={label} className="flex justify-between text-sm">
-                <span className="text-gray-400">{label}</span>
-                <span className={`font-mono ${value.startsWith("−") ? "text-red-400" : value === "$71.25" ? "text-green-400 font-bold" : ""}`}>
-                  {value}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          {/* Live status badge — always fetched from Stripe V2 API directly */}
-          <div className={`mt-6 flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium ${statusColor}`}>
-            <span className={`w-2 h-2 rounded-full flex-shrink-0 ${isActive ? "bg-green-500" : isPending ? "bg-amber-400" : "bg-gray-400"}`} />
-            {statusLabel}
-          </div>
-
-          {connectStatus?.accountId && (
-            <p className="mt-2 text-xs text-gray-600 font-mono">{connectStatus.accountId}</p>
-          )}
-
-          {error && <div className="mt-4 text-red-400 text-sm">{error}</div>}
-
-          {/* Show connect button only if onboarding is needed */}
-          {needsOnboarding && (
-            <button
-              onClick={handleConnect}
-              disabled={connectLoading}
-              className="mt-6 w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white py-3 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2"
-            >
-              {connectLoading ? "Redirecting to Stripe…" : "Onboard to collect payments →"}
-            </button>
-          )}
-
-          {isActive && (
-            <div className="mt-6 pt-6 border-t border-gray-800 space-y-3 text-xs text-gray-500">
-              <div className="flex gap-2"><span>✓</span><span>Funds deposited to your bank in 2 business days</span></div>
-              <div className="flex gap-2"><span>✓</span><span>Patients see your practice name on their card statement</span></div>
-              <div className="flex gap-2"><span>✓</span><span>HIPAA-compliant — no PHI stored in Stripe</span></div>
-            </div>
-          )}
-
-          <p className="text-center text-xs text-gray-600 mt-4">Powered by Stripe Connect</p>
+    <div className="min-h-screen bg-gray-950 text-white">
+      <div className="max-w-2xl mx-auto px-6 py-12">
+        <div className="flex items-center gap-3 mb-10">
+          <LogoMark size={32} />
+          <span className="font-semibold text-lg tracking-tight">Claima</span>
         </div>
 
-        {/* ── Create Product Card (only shown when active) ── */}
-        {isActive && (
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8">
-            <h2 className="text-lg font-bold mb-1">Add a service</h2>
-            <p className="text-gray-400 text-sm mb-6">
-              Services appear in the{" "}
-              <Link href="/store" className="text-blue-400 hover:text-blue-300">patient storefront</Link>{" "}
-              for direct payment.
-            </p>
-
-            <form onSubmit={handleCreateProduct} className="space-y-4">
-              <div>
-                <label className="block text-xs font-medium text-gray-400 mb-1">Service name</label>
-                <input
-                  value={product.name}
-                  onChange={(e) => setProduct((p) => ({ ...p, name: e.target.value }))}
-                  placeholder="e.g. Initial Consultation"
-                  required
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-blue-500"
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold">Getting started</h1>
+          <p className="text-gray-400 mt-1 text-sm">
+            Complete these steps to go live with your first client.
+          </p>
+          {!loading && (
+            <div className="mt-4 flex items-center gap-3">
+              <div className="flex-1 bg-gray-800 rounded-full h-1.5">
+                <div
+                  className="bg-blue-500 h-1.5 rounded-full transition-all"
+                  style={{ width: `${(completedCount / totalCount) * 100}%` }}
                 />
               </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-400 mb-1">Description <span className="text-gray-600">(optional)</span></label>
-                <input
-                  value={product.description}
-                  onChange={(e) => setProduct((p) => ({ ...p, description: e.target.value }))}
-                  placeholder="e.g. 60-minute individual therapy session"
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-400 mb-1">Price (USD)</label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">$</span>
-                  <input
-                    value={product.price}
-                    onChange={(e) => setProduct((p) => ({ ...p, price: e.target.value }))}
-                    placeholder="75.00"
-                    type="number"
-                    min="0.01"
-                    step="0.01"
-                    required
-                    className="w-full bg-gray-800 border border-gray-700 rounded-lg pl-7 pr-3 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-blue-500"
-                  />
-                </div>
-              </div>
+              <span className="text-xs text-gray-400 shrink-0">{completedCount} of {totalCount}</span>
+            </div>
+          )}
+        </div>
 
-              {productError && <p className="text-red-400 text-sm">{productError}</p>}
-              {productSuccess && <p className="text-green-400 text-sm">{productSuccess}</p>}
-
-              <button
-                type="submit"
-                disabled={productLoading}
-                className="w-full bg-gray-700 hover:bg-gray-600 disabled:opacity-50 text-white py-2.5 rounded-xl text-sm font-semibold transition-colors"
-              >
-                {productLoading ? "Creating…" : "Create service"}
-              </button>
-            </form>
+        {allComplete && (
+          <div className="mb-6 bg-green-900/30 border border-green-800 rounded-xl px-5 py-4 text-sm text-green-300">
+            All setup steps complete. You&apos;re ready to onboard your first client.{" "}
+            <Link href="/" className="underline hover:text-green-200">Go to dashboard →</Link>
           </div>
         )}
 
-        <div className="flex gap-4 text-xs text-gray-600">
-          <Link href="/store" className="hover:text-gray-400">View storefront →</Link>
-          <Link href="/billing" className="hover:text-gray-400">Patient billing →</Link>
+        <div className="space-y-3">
+          {loading
+            ? Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="bg-gray-900 border border-gray-800 rounded-xl p-5 animate-pulse h-20" />
+              ))
+            : STEP_CONFIG.map((step, index) => {
+                const done = steps?.[step.key] ?? false
+                const isStripe = step.key === "stripeConnect"
+
+                return (
+                  <div
+                    key={step.key}
+                    className={`bg-gray-900 border rounded-xl p-5 flex items-start gap-4 transition-colors ${
+                      done ? "border-gray-800 opacity-75" : "border-gray-700"
+                    }`}
+                  >
+                    {/* Step number / checkmark */}
+                    <div
+                      className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-bold mt-0.5 ${
+                        done
+                          ? "bg-green-500/20 text-green-400"
+                          : "bg-gray-800 text-gray-500"
+                      }`}
+                    >
+                      {done ? "✓" : index + 1}
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-baseline gap-2">
+                        <span className={`text-sm font-semibold ${done ? "text-gray-400 line-through" : "text-white"}`}>
+                          {step.title}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-0.5">{step.description}</p>
+
+                      {/* Stripe connect inline error */}
+                      {isStripe && connectError && (
+                        <p className="text-xs text-red-400 mt-2">{connectError}</p>
+                      )}
+
+                      {/* Stripe pending state */}
+                      {isStripe && connectStatus?.status === "pending_capability" && !done && (
+                        <p className="text-xs text-amber-400 mt-2">
+                          Onboarding submitted — waiting for Stripe capability approval.
+                        </p>
+                      )}
+                    </div>
+
+                    {/* CTA */}
+                    {!done && (
+                      isStripe ? (
+                        <button
+                          onClick={handleStripeConnect}
+                          disabled={connectLoading}
+                          className="text-xs text-blue-400 hover:text-blue-300 font-medium shrink-0 disabled:opacity-50"
+                        >
+                          {connectLoading ? "Redirecting…" : step.action}
+                        </button>
+                      ) : (
+                        <Link
+                          href={step.href!}
+                          className="text-xs text-blue-400 hover:text-blue-300 font-medium shrink-0"
+                        >
+                          {step.action}
+                        </Link>
+                      )
+                    )}
+                  </div>
+                )
+              })}
+        </div>
+
+        <div className="mt-8 flex gap-4 text-xs text-gray-600">
+          <Link href="/" className="hover:text-gray-400">Skip for now →</Link>
+          <Link href="/support" className="hover:text-gray-400">Need help?</Link>
         </div>
       </div>
     </div>

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
-import { getSession } from "@/lib/auth"
+import { getSessionFromRequest } from "@/lib/auth"
 import { logAudit } from "@/lib/audit"
 
 const createSchema = z.object({
@@ -12,15 +12,18 @@ const createSchema = z.object({
   groupNumber: z.string().optional(),
   payerId: z.string().min(1),
   payerName: z.string().min(1),
+  relationshipToSubscriber: z.enum(["18", "01", "19", "53", "G8"]).optional(),
   addressLine1: z.string().min(1),
   city: z.string().min(1),
   state: z.string().length(2),
   zip: z.string().min(5).max(10),
+  email: z.string().email().optional(),
+  phone: z.string().optional(),
 })
 
 // GET /api/patients — list patients for current practice
 export async function GET(req: NextRequest) {
-  const session = await getSession()
+  const session = await getSessionFromRequest(req)
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   if (!process.env.DATABASE_URL) return NextResponse.json([], { status: 200 })
@@ -49,7 +52,7 @@ export async function GET(req: NextRequest) {
 
 // POST /api/patients — add a patient
 export async function POST(req: NextRequest) {
-  const session = await getSession()
+  const session = await getSessionFromRequest(req)
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   if (!process.env.DATABASE_URL) return NextResponse.json({ error: "No database" }, { status: 503 })

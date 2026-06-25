@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
-import { getSession } from "@/lib/auth"
+import { getSessionFromRequest } from "@/lib/auth"
 import { logAudit } from "@/lib/audit"
 
 const createSchema = z.object({
@@ -12,7 +12,7 @@ const createSchema = z.object({
 
 // GET /api/providers — list providers for current practice
 export async function GET(req: NextRequest) {
-  const session = await getSession()
+  const session = await getSessionFromRequest(req)
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   if (!process.env.DATABASE_URL) return NextResponse.json([], { status: 200 })
@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
 
 // POST /api/providers — add a provider
 export async function POST(req: NextRequest) {
-  const session = await getSession()
+  const session = await getSessionFromRequest(req)
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   if (session.role !== "ADMIN") return NextResponse.json({ error: "Admin only" }, { status: 403 })
 
@@ -39,6 +39,7 @@ export async function POST(req: NextRequest) {
     const data = createSchema.parse(body)
 
     const { prisma } = await import("@/lib/prisma")
+    logAudit({ action: "provider.create", practiceId: session.practiceId, userId: session.userId, userEmail: session.email, resource: "provider", req })
     const provider = await prisma.provider.create({
       data: { ...data, practiceId: session.practiceId },
     })

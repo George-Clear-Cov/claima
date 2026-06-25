@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getSession } from "@/lib/auth"
+import { getSessionFromRequest } from "@/lib/auth"
 import { logAudit } from "@/lib/audit"
 
 // GET /api/admin/export — export all practice data as JSON (ADMIN only)
 export async function GET(req: NextRequest) {
-  const session = await getSession()
+  const session = await getSessionFromRequest(req)
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   if (session.role !== "ADMIN") return NextResponse.json({ error: "Admin only" }, { status: 403 })
 

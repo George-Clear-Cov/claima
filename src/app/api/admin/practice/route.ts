@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getSession, COOKIE_NAME } from "@/lib/auth"
+import { getSessionFromRequest, COOKIE_NAME } from "@/lib/auth"
 import { logAudit } from "@/lib/audit"
 
 // DELETE /api/admin/practice — hard-delete all practice PHI (ADMIN only)
 // Body: { confirm: "DELETE MY PRACTICE" }
 export async function DELETE(req: NextRequest) {
-  const session = await getSession()
+  const session = await getSessionFromRequest(req)
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   if (session.role !== "ADMIN") return NextResponse.json({ error: "Admin only" }, { status: 403 })
 
