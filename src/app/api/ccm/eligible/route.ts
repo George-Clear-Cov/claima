@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getSessionFromRequest } from "@/lib/auth"
+import { logAudit } from "@/lib/audit"
 
 const CHRONIC_CONDITIONS: { name: string; prefixes: string[] }[] = [
   { name: "Type 2 Diabetes", prefixes: ["E11", "E13"] },
@@ -38,6 +39,7 @@ function detectChronicConditions(icd10Codes: string[]): string[] {
 export async function GET(req: NextRequest) {
   const session = await getSessionFromRequest(req)
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  logAudit({ action: "ccm.eligible.view", practiceId: session.practiceId, userId: session.userId, userEmail: session.email, req })
 
   const { prisma } = await import("@/lib/prisma")
 

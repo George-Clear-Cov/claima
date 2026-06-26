@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getSessionFromRequest } from "@/lib/auth"
+import { logAudit } from "@/lib/audit"
 
 // Industry benchmark figures (standard RCM averages)
 const BENCHMARKS = {
@@ -11,6 +12,7 @@ const BENCHMARKS = {
 export async function GET(req: NextRequest) {
   const session = await getSessionFromRequest(req)
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  logAudit({ action: "payer_intel.view", practiceId: session.practiceId, userId: session.userId, userEmail: session.email, req })
 
   const { searchParams } = new URL(req.url)
   const fromParam = searchParams.get("from")

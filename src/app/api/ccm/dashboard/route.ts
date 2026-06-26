@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getSessionFromRequest } from "@/lib/auth"
+import { logAudit } from "@/lib/audit"
 
 const CCM_RATE_99490 = 62.43  // Medicare rate for 99490 (20+ min/month)
 const CCM_RATE_99439 = 47.15  // Add-on for additional 20 min
@@ -7,6 +8,7 @@ const CCM_RATE_99439 = 47.15  // Add-on for additional 20 min
 export async function GET(req: NextRequest) {
   const session = await getSessionFromRequest(req)
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  logAudit({ action: "ccm.dashboard.view", practiceId: session.practiceId, userId: session.userId, userEmail: session.email, req })
 
   const { prisma } = await import("@/lib/prisma")
 

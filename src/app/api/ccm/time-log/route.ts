@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { getSessionFromRequest } from "@/lib/auth"
+import { logAudit } from "@/lib/audit"
 
 const createSchema = z.object({
   patientId: z.string().uuid(),
@@ -12,6 +13,7 @@ const createSchema = z.object({
 export async function GET(req: NextRequest) {
   const session = await getSessionFromRequest(req)
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  logAudit({ action: "ccm.timelog.view", practiceId: session.practiceId, userId: session.userId, userEmail: session.email, req })
 
   const patientId = req.nextUrl.searchParams.get("patientId")
   const { prisma } = await import("@/lib/prisma")
