@@ -65,10 +65,10 @@ function priceFor(model: string): { in: number; out: number; cw: number; cr: num
 }
 
 interface Usage {
-  input_tokens?: number
-  output_tokens?: number
-  cache_read_input_tokens?: number
-  cache_creation_input_tokens?: number
+  input_tokens?: number | null
+  output_tokens?: number | null
+  cache_read_input_tokens?: number | null
+  cache_creation_input_tokens?: number | null
 }
 
 function costUsd(model: string, u: Usage): number {
