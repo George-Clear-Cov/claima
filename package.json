@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "audit": "bun scripts/audit.ts",
+    "llm-audit": "bun scripts/llm-audit.ts",
     "prepare": "git config core.hooksPath .githooks || true",
     "setup:webhook": "bun run scripts/setup-stripe-webhook.ts"
   },

@@ -1,0 +1,30 @@
+name: LLM Audit
+
+# Deeper, judgment-based security/compliance review of changed files on PRs.
+# Complements the deterministic gate in audit.yml. Needs the ANTHROPIC_API_KEY
+# repo secret; skips gracefully if it isn't set.
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  llm-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - name: LLM security & compliance audit (changed files)
+        run: bun scripts/llm-audit.ts
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GITHUB_BASE_REF: ${{ github.base_ref }}
+          # AUDIT_FAIL_ON: critical   # uncomment to fail the check on CRITICAL findings
