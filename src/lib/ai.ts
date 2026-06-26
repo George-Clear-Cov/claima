@@ -1,5 +1,7 @@
 import { createHmac, createHash } from "crypto"
 import Anthropic from "@anthropic-ai/sdk"
+import { getAiPracticeId } from "@/lib/ai-context"
+import { AiGuardError, checkRateLimit, checkQuota, recordUsage } from "@/lib/ai-usage"
 
 type Provider = "anthropic" | "bedrock" | "azure"
 type Tier = "fast" | "smart"
@@ -69,20 +71,51 @@ interface Usage {
   cache_creation_input_tokens?: number
 }
 
-/** PHI-safe: logs token counts + estimated cost only, never prompt content. Disable with AI_COST_LOG=0. */
-function logUsage(model: string, label: string | undefined, u: Usage | undefined): void {
-  if (process.env.AI_COST_LOG === "0" || !u) return
+function costUsd(model: string, u: Usage): number {
   const p = priceFor(model)
-  const i = u.input_tokens ?? 0
-  const o = u.output_tokens ?? 0
-  const cr = u.cache_read_input_tokens ?? 0
-  const cw = u.cache_creation_input_tokens ?? 0
-  const cost = (i * p.in + o * p.out + cw * p.cw + cr * p.cr) / 1e6
-  const tag = /haiku/i.test(model) ? "haiku" : "sonnet"
-  console.log(
-    `[ai-cost] ${label ?? "ai"} ${tag} in=${i} out=${o}` +
-      `${cr ? ` cacheRead=${cr}` : ""}${cw ? ` cacheWrite=${cw}` : ""} ~$${cost.toFixed(4)}`,
+  return (
+    ((u.input_tokens ?? 0) * p.in +
+      (u.output_tokens ?? 0) * p.out +
+      (u.cache_creation_input_tokens ?? 0) * p.cw +
+      (u.cache_read_input_tokens ?? 0) * p.cr) /
+    1e6
   )
+}
+
+/** PHI-safe: logs token counts + estimated cost only (never prompt content), and records
+ *  per-practice usage for quota enforcement. Disable the log line with AI_COST_LOG=0. */
+async function logUsage(model: string, label: string | undefined, u: Usage | undefined): Promise<void> {
+  if (!u) return
+  const cost = costUsd(model, u)
+  if (process.env.AI_COST_LOG !== "0") {
+    const i = u.input_tokens ?? 0
+    const o = u.output_tokens ?? 0
+    const cr = u.cache_read_input_tokens ?? 0
+    const cw = u.cache_creation_input_tokens ?? 0
+    const tag = /haiku/i.test(model) ? "haiku" : "sonnet"
+    console.log(
+      `[ai-cost] ${label ?? "ai"} ${tag} in=${i} out=${o}` +
+        `${cr ? ` cacheRead=${cr}` : ""}${cw ? ` cacheWrite=${cw}` : ""} ~$${cost.toFixed(4)}`,
+    )
+  }
+  const pid = getAiPracticeId()
+  if (pid) await recordUsage(pid, Math.round(cost * 1e6), u.input_tokens ?? 0, u.output_tokens ?? 0)
+}
+
+// ── Guards (Layer 2 + 3): input-size cap, per-practice burst + quota ──
+const MAX_INPUT_CHARS = Number(process.env.AI_MAX_INPUT_CHARS ?? 60000)
+
+async function guard(params: AIMessageParams): Promise<void> {
+  const chars =
+    (params.system?.length ?? 0) + params.messages.reduce((s, m) => s + m.content.length, 0)
+  if (chars > MAX_INPUT_CHARS) {
+    throw new AiGuardError("input", `AI input too large (${chars} chars, max ${MAX_INPUT_CHARS}).`)
+  }
+  const pid = getAiPracticeId()
+  if (pid) {
+    checkRateLimit(pid)
+    await checkQuota(pid)
+  }
 }
 
 /** Cache large, reusable system prompts (5-min TTL). Small/absent system prompts are sent as-is. */
@@ -94,6 +127,7 @@ function anthropicSystem(system?: string): string | unknown[] | undefined {
 
 /** Returns plain text from AI. Throws on error. */
 export async function aiComplete(params: AIMessageParams): Promise<string> {
+  await guard(params)
   const p = getProvider()
   if (p === "bedrock") return bedrockComplete(params)
   if (p === "azure") return azureComplete(params)
@@ -102,6 +136,7 @@ export async function aiComplete(params: AIMessageParams): Promise<string> {
 
 /** Yields text chunks for streaming. */
 export async function* aiStream(params: AIMessageParams): AsyncGenerator<string> {
+  await guard(params)
   const p = getProvider()
   if (p === "bedrock") {
     yield* bedrockStream(params)
@@ -133,7 +168,7 @@ async function anthropicComplete(params: AIMessageParams): Promise<string> {
     ...(anthropicSystem(params.system) ? { system: anthropicSystem(params.system) as never } : {}),
     ...(params.temperature !== undefined ? { temperature: params.temperature } : {}),
   })
-  logUsage(model, params.label, msg.usage)
+  await logUsage(model, params.label, msg.usage)
   const block = msg.content[0]
   return block.type === "text" ? block.text : ""
 }
@@ -162,7 +197,7 @@ async function* anthropicStream(params: AIMessageParams): AsyncGenerator<string>
       usage.output_tokens = event.usage.output_tokens ?? usage.output_tokens
     }
   }
-  logUsage(model, params.label, usage)
+  await logUsage(model, params.label, usage)
 }
 
 // ── Amazon Bedrock (SigV4 signed fetch) ───────────────────────────────────────
@@ -266,7 +301,7 @@ async function bedrockComplete(params: AIMessageParams): Promise<string> {
     content: Array<{ type: string; text: string }>
     usage?: Usage
   }
-  logUsage(model, params.label, data.usage)
+  await logUsage(model, params.label, data.usage)
   const block = data.content?.[0]
   return block?.type === "text" ? block.text : ""
 }
@@ -312,7 +347,7 @@ async function azureComplete(params: AIMessageParams): Promise<string> {
     choices: Array<{ message: { content: string } }>
     usage?: { prompt_tokens?: number; completion_tokens?: number }
   }
-  logUsage(deployment, params.label, {
+  await logUsage(deployment, params.label, {
     input_tokens: data.usage?.prompt_tokens,
     output_tokens: data.usage?.completion_tokens,
   })

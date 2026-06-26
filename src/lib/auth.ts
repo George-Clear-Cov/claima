@@ -1,6 +1,7 @@
 import { SignJWT, jwtVerify } from "jose"
 import { cookies } from "next/headers"
 import { NextRequest } from "next/server"
+import { setAiPracticeContext } from "@/lib/ai-context"
 
 export const COOKIE_NAME = "claima_session"
 export const JWT_EXPIRY = "7d"
@@ -40,11 +41,15 @@ export async function getSession(): Promise<SessionPayload | null> {
   const cookieStore = await cookies()
   const token = cookieStore.get(COOKIE_NAME)?.value
   if (!token) return null
-  return verifyToken(token)
+  const session = await verifyToken(token)
+  if (session?.practiceId) setAiPracticeContext(session.practiceId)
+  return session
 }
 
 export async function getSessionFromRequest(req: NextRequest): Promise<SessionPayload | null> {
   const token = req.cookies.get(COOKIE_NAME)?.value
   if (!token) return null
-  return verifyToken(token)
+  const session = await verifyToken(token)
+  if (session?.practiceId) setAiPracticeContext(session.practiceId)
+  return session
 }
