@@ -9,6 +9,8 @@
     "lint": "eslint",
     "audit": "bun scripts/audit.ts",
     "llm-audit": "bun scripts/llm-audit.ts",
+    "deps-check": "bun scripts/deps-check.ts",
+    "go-live": "bun scripts/go-live-check.ts",
     "prepare": "git config core.hooksPath .githooks || true",
     "setup:webhook": "bun run scripts/setup-stripe-webhook.ts"
   },

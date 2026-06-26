@@ -1,0 +1,35 @@
+name: Dependency & CVE Watch
+
+on:
+  schedule:
+    - cron: "17 13 * * 1" # Mondays 13:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  deps:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - name: Check outdated packages & known vulnerabilities
+        id: deps
+        run: bun scripts/deps-check.ts
+      - name: Open/update issue on vulnerabilities
+        if: steps.deps.outputs.vulns != '' && steps.deps.outputs.vulns != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          title="🔒 Dependency vulnerabilities detected"
+          existing=$(gh issue list --search "$title in:title" --state open --json number --jq '.[0].number' 2>/dev/null || true)
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body-file deps-report.md
+          else
+            gh issue create --title "$title" --body-file deps-report.md
+          fi
