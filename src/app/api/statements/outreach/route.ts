@@ -83,7 +83,7 @@ Write THREE versions. Respond ONLY with valid JSON:
 Tone: warm, non-judgmental, understanding that patients are navigating both healthcare and billing. Do not use collection agency language. Never say 'past due' or 'delinquent'. ${daysOverdue > 60 ? "This is the third outreach — be slightly more direct about needing resolution." : ""}`
 
   try {
-    const text = await aiComplete({ max_tokens: 1024, messages: [{ role: "user", content: prompt }] })
+    const text = await aiComplete({ max_tokens: 1024, tier: "fast", label: "patient-outreach", messages: [{ role: "user", content: prompt }] })
     const match = text.match(/\{[\s\S]*\}/)
     if (!match) throw new Error("No JSON")
     return NextResponse.json(JSON.parse(match[0]))

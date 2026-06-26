@@ -36,7 +36,7 @@ Extract the values and respond ONLY with valid JSON:
 If a value is not present in the text, use 0 for numbers and null for strings. Be precise with dollar amounts — use the exact figures from the document.`
 
   try {
-    const responseText = await aiComplete({ max_tokens: 512, messages: [{ role: "user", content: prompt }] })
+    const responseText = await aiComplete({ max_tokens: 512, tier: "fast", label: "era-parse", messages: [{ role: "user", content: prompt }] })
     const match = responseText.match(/\{[\s\S]*\}/)
     if (!match) throw new Error("No JSON in response")
 

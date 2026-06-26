@@ -160,7 +160,7 @@ Provide 2-3 specific, actionable insights. Respond ONLY with valid JSON:
 
 Be specific: name payers, CPT codes, and dollar amounts. Focus on: underpayment, renegotiation opportunities, claim patterns.`
 
-      const raw = await aiComplete({ max_tokens: 512, messages: [{ role: "user", content: prompt }] })
+      const raw = await aiComplete({ max_tokens: 512, tier: "fast", label: "rate-estimate", messages: [{ role: "user", content: prompt }] })
       const stripped = raw.replace(/```json\s*/gi, "").replace(/```\s*/g, "")
       const match = stripped.match(/\[[\s\S]*\]/)
       if (match) insights = JSON.parse(match[0])

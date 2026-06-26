@@ -85,7 +85,7 @@ Respond ONLY with valid JSON:
 }`
 
   try {
-    const raw = await aiComplete({ max_tokens: 512, messages: [{ role: "user", content: prompt }] })
+    const raw = await aiComplete({ max_tokens: 512, tier: "fast", label: "parse-natural", messages: [{ role: "user", content: prompt }] })
     const match = raw.match(/\{[\s\S]*\}/)
     if (!match) throw new Error("No JSON")
     return NextResponse.json(JSON.parse(match[0]))

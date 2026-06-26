@@ -65,7 +65,7 @@ Respond ONLY with JSON:
   "patientOwesEstimate": <number, estimated patient responsibility in dollars for a standard outpatient visit>
 }`
 
-    const text = await aiComplete({ max_tokens: 512, messages: [{ role: "user", content: prompt }] })
+    const text = await aiComplete({ max_tokens: 512, tier: "fast", label: "eligibility", messages: [{ role: "user", content: prompt }] })
     const raw = text.replace(/```json\s*/gi, "").replace(/```\s*/g, "")
     const match = raw.match(/\{[\s\S]*\}/)
     if (!match) throw new Error("No JSON")

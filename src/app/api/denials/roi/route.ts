@@ -101,7 +101,7 @@ For CARC-4 (not covered): 25-40%, parity argument helps.
 For CARC-50 (medical necessity): 45-60% with good clinical notes.`
 
   try {
-    const text = await aiComplete({ max_tokens: 512, messages: [{ role: "user", content: prompt }] })
+    const text = await aiComplete({ max_tokens: 512, tier: "fast", label: "denial-roi", messages: [{ role: "user", content: prompt }] })
     const match = text.match(/\{[\s\S]*\}/)
     if (!match) throw new Error("No JSON")
     const result = JSON.parse(match[0])

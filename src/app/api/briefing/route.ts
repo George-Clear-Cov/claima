@@ -129,7 +129,7 @@ Rules:
 - Do NOT use "delinquent" or collection-agency language`
 
   try {
-    const raw = await aiComplete({ max_tokens: 768, messages: [{ role: "user", content: prompt }] })
+    const raw = await aiComplete({ max_tokens: 768, tier: "fast", label: "briefing", messages: [{ role: "user", content: prompt }] })
     const stripped = raw.replace(/```json\s*/gi, "").replace(/```\s*/g, "")
     const match = stripped.match(/\{[\s\S]*\}/)
     if (!match) throw new Error("No JSON")
