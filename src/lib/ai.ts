@@ -3,12 +3,43 @@ import Anthropic from "@anthropic-ai/sdk"
 import { getAiPracticeId } from "@/lib/ai-context"
 import { AiGuardError, checkRateLimit, checkQuota, recordUsage } from "@/lib/ai-usage"
 
-type Provider = "anthropic" | "bedrock" | "azure"
+export type Provider = "anthropic" | "bedrock" | "azure"
 type Tier = "fast" | "smart"
 
-function getProvider(): Provider {
+// Weighted split (e.g. AI_PROVIDER_SPLIT="bedrock:50,azure:50") distributes load across
+// clouds so each gets attributable consumption — the basis for AWS + Microsoft co-sell.
+function parseSplit(): { provider: Provider; weight: number }[] | null {
+  const raw = process.env.AI_PROVIDER_SPLIT
+  if (!raw) return null
+  const items = raw
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((s) => {
+      const [p, w] = s.split(":")
+      return { provider: (p ?? "").trim() as Provider, weight: Number(w) || 0 }
+    })
+    .filter((x) => x.weight > 0 && ["anthropic", "bedrock", "azure"].includes(x.provider))
+  return items.length ? items : null
+}
+
+function weightedPick(items: { provider: Provider; weight: number }[]): Provider {
+  const total = items.reduce((s, i) => s + i.weight, 0)
+  let r = Math.random() * total
+  for (const i of items) {
+    r -= i.weight
+    if (r <= 0) return i.provider
+  }
+  return items[items.length - 1].provider
+}
+
+// Priority: per-call pin → explicit AI_PROVIDER → weighted split → auto-detect by creds.
+function getProvider(params?: { provider?: Provider }): Provider {
+  if (params?.provider) return params.provider
   const explicit = process.env.AI_PROVIDER as Provider | undefined
   if (explicit) return explicit
+  const split = parseSplit()
+  if (split) return weightedPick(split)
   if (process.env.AWS_BEDROCK_REGION && process.env.AWS_ACCESS_KEY_ID) return "bedrock"
   if (process.env.AZURE_OPENAI_ENDPOINT && process.env.AZURE_OPENAI_KEY) return "azure"
   return "anthropic"
@@ -23,6 +54,8 @@ export interface AIMessageParams {
   tier?: Tier
   /** Short label for cost attribution in logs, e.g. "claim-scrub". */
   label?: string
+  /** Pin this call to a specific cloud (overrides AI_PROVIDER / split) — for model-parity-sensitive features. */
+  provider?: Provider
 }
 
 export function isAIConfigured(): boolean {
@@ -128,7 +161,7 @@ function anthropicSystem(system?: string): string | unknown[] | undefined {
 /** Returns plain text from AI. Throws on error. */
 export async function aiComplete(params: AIMessageParams): Promise<string> {
   await guard(params)
-  const p = getProvider()
+  const p = getProvider(params)
   if (p === "bedrock") return bedrockComplete(params)
   if (p === "azure") return azureComplete(params)
   return anthropicComplete(params)
@@ -137,7 +170,7 @@ export async function aiComplete(params: AIMessageParams): Promise<string> {
 /** Yields text chunks for streaming. */
 export async function* aiStream(params: AIMessageParams): AsyncGenerator<string> {
   await guard(params)
-  const p = getProvider()
+  const p = getProvider(params)
   if (p === "bedrock") {
     yield* bedrockStream(params)
   } else if (p === "azure") {
