@@ -9,7 +9,40 @@ import { acknowledgeOperation } from "@/lib/azure-marketplace"
  * IMPORTANT: Acknowledge within 10 seconds or Microsoft will retry and eventually
  * block the subscription. We ack immediately then process async.
  */
+
+async function validateAzureWebhookToken(req: NextRequest): Promise<boolean> {
+  const tenantId = process.env.AZURE_MARKETPLACE_TENANT_ID
+  const clientId = process.env.AZURE_MARKETPLACE_CLIENT_ID
+  if (!tenantId || !clientId) {
+    // Not yet configured — warn and allow so dev/staging aren't blocked before setup
+    console.warn("[azure-marketplace/webhook] Marketplace env vars not set; skipping JWT validation")
+    return true
+  }
+
+  const auth = req.headers.get("authorization")
+  if (!auth?.startsWith("Bearer ")) return false
+  const token = auth.slice(7)
+
+  try {
+    const { createRemoteJWKSet, jwtVerify } = await import("jose")
+    const JWKS = createRemoteJWKSet(
+      new URL(`https://login.microsoftonline.com/${tenantId}/discovery/v2.0/keys`)
+    )
+    await jwtVerify(token, JWKS, {
+      issuer: `https://sts.windows.net/${tenantId}/`,
+      audience: clientId,
+    })
+    return true
+  } catch {
+    return false
+  }
+}
+
 export async function POST(req: NextRequest) {
+  if (!await validateAzureWebhookToken(req)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
   let body: Record<string, unknown>
   try {
     body = await req.json()
