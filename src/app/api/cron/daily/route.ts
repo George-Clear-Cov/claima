@@ -12,9 +12,13 @@ export async function GET(req: NextRequest) {
   const auth = req.headers.get("authorization")
   const cronSecret = process.env.CRON_SECRET
 
-  // Allow local dev without a secret, require it in production
-  if (cronSecret && auth !== `Bearer ${cronSecret}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  // Fail closed in production even if CRON_SECRET is misconfigured/unset.
+  // Only allow the unauthenticated path in local dev when no secret is set.
+  const isProd = process.env.NODE_ENV === "production"
+  if (isProd || cronSecret) {
+    if (!cronSecret || auth !== `Bearer ${cronSecret}`) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
   }
 
   const { prisma } = await import("@/lib/prisma")
