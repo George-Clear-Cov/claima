@@ -6,10 +6,10 @@
  * sent as a form field on every request. Responses are XML by default; we ask
  * for JSON via the Accept header. Base host: https://svc.claim.md/services.
  *
- * Request/auth/endpoints follow Claim.MD's published API and are correct.
- * Fields tagged `VERIFY:` are response-shape guesses — confirm them against a
- * Claim.MD TEST account (https://docs.claim.md test-account quickstart) before
- * trusting this in production. Never validate against the live account.
+ * Field names below are sourced from Claim.MD's API reference (response schemas
+ * for upload/response/eralist/eradata). Auth + payerlist are validated live;
+ * ERA/status field mappings should still be spot-checked against the first real
+ * 835 / claim response, since the account had no data at build time.
  */
 
 const CLAIMMD_ACCOUNT_KEY = process.env.CLAIMMD_ACCOUNT_KEY || ""
@@ -21,8 +21,8 @@ export function isClaimMdConfigured(): boolean {
 
 /**
  * POST to a Claim.MD service endpoint with the AccountKey + params.
- * When `file` is supplied the request is multipart/form-data (for /upload/ and
- * /elig/); otherwise it's application/x-www-form-urlencoded. Always asks for JSON.
+ * When `file` is supplied the request is multipart/form-data (for /upload/);
+ * otherwise it's application/x-www-form-urlencoded. Always asks for JSON.
  */
 async function claimMdPost(
   path: string,
@@ -66,29 +66,27 @@ function asArray(v: unknown): Record<string, unknown>[] {
   return []
 }
 
-function extractErrors(data: Record<string, unknown>): string[] {
-  const errs: string[] = []
-  const push = (v: unknown) => {
-    if (!v) return
-    if (Array.isArray(v)) return v.forEach(push)
-    if (typeof v === "object") {
-      const o = v as Record<string, unknown>
-      const m = o.error_mesg ?? o.message ?? o.error ?? o.desc
-      if (m) errs.push(String(m))
-    } else {
-      errs.push(String(v))
-    }
-  }
-  push(data.error)
-  push(data.errors)
-  return errs
-}
-
 const num = (v: unknown): number => {
   const n = parseFloat(String(v ?? "").replace(/[^0-9.\-]/g, ""))
   return Number.isFinite(n) ? n : 0
 }
 const str = (v: unknown): string => (v == null ? "" : String(v))
+
+// Claim.MD returns messages under a claim's nested `messages` (mesgid/message/status/fields).
+function collectMessages(data: Record<string, unknown>): string[] {
+  const out: string[] = []
+  const claim = firstOf(data.claim)
+  for (const m of asArray(claim?.messages)) {
+    const msg = str(m.message ?? m.error ?? m.desc)
+    if (msg) out.push(m.fields ? `${msg} (${str(m.fields)})` : msg)
+  }
+  if (typeof data.error === "string") out.push(data.error)
+  for (const e of asArray(data.error)) {
+    const msg = str(e.message ?? e.error)
+    if (msg) out.push(msg)
+  }
+  return out
+}
 
 export interface ClearinghouseSubmitResult {
   claimId: string
@@ -137,15 +135,16 @@ export async function submitClaim(edi837p: string): Promise<ClearinghouseSubmitR
       filename: `claima-837p-${Date.now()}.txt`,
     })
 
-    const claim = firstOf(data.claim) // VERIFY: upload returns `claim` (single/array)
-    const claimId = str(claim?.claimid ?? claim?.remote_claimid ?? data.batchid) // VERIFY
-    const errors = extractErrors(data)
-    const rejected = !ok || errors.length > 0
+    const claim = firstOf(data.claim)
+    const claimId = str(claim?.claimid ?? claim?.remote_claimid ?? data.batchid)
+    const status = str(claim?.status).toUpperCase() // "A" = acknowledged/accepted
+    const messages = collectMessages(data)
+    const accepted = ok && (status.startsWith("A") || (status === "" && messages.length === 0))
 
     return {
       claimId,
-      status: rejected ? "rejected" : "accepted",
-      errors: rejected ? (errors.length ? errors : ["Claim rejected by Claim.MD"]) : undefined,
+      status: accepted ? "accepted" : "rejected",
+      errors: accepted ? undefined : (messages.length ? messages : [`Claim not accepted (status: ${status || "unknown"})`]),
       raw: data,
     }
   } catch (err) {
@@ -171,15 +170,15 @@ export async function getClaimStatus(claimId: string): Promise<ClaimStatusResult
     const { ok, data } = await claimMdPost("/response/", { ResponseID: "0", ClaimID: claimId })
     if (!ok) return null
 
-    const claim = firstOf(data.claim) ?? firstOf(data.response) // VERIFY
-    const raw = str(claim?.status ?? claim?.claim_status).toUpperCase()
+    const claim = firstOf(data.claim)
+    const raw = str(claim?.status).toUpperCase() // "A" acknowledged
     const status: ClaimStatusResult["status"] =
       raw.startsWith("A") ? "accepted" :
       raw.startsWith("R") ? "rejected" :
       raw.startsWith("P") ? "paid" :
       raw.startsWith("D") ? "denied" : "pending"
 
-    return { claimId, status, message: claim?.status_mesg ? str(claim.status_mesg) : undefined }
+    return { claimId, status, message: collectMessages(data)[0] }
   } catch {
     return null
   }
@@ -191,7 +190,7 @@ export async function fetchAvailableERAs(): Promise<ClaimMdERAEntry[]> {
   try {
     const { ok, data } = await claimMdPost("/eralist/", { ERAID: "0" })
     if (!ok) return []
-    return asArray(data.era).map(mapERAEntry) // VERIFY: list key is `era`
+    return asArray(data.era).map(mapERAEntry)
   } catch {
     return []
   }
@@ -203,11 +202,12 @@ export async function fetchERAById(eraId: string): Promise<ClaimMdERADetail | nu
   try {
     const { ok, data } = await claimMdPost("/eradata/", { eraid: eraId })
     if (!ok) return null
-    const entry = mapERAEntry({ era_id: eraId, ...data })
+    const claims = asArray(data.claim).map(mapERAClaimLine)
     return {
-      ...entry,
+      ...mapERAEntry(data),
       era_id: eraId,
-      claims: asArray(data.claim).map(mapERAClaimLine), // VERIFY: claim lines under `claim`
+      claim_count: claims.length,
+      claims,
       raw_835: data.x12 ? str(data.x12) : undefined,
     }
   } catch {
@@ -215,33 +215,43 @@ export async function fetchERAById(eraId: string): Promise<ClaimMdERADetail | nu
   }
 }
 
-// VERIFY: the field names below are inferred; confirm against a test-account response.
+// eralist record + eradata top-level share these field names (Claim.MD API ref).
 function mapERAEntry(e: Record<string, unknown>): ClaimMdERAEntry {
   return {
-    era_id: str(e.era_id ?? e.eraid),
-    check_number: str(e.check_number ?? e.checknum ?? e.check),
-    payment_date: str(e.payment_date ?? e.checkdate ?? e.check_date),
-    payer_id: str(e.payer_id ?? e.payerid),
+    era_id: str(e.eraid ?? e.era_id),
+    check_number: str(e.check_number ?? e.checknum),
+    payment_date: str(e.paid_date ?? e.payment_date ?? e.check_date),
+    payer_id: str(e.payerid ?? e.payer_id),
     payer_name: str(e.payer_name ?? e.payername),
-    total_payment: num(e.total_payment ?? e.checkamt ?? e.check_amount),
-    claim_count: Math.round(num(e.claim_count ?? e.claims)),
+    total_payment: num(e.paid_amount ?? e.total_payment),
+    claim_count: Math.round(num(e.claim_count ?? (Array.isArray(e.claim) ? (e.claim as unknown[]).length : 0))),
   }
 }
 
+// eradata hierarchy: claim → charge[] → adjustment[]. Gather adjustments from both levels.
+function collectAdjustments(c: Record<string, unknown>): Record<string, unknown>[] {
+  const out = asArray(c.adjustment)
+  for (const charge of asArray(c.charge)) out.push(...asArray(charge.adjustment))
+  return out
+}
+
 function mapERAClaimLine(c: Record<string, unknown>): ClaimMdERAClaimLine {
-  const adjustments = asArray(c.adjustment ?? c.adj)
-  const carc = adjustments
-    .map((a) => str(a.carc ?? a.reason ?? a.code))
-    .filter(Boolean)
+  const adjustments = collectAdjustments(c)
+  const carc = adjustments.map((a) => str(a.code ?? a.carc ?? a.reason)).filter(Boolean)
+  const adjustmentAmount = adjustments.reduce((s, a) => s + num(a.amount), 0)
+  const patientResponsibility = adjustments
+    .filter((a) => str(a.group).toUpperCase() === "PR")
+    .reduce((s, a) => s + num(a.amount), 0)
+
   return {
-    claim_id: str(c.claimid ?? c.claim_id ?? c.remote_claimid),
+    claim_id: str(c.claimid ?? c.remote_claimid ?? c.pcn ?? c.claim_id),
     patient_first: str(c.pat_name_f ?? c.patient_first),
     patient_last: str(c.pat_name_l ?? c.patient_last),
-    service_date: str(c.fdos ?? c.service_date),
-    billed_amount: num(c.charge ?? c.billed_amount),
-    paid_amount: num(c.paid ?? c.paid_amount),
-    adjustment_amount: num(c.adj_amount ?? c.adjustment_amount),
-    patient_responsibility: num(c.patient_resp ?? c.patient_responsibility),
+    service_date: str(c.from_dos ?? c.fdos ?? c.service_date),
+    billed_amount: num(c.total_charge ?? c.charge),
+    paid_amount: num(c.total_paid ?? c.paid),
+    adjustment_amount: adjustmentAmount,
+    patient_responsibility: patientResponsibility,
     carc_codes: carc,
   }
 }
