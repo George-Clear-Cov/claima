@@ -4,8 +4,7 @@
 export { getServiceTypeForCPT } from "./specialty"
 
 const CLAIMMD_ACCOUNT_KEY = process.env.CLAIMMD_ACCOUNT_KEY || ""
-const CLAIMMD_API_KEY = process.env.CLAIMMD_API_KEY || ""
-const CLAIMMD_BASE_URL = "https://www.claimmd.com/api"
+const CLAIMMD_BASE_URL = "https://svc.claim.md/services"
 
 export interface EligibilityRequest {
   payerId: string
@@ -130,28 +129,31 @@ function getMockResponse(payerId: string): EligibilityResult {
 }
 
 export async function checkEligibility(req: EligibilityRequest): Promise<EligibilityResult> {
-  if (!CLAIMMD_ACCOUNT_KEY || !CLAIMMD_API_KEY) {
+  if (!CLAIMMD_ACCOUNT_KEY) {
     // Simulate 300ms network latency in dev
     await new Promise((r) => setTimeout(r, 300))
     return getMockResponse(req.payerId)
   }
 
   try {
-    const res = await fetch(`${CLAIMMD_BASE_URL}/eligibility/`, {
+    // Real-time 270/271 via POST /services/eligdata/ (parameter-based).
+    // VERIFY: request field names + 271 response shape against a Claim.MD test account.
+    const res = await fetch(`${CLAIMMD_BASE_URL}/eligdata/`, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        "X-Account-Key": CLAIMMD_ACCOUNT_KEY,
-        "X-API-Key": CLAIMMD_API_KEY,
+        "Content-Type": "application/x-www-form-urlencoded",
+        Accept: "application/json",
       },
-      body: JSON.stringify({
-        payer_id: req.payerId,
-        provider_npi: req.npi,
-        member_id: req.memberId,
-        first_name: req.firstName,
-        last_name: req.lastName,
-        dob: req.dob.replace(/-/g, ""),
-        service_type: req.serviceType ?? "1",
+      body: new URLSearchParams({
+        AccountKey: CLAIMMD_ACCOUNT_KEY,
+        payerid: req.payerId,
+        prov_npi: req.npi,
+        ins_number: req.memberId,
+        ins_name_f: req.firstName,
+        ins_name_l: req.lastName,
+        pat_dob: req.dob.replace(/-/g, ""),
+        fdos: new Date().toISOString().slice(0, 10).replace(/-/g, ""),
+        service_type: req.serviceType ?? "30",
       }),
     })
 

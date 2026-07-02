@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
     const patientOwes = Math.max(input.totalCharge - input.insurancePaid - input.adjustments, 0)
     const stmt = await prisma.patientStatement.create({
       data: {
-        patientId: input.patientId,
+        patientId: claim.patientId,
         claimId: input.claimId,
         totalCharge: input.totalCharge,
         insurancePaid: input.insurancePaid,

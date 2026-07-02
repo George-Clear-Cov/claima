@@ -195,7 +195,7 @@ async function postMockERAs(practiceId: string, adminEmail: string, prisma: any)
   if (eligible.length === 0) {
     return NextResponse.json({
       processed: 0,
-      message: "No claims pending 14+ days. Add CLAIMMD_ACCOUNT_KEY + CLAIMMD_API_KEY to enable real ERA retrieval.",
+      message: "No claims pending 14+ days. Add CLAIMMD_ACCOUNT_KEY to enable real ERA retrieval.",
       results: [],
       mode: "mock",
     })

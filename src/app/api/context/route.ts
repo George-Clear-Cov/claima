@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
     providers,
     patients,
     stripeConfigured: !!process.env.STRIPE_SECRET_KEY,
-    clearinghouseConfigured: !!(process.env.CLAIMMD_ACCOUNT_KEY && process.env.CLAIMMD_API_KEY),
+    clearinghouseConfigured: !!process.env.CLAIMMD_ACCOUNT_KEY,
     anthropicConfigured: !!process.env.ANTHROPIC_API_KEY,
     dbConfigured: !!process.env.DATABASE_URL,
   })

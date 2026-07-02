@@ -39,6 +39,10 @@ const _rl = new Map<string, { n: number; t: number }>()
 const RATE_LIMITS: [string, number][] = [
   ["/api/checkout", 10],
   ["/api/store", 200],
+  ["/api/auth/register", 5],
+  ["/api/auth/login", 20],
+  ["/api/auth/forgot-password", 5],
+  ["/api/auth/reset-password", 5],
 ]
 
 function isRateLimited(ip: string, pathname: string): boolean {

@@ -22,7 +22,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     const { prisma } = await import("@/lib/prisma")
 
-    const existing = await prisma.providerCredential.findUnique({ where: { id } })
+    const existing = await prisma.providerCredential.findUnique({ where: { id, practiceId: session.practiceId } })
     if (!existing || existing.practiceId !== session.practiceId) {
       return NextResponse.json({ error: "Not found" }, { status: 404 })
     }
@@ -57,7 +57,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   const { id } = await params
   const { prisma } = await import("@/lib/prisma")
 
-  const existing = await prisma.providerCredential.findUnique({ where: { id } })
+  const existing = await prisma.providerCredential.findUnique({ where: { id, practiceId: session.practiceId } })
   if (!existing || existing.practiceId !== session.practiceId) {
     return NextResponse.json({ error: "Not found" }, { status: 404 })
   }
