@@ -88,7 +88,10 @@ export default function DenialsPage() {
 
   const filtered = filter === "ALL" ? denials
     : denials.filter((d) =>
-        filter === "APPEALABLE" ? d.appealable && d.appealStatus === "PENDING"
+        filter === "AWAITING" ? d.appealStatus === "PENDING"
+        : filter === "IN_PROGRESS" ? d.appealStatus === "IN_PROGRESS"
+        : filter === "SUBMITTED" ? d.appealStatus === "SUBMITTED"
+        : filter === "WON" ? d.appealStatus === "WON"
         : filter === "RESUBMIT" ? d.category === "RESUBMIT"
         : d.priority.toUpperCase() === filter)
 
@@ -171,8 +174,10 @@ export default function DenialsPage() {
   const statCards = [
     { label: "Total Denials", value: denials.length, accent: "bg-gray-400", valueColor: "text-gray-900" },
     { label: "High Priority", value: denials.filter((d) => d.priority.toUpperCase() === "HIGH").length, accent: "bg-red-500", valueColor: "text-red-600" },
-    { label: "Appealable", value: denials.filter((d) => d.appealable && d.appealStatus === "PENDING").length, accent: "bg-amber-500", valueColor: "text-amber-600" },
+    { label: "Awaiting Action", value: denials.filter((d) => d.appealStatus === "PENDING").length, accent: "bg-amber-500", valueColor: "text-amber-600" },
     { label: "In Progress", value: denials.filter((d) => d.appealStatus === "IN_PROGRESS").length, accent: "bg-blue-500", valueColor: "text-blue-600" },
+    { label: "Submitted", value: denials.filter((d) => d.appealStatus === "SUBMITTED").length, accent: "bg-indigo-500", valueColor: "text-indigo-600" },
+    { label: "Appeals Won", value: denials.filter((d) => d.appealStatus === "WON").length, accent: "bg-green-500", valueColor: "text-green-600" },
   ]
 
   return (
@@ -200,7 +205,7 @@ export default function DenialsPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
           {statCards.map((stat) => (
             <div key={stat.label} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
               <div className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-3">{stat.label}</div>
@@ -223,7 +228,7 @@ export default function DenialsPage() {
         <div className="flex gap-6">
           <div className="flex-1 min-w-0">
             <div className="flex gap-2 mb-4 flex-wrap">
-              {[["ALL", "All"], ["HIGH", "High Priority"], ["APPEALABLE", "Appealable"], ["RESUBMIT", "Resubmit"]].map(([val, label]) => (
+              {[["ALL", "All"], ["HIGH", "High Priority"], ["AWAITING", "Awaiting Action"], ["IN_PROGRESS", "In Progress"], ["SUBMITTED", "Submitted"], ["WON", "Won"], ["RESUBMIT", "Resubmit"]].map(([val, label]) => (
                 <button key={val} onClick={() => setFilter(val)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${filter === val ? "bg-blue-600 text-white shadow-sm" : "bg-white border border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50 shadow-sm"}`}>
                   {label}
