@@ -90,7 +90,7 @@ export default function DenialsPage() {
     : denials.filter((d) =>
         filter === "APPEALABLE" ? d.appealable && d.appealStatus === "PENDING"
         : filter === "RESUBMIT" ? d.category === "RESUBMIT"
-        : d.priority === filter)
+        : d.priority.toUpperCase() === filter)
 
   const totalAtRisk = denials
     .filter((d) => ["PENDING", "IN_PROGRESS"].includes(d.appealStatus))
@@ -170,7 +170,7 @@ export default function DenialsPage() {
 
   const statCards = [
     { label: "Total Denials", value: denials.length, accent: "bg-gray-400", valueColor: "text-gray-900" },
-    { label: "High Priority", value: denials.filter((d) => d.priority === "HIGH").length, accent: "bg-red-500", valueColor: "text-red-600" },
+    { label: "High Priority", value: denials.filter((d) => d.priority.toUpperCase() === "HIGH").length, accent: "bg-red-500", valueColor: "text-red-600" },
     { label: "Appealable", value: denials.filter((d) => d.appealable && d.appealStatus === "PENDING").length, accent: "bg-amber-500", valueColor: "text-amber-600" },
     { label: "In Progress", value: denials.filter((d) => d.appealStatus === "IN_PROGRESS").length, accent: "bg-blue-500", valueColor: "text-blue-600" },
   ]
@@ -186,7 +186,7 @@ export default function DenialsPage() {
           <div className="flex items-center gap-4">
             <div className="text-right">
               <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">Revenue at risk</div>
-              <div className="text-2xl font-bold font-mono text-red-600">${totalAtRisk.toFixed(2)}</div>
+              <div className="text-2xl font-bold font-mono text-red-600">${totalAtRisk.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
             </div>
             <button
               onClick={handleAutoProcess}
