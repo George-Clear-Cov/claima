@@ -235,6 +235,85 @@ function collectAdjustments(c: Record<string, unknown>): Record<string, unknown>
   return out
 }
 
+// ── Payer enrollment (EDI/ERA) ────────────────────────────────────────────────
+
+export interface ClaimMdPayerInfo {
+  payerId: string
+  payerName: string
+  claimsSupported: boolean
+  eraMode: string // e.g. "auto" | "enrollment" | "no" — VERIFY exact values vs sandbox
+  eligibilitySupported: boolean
+  raw: Record<string, unknown>
+}
+
+/** Look up a payer's enrollment requirements via POST /services/payerlist/. */
+export async function lookupPayer(payerIdOrName: string): Promise<ClaimMdPayerInfo | null> {
+  if (!isClaimMdConfigured()) return null
+  try {
+    const byId = /^[A-Z0-9]{4,10}$/i.test(payerIdOrName)
+    const { ok, data } = await claimMdPost("/payerlist/", byId ? { payerid: payerIdOrName } : { payer_name: payerIdOrName })
+    if (!ok) return null
+    const p = firstOf(data.payer)
+    if (!p) return null
+    return {
+      payerId: str(p.payerid),
+      payerName: str(p.payer_name),
+      claimsSupported: str(p["1500_claims"]).toLowerCase() === "yes",
+      eraMode: str(p.era),
+      eligibilitySupported: str(p.eligibility).toLowerCase() === "yes",
+      raw: p,
+    }
+  } catch {
+    return null
+  }
+}
+
+export interface EnrollmentInitResult {
+  ok: boolean
+  enrollmentUrl?: string
+  message?: string
+  raw: unknown
+}
+
+/**
+ * Initiate a payer enrollment via POST /services/enroll/.
+ * Returns the enrollment-portal link Claim.MD generates.
+ * VERIFY: exact enroll_type values + response field names against the sandbox
+ * before first real enrollment (request params per api.claim.md).
+ */
+export async function initiateEnrollment(params: {
+  payerId: string
+  enrollType: string // e.g. "era" | "claim" — VERIFY accepted values
+  taxId: string
+  npi?: string
+  providerName?: string
+  contactEmail?: string
+}): Promise<EnrollmentInitResult> {
+  if (!isClaimMdConfigured()) {
+    return { ok: true, enrollmentUrl: `https://claim.md/enroll/MOCK-${params.payerId}`, message: "mock mode", raw: { mock: true } }
+  }
+  try {
+    const { ok, data } = await claimMdPost("/enroll/", {
+      payerid: params.payerId,
+      enroll_type: params.enrollType,
+      prov_taxid: params.taxId.replace(/-/g, ""),
+      ...(params.npi ? { prov_npi: params.npi } : {}),
+      ...(params.providerName ? { prov_name: params.providerName } : {}),
+      ...(params.contactEmail ? { contact_email: params.contactEmail } : {}),
+    })
+    const errors = data.error ? [str(data.error)] : []
+    const url = str(data.enroll_url ?? data.enrollment_url ?? data.url) // VERIFY field name
+    return {
+      ok: ok && errors.length === 0,
+      enrollmentUrl: url || undefined,
+      message: errors[0],
+      raw: data,
+    }
+  } catch (err) {
+    return { ok: false, message: err instanceof Error ? err.message : "Network error", raw: null }
+  }
+}
+
 function mapERAClaimLine(c: Record<string, unknown>): ClaimMdERAClaimLine {
   const adjustments = collectAdjustments(c)
   const carc = adjustments.map((a) => str(a.code ?? a.carc ?? a.reason)).filter(Boolean)
