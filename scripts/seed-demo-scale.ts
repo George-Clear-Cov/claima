@@ -163,13 +163,29 @@ async function main() {
     const svc = pick(SERVICES), prov = pick(providers), pat = pick(patients)
     const serviceDate = daysAgo(rnd(10, 180))
     const insPaid = Math.round(svc.charge * 0.72)
-    await prisma.claim.create({
+    const adj = Math.round(svc.charge * 0.13)
+    const paidAt = new Date(serviceDate.getTime() + 21 * 86400000)
+    const claim = await prisma.claim.create({
       data: {
         practiceId: practice.id, providerId: prov.id, patientId: pat.id, serviceDate,
         totalCharge: svc.charge, claimStatus: "PAID", stediClaimId: sid(),
         submittedAt: new Date(serviceDate.getTime() + 2 * 3600000),
-        paidAmount: insPaid, paidAt: new Date(serviceDate.getTime() + 21 * 86400000),
+        paidAmount: insPaid, paidAt,
         lineItems: { create: [{ cptCode: svc.cpt, icd10Codes: svc.icd, units: svc.units, chargeAmount: svc.charge, description: svc.desc }] },
+      },
+    })
+    // Statement so analytics/billing see collections (~80% of patients have paid in full)
+    const patientOwes = Math.max(svc.charge - insPaid - adj, 0)
+    const fullyPaid = Math.random() < 0.8
+    const patientPaid = fullyPaid ? patientOwes : Math.random() < 0.5 ? Math.round(patientOwes / 2) : 0
+    await prisma.patientStatement.create({
+      data: {
+        patientId: pat.id, claimId: claim.id, totalCharge: svc.charge,
+        insurancePaid: insPaid, adjustments: adj, patientOwes, patientPaid,
+        balanceDue: Math.max(patientOwes - patientPaid, 0),
+        statementStatus: patientPaid >= patientOwes ? "PAID" : patientPaid > 0 ? "PARTIAL" : "PENDING",
+        dueDate: new Date(serviceDate.getTime() + 30 * 86400000),
+        paidAt: patientPaid >= patientOwes ? paidAt : null,
       },
     })
   })
