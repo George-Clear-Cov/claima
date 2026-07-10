@@ -33,9 +33,16 @@ function weightedPick(items: { provider: Provider; weight: number }[]): Provider
   return items[items.length - 1].provider
 }
 
-// Priority: per-call pin → explicit AI_PROVIDER → weighted split → auto-detect by creds.
-function getProvider(params?: { provider?: Provider }): Provider {
+// Priority: per-call pin → fast-tier override → explicit AI_PROVIDER → weighted split → auto-detect.
+function getProvider(params?: { provider?: Provider; tier?: Tier }): Provider {
   if (params?.provider) return params.provider
+  // Route the low-stakes fast tier to a specific cloud (e.g. AI_PROVIDER_FAST=azure
+  // sends parse/interpret/summary calls to Azure OpenAI while Sonnet keeps the
+  // quality-critical smart tier). No-op unless the env var is set.
+  const fastOverride = process.env.AI_PROVIDER_FAST as Provider | undefined
+  if (params?.tier === "fast" && fastOverride && ["anthropic", "bedrock", "azure"].includes(fastOverride)) {
+    return fastOverride
+  }
   const explicit = process.env.AI_PROVIDER as Provider | undefined
   if (explicit) return explicit
   const split = parseSplit()
