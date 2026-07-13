@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getSessionFromRequest } from "@/lib/auth"
 import { aiComplete, isAIConfigured } from "@/lib/ai"
+import { logError } from "@/lib/log"
 
 interface InterpretRequest {
   patientName: string
@@ -72,7 +73,7 @@ Respond ONLY with JSON:
 
     return NextResponse.json(JSON.parse(match[0]))
   } catch (err) {
-    console.error("[eligibility/interpret] failed:", err)
+    logError("eligibility/interpret", err)
     const body = await req.json().catch(() => ({}))
     return NextResponse.json(fallbackInterpret({
       payerName: body.payerName ?? "payer",

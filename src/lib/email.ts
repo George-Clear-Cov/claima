@@ -19,9 +19,10 @@ export async function sendEmail({
   if (!RESEND_API_KEY) {
     // [PLACEHOLDER] Add RESEND_API_KEY to Vercel env vars to enable real email delivery.
     // Get a free key at resend.com — free tier sends 3,000 emails/month.
-    console.warn(`[EMAIL] No RESEND_API_KEY — would have sent to ${to}:`)
-    console.warn(`[EMAIL] Subject: ${subject}`)
-    console.warn(`[EMAIL] Body: ${html.replace(/<[^>]+>/g, "")}`)
+    // Do NOT log recipient, subject, or body — patient statements/outreach contain PHI.
+    // Log only a redacted marker. In production RESEND_API_KEY must be set (see HIPAA audit).
+    const domain = to.includes("@") ? to.slice(to.indexOf("@")) : "redacted"
+    console.warn(`[EMAIL] No RESEND_API_KEY — email to <redacted>${domain} not sent`)
     return
   }
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { getSessionFromRequest } from "@/lib/auth"
 import { logAudit } from "@/lib/audit"
+import { logError } from "@/lib/log"
 import { sendEmail } from "@/lib/email"
 
 const createSchema = z.object({
@@ -80,7 +81,7 @@ export async function POST(req: NextRequest) {
 <p>A statement has been generated for your recent visit. Your patient balance is <strong>$${patientOwes.toFixed(2)}</strong>, due by ${dueDate}.</p>
 <p>Please contact our office if you have any questions about your bill.</p>
 <p>Thank you,<br>Billing Department</p>`,
-      }).catch((e) => console.error("[email] statement notification failed:", e))
+      }).catch((e) => logError("email", e))
     }
 
     return NextResponse.json(stmt)
@@ -88,7 +89,7 @@ export async function POST(req: NextRequest) {
     if (err instanceof z.ZodError) {
       return NextResponse.json({ error: err.issues }, { status: 400 })
     }
-    console.error(err)
+    logError("statements", err)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

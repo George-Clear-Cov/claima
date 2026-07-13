@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getSessionFromRequest } from "@/lib/auth"
+import { logError } from "@/lib/log"
 
 export async function POST(req: NextRequest) {
   const session = await getSessionFromRequest(req)
@@ -40,7 +41,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true })
   } catch (err) {
-    console.error("[onboarding/setup] failed:", err)
+    logError("onboarding/setup", err)
     return NextResponse.json({ error: "Setup failed" }, { status: 500 })
   }
 }

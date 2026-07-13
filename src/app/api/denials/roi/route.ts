@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { aiComplete, isAIConfigured } from "@/lib/ai"
 import { getSessionFromRequest } from "@/lib/auth"
+import { logError } from "@/lib/log"
 
 export interface ROIResult {
   winProbability: number
@@ -116,8 +117,7 @@ For CARC-50 (medical necessity): 45-60% with good clinical notes.`
       historicalContext,
     } as ROIResult)
   } catch (err) {
-    console.error("[denials/roi] failed:", err)
-    const msg = err instanceof Error ? err.message : "ROI analysis failed"
-    return NextResponse.json({ error: msg }, { status: 422 })
+    logError("denials/roi", err)
+    return NextResponse.json({ error: "ROI analysis failed" }, { status: 422 })
   }
 }

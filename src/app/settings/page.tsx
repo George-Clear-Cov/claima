@@ -405,11 +405,12 @@ function PatientsTab() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const load = useCallback(async (q?: string) => {
+  const load = useCallback(async () => {
     setLoading(true)
     try {
-      const url = q ? `/api/patients?q=${encodeURIComponent(q)}` : "/api/patients"
-      const res = await fetch(url)
+      // Fetch the full practice-scoped list and filter client-side, so patient names / member
+      // IDs never appear in a request URL (which lands in access logs). See HIPAA audit H4.
+      const res = await fetch("/api/patients")
       const data = await res.json()
       setPatients(Array.isArray(data) ? data : [])
     } finally {
@@ -420,9 +421,7 @@ function PatientsTab() {
   useEffect(() => { load() }, [load])
 
   function handleSearchChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const q = e.target.value
-    setSearch(q)
-    load(q)
+    setSearch(e.target.value)
   }
 
   async function handleAdd(e: React.FormEvent) {
@@ -443,7 +442,7 @@ function PatientsTab() {
         addressLine1: "", city: "New York", state: "NY", zip: "",
       })
       setShowForm(false)
-      load(search || undefined)
+      load()
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed")
     } finally {
@@ -455,6 +454,16 @@ function PatientsTab() {
     const payer = COMMON_PAYERS.find((p) => p.id === payerId)
     setForm({ ...form, payerId, payerName: payer?.name ?? payerId })
   }
+
+  const query = search.trim().toLowerCase()
+  const filtered = query
+    ? patients.filter(
+        (p) =>
+          p.firstName.toLowerCase().includes(query) ||
+          p.lastName.toLowerCase().includes(query) ||
+          p.memberId.toLowerCase().includes(query),
+      )
+    : patients
 
   return (
     <div className="max-w-3xl">
@@ -554,7 +563,7 @@ function PatientsTab() {
 
       {loading ? (
         <div className="text-gray-400 text-sm py-8 text-center">Loading…</div>
-      ) : patients.length === 0 ? (
+      ) : filtered.length === 0 ? (
         <div className="text-gray-400 text-sm py-8 text-center">
           {search ? `No patients matching "${search}"` : "No patients yet. Add one above."}
         </div>
@@ -570,7 +579,7 @@ function PatientsTab() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {patients.map((p) => (
+              {filtered.map((p) => (
                 <tr key={p.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-5 py-3.5 font-medium text-gray-900">{p.lastName}, {p.firstName}</td>
                   <td className="px-5 py-3.5 text-gray-500 text-xs font-mono">

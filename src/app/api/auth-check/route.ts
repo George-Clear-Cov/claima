@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { aiComplete, isAIConfigured } from "@/lib/ai"
 import { getSessionFromRequest } from "@/lib/auth"
+import { logError } from "@/lib/log"
 
 export async function POST(req: NextRequest) {
   const session = await getSessionFromRequest(req)
@@ -88,11 +89,10 @@ Context on prior claim count:
     const text = await aiComplete({ max_tokens: 1024, messages: [{ role: "user", content: prompt }] })
     const stripped = text.replace(/```json\s*/gi, "").replace(/```\s*/g, "")
     const match = stripped.match(/\{[\s\S]*\}/)
-    if (!match) throw new Error(`No JSON in response: ${text.slice(0, 200)}`)
+    if (!match) throw new Error("AI response was not valid JSON")
     return NextResponse.json(JSON.parse(match[0]))
   } catch (err) {
-    console.error("[auth-check] failed:", err)
-    const msg = err instanceof Error ? err.message : "Auth check failed"
-    return NextResponse.json({ error: msg }, { status: 422 })
+    logError("auth-check", err)
+    return NextResponse.json({ error: "Auth check failed" }, { status: 422 })
   }
 }

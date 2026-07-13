@@ -2,11 +2,12 @@ import { PrismaClient } from "@prisma/client"
 import { PrismaPg } from "@prisma/adapter-pg"
 import { Pool } from "pg"
 
-// Supabase uses a self-signed CA in its certificate chain; disable verification
-// so Node's TLS stack accepts it. The connection is still encrypted.
-if (typeof process !== "undefined") {
-  process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
-}
+// Supabase uses a self-signed CA in its certificate chain. We scope that TLS exception to
+// THIS database connection only, via the pg Pool's `ssl` option below. We must NOT set
+// NODE_TLS_REJECT_UNAUTHORIZED globally — that disables certificate verification for ALL
+// outbound HTTPS in the process (PHI to the AI provider, Claim.MD, Stripe), a MITM exposure.
+// TODO(azure-migration): switch the pool to `ssl: { ca: <azure-ca>, rejectUnauthorized: true }`
+// to verify the DB cert too, removing this exception entirely.
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient }
 

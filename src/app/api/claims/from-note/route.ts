@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { aiComplete, isAIConfigured } from "@/lib/ai"
 import { getSessionFromRequest } from "@/lib/auth"
 import { taxonomyToSpecialtyLabel } from "@/lib/specialty"
+import { logError } from "@/lib/log"
 
 export async function POST(req: NextRequest) {
   const session = await getSessionFromRequest(req)
@@ -142,7 +143,7 @@ Respond ONLY with valid JSON (no code fences):
     if (!match) throw new Error("No JSON in response")
     return NextResponse.json(JSON.parse(match[0]))
   } catch (err) {
-    console.error("[claims/from-note] failed:", err)
+    logError("claims/from-note", err)
     return NextResponse.json({ error: "Note parsing failed" }, { status: 422 })
   }
 }

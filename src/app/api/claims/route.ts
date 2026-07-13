@@ -4,6 +4,7 @@ import { generate837P } from "@/lib/837p"
 import { submitClaim } from "@/lib/claimmd"
 import { getSessionFromRequest } from "@/lib/auth"
 import { logAudit } from "@/lib/audit"
+import { logError } from "@/lib/log"
 
 const lineItemSchema = z.object({
   cptCode: z.string().min(5).max(5),
@@ -135,7 +136,7 @@ export async function POST(req: NextRequest) {
     if (err instanceof z.ZodError) {
       return NextResponse.json({ error: err.issues }, { status: 400 })
     }
-    console.error(err)
+    logError("claims", err)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

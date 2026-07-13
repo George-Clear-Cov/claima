@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs"
 import { v4 as uuid } from "uuid"
 import { signToken, COOKIE_NAME } from "@/lib/auth"
 import { validatePassword } from "@/lib/password"
+import { logError } from "@/lib/log"
 
 export async function POST(req: NextRequest) {
   try {
@@ -11,6 +12,8 @@ export async function POST(req: NextRequest) {
     if (!name || !email || !password || !practiceName) {
       return NextResponse.json({ error: "All fields are required" }, { status: 400 })
     }
+
+    const emailNorm = email.toLowerCase().trim()
 
     if (!baaAccepted) {
       return NextResponse.json({ error: "You must accept the Business Associate Agreement to create an account" }, { status: 400 })
@@ -23,7 +26,7 @@ export async function POST(req: NextRequest) {
 
     const { prisma } = await import("@/lib/prisma")
 
-    const existing = await prisma.user.findUnique({ where: { email } })
+    const existing = await prisma.user.findUnique({ where: { email: emailNorm } })
     if (existing) {
       return NextResponse.json({ error: "An account with this email already exists" }, { status: 409 })
     }
@@ -56,7 +59,7 @@ export async function POST(req: NextRequest) {
       prisma.user.create({
         data: {
           id: userId,
-          email,
+          email: emailNorm,
           name,
           hashedPassword,
           practiceId,
@@ -65,7 +68,7 @@ export async function POST(req: NextRequest) {
       }),
     ])
 
-    const token = await signToken({ userId, email, name, practiceId, role: "ADMIN" })
+    const token = await signToken({ userId, email: emailNorm, name, practiceId, role: "ADMIN" })
 
     const res = NextResponse.json({ success: true })
     res.cookies.set(COOKIE_NAME, token, {
@@ -77,7 +80,7 @@ export async function POST(req: NextRequest) {
     })
     return res
   } catch (err) {
-    console.error("[register] failed:", err)
+    logError("register", err)
     return NextResponse.json({ error: "Registration failed" }, { status: 500 })
   }
 }

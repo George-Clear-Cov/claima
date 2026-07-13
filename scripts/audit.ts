@@ -82,11 +82,14 @@ for (const file of files) {
     }
   })
 
-  // 4 · TLS setting must be present in prisma.ts (CRITICAL)
-  if (isPrismaLib && !/NODE_TLS_REJECT_UNAUTHORIZED/.test(src)) {
-    add({ severity: "CRITICAL", file: path, line: 1, check: "tls-setting",
-      message: 'src/lib/prisma.ts is missing NODE_TLS_REJECT_UNAUTHORIZED = "0".',
-      fix: "Supabase's CA chain requires this — do not remove it." })
+  // 4 · Global TLS bypass must NOT be present (CRITICAL). Scoping the Supabase self-signed-CA
+  // exception to the pg Pool `ssl` option is required; the process-global
+  // NODE_TLS_REJECT_UNAUTHORIZED="0" disables certificate verification for ALL outbound HTTPS
+  // (PHI to the AI provider, Claim.MD, Stripe) — a MITM exposure.
+  if (/NODE_TLS_REJECT_UNAUTHORIZED\s*=\s*["']0["']/.test(src)) {
+    add({ severity: "CRITICAL", file: path, line: 1, check: "tls-global-bypass",
+      message: 'Global NODE_TLS_REJECT_UNAUTHORIZED="0" disables cert verification for ALL outbound TLS.',
+      fix: "Remove the global flag; scope the Supabase TLS exception to the pg Pool ssl option only." })
   }
 
   if (isRoute) {

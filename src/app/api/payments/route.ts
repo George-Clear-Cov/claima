@@ -3,6 +3,7 @@ import { z } from "zod"
 import { stripe } from "@/lib/stripe"
 import { getSessionFromRequest } from "@/lib/auth"
 import { logAudit } from "@/lib/audit"
+import { logError } from "@/lib/log"
 
 const schema = z.object({
   statementId: z.string(),
@@ -87,7 +88,7 @@ export async function POST(req: NextRequest) {
     if (err instanceof z.ZodError) {
       return NextResponse.json({ error: err.issues }, { status: 400 })
     }
-    console.error(err)
+    logError("payments", err)
     return NextResponse.json({ error: "Failed to create payment" }, { status: 500 })
   }
 }

@@ -56,8 +56,14 @@ const session = await getSessionFromRequest(req)
 if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 ```
 
-### TLS — do not remove this from prisma.ts
-`process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"` is required. Supabase uses a self-signed CA chain that Prisma's Rust engine rejects. The pg adapter's `ssl` option alone doesn't fix it.
+### TLS — never set NODE_TLS_REJECT_UNAUTHORIZED globally
+Do NOT set `process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"` in `prisma.ts` (or anywhere). It is a
+process-global flag that disables TLS certificate verification for ALL outbound HTTPS — including
+PHI sent to the AI provider, Claim.MD, and Stripe — exposing it to man-in-the-middle. Scope the
+Supabase self-signed-CA exception to the DB connection only, via the pg `Pool`'s `ssl` option
+(`ssl: { rejectUnauthorized: false }`). During the Azure migration, replace this with
+`ssl: { ca: <azure-ca>, rejectUnauthorized: true }` so the DB cert is verified too. `scripts/audit.ts`
+enforces the absence of the global flag (CRITICAL).
 
 ---
 

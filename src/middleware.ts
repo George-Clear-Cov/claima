@@ -94,7 +94,7 @@ export async function middleware(req: NextRequest) {
 
   const secret = new TextEncoder().encode(process.env.JWT_SECRET ?? "")
   try {
-    await jwtVerify(token, secret)
+    await jwtVerify(token, secret, { algorithms: ["HS256"] })
     return NextResponse.next()
   } catch {
     if (isApiRoute) {

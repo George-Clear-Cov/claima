@@ -3,9 +3,10 @@ import { z } from "zod"
 import bcrypt from "bcryptjs"
 import { signToken, COOKIE_NAME } from "@/lib/auth"
 import { logAudit } from "@/lib/audit"
+import { logError } from "@/lib/log"
 
 const schema = z.object({
-  email: z.string().email(),
+  email: z.string().email().transform((v) => v.toLowerCase().trim()),
   password: z.string().min(1),
 })
 
@@ -103,7 +104,7 @@ export async function POST(req: NextRequest) {
     if (err instanceof z.ZodError) {
       return NextResponse.json({ error: err.issues }, { status: 400 })
     }
-    console.error(err)
+    logError("login", err)
     return NextResponse.json({ error: "Login failed" }, { status: 500 })
   }
 }

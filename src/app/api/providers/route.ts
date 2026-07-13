@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { getSessionFromRequest } from "@/lib/auth"
 import { logAudit } from "@/lib/audit"
+import { logError } from "@/lib/log"
 
 const createSchema = z.object({
   firstName: z.string().min(1),
@@ -49,7 +50,7 @@ export async function POST(req: NextRequest) {
     if ((err as { code?: string }).code === "P2002") {
       return NextResponse.json({ error: "A provider with this NPI already exists" }, { status: 409 })
     }
-    console.error(err)
+    logError("providers", err)
     return NextResponse.json({ error: "Failed to create provider" }, { status: 500 })
   }
 }

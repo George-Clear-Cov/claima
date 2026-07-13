@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { getSessionFromRequest } from "@/lib/auth"
 import { logAudit } from "@/lib/audit"
+import { logError } from "@/lib/log"
 
 const eraSchema = z.object({
   insurancePaid: z.number().min(0),
@@ -66,7 +67,7 @@ export async function PATCH(
     if (err instanceof z.ZodError) {
       return NextResponse.json({ error: err.issues }, { status: 400 })
     }
-    console.error(err)
+    logError("claims/[id]", err)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

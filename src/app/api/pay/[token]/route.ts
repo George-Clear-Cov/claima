@@ -8,7 +8,7 @@ function getSecret() {
 
 async function verifyPaymentToken(token: string) {
   try {
-    const { payload } = await jwtVerify(token, getSecret())
+    const { payload } = await jwtVerify(token, getSecret(), { algorithms: ["HS256"] })
     if (payload.type !== "payment_link") return null
     return payload as { statementId: string; practiceId: string; type: string }
   } catch {

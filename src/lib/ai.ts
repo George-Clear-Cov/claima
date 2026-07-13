@@ -75,7 +75,10 @@ export function isAIConfigured(): boolean {
     )
   if (p === "azure")
     return !!(process.env.AZURE_OPENAI_ENDPOINT && process.env.AZURE_OPENAI_KEY)
-  return !!process.env.ANTHROPIC_API_KEY
+  // Direct Anthropic (standard tier) has no BAA → not HIPAA-permissible for PHI. Report it as
+  // "not configured" unless a signed Anthropic BAA is explicitly acknowledged, so PHI routes
+  // fall back to their deterministic non-AI path instead of leaking PHI. Prefer Bedrock/Azure.
+  return !!process.env.ANTHROPIC_API_KEY && process.env.ANTHROPIC_BAA_ACCEPTED === "1"
 }
 
 // ── Model selection & pricing ───────────────────────────────────────────────────
@@ -146,6 +149,15 @@ async function logUsage(model: string, label: string | undefined, u: Usage | und
 const MAX_INPUT_CHARS = Number(process.env.AI_MAX_INPUT_CHARS ?? 60000)
 
 async function guard(params: AIMessageParams): Promise<void> {
+  // HIPAA fail-closed (backstop): never send PHI to the direct Anthropic API (no BAA). Route via
+  // Bedrock/Azure. Escape hatch ANTHROPIC_BAA_ACCEPTED=1 only with a signed Anthropic BAA +
+  // zero-retention (e.g. local dev on non-PHI seed data).
+  if (getProvider(params) === "anthropic" && process.env.ANTHROPIC_BAA_ACCEPTED !== "1") {
+    throw new AiGuardError(
+      "baa",
+      "AI blocked (HIPAA): direct Anthropic API has no BAA. Set AI_PROVIDER=bedrock (BAA via AWS Artifact), or ANTHROPIC_BAA_ACCEPTED=1 only with a signed Anthropic BAA.",
+    )
+  }
   const chars =
     (params.system?.length ?? 0) + params.messages.reduce((s, m) => s + m.content.length, 0)
   if (chars > MAX_INPUT_CHARS) {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { aiComplete, isAIConfigured } from "@/lib/ai"
 import { getSessionFromRequest } from "@/lib/auth"
 import { logAudit } from "@/lib/audit"
+import { logError } from "@/lib/log"
 import { generateAppealLetter } from "@/lib/appeal-generator"
 
 const PAYER_RATES: Record<string, { insRate: number; adjRate: number }> = {
@@ -222,7 +223,7 @@ nextActions should be specific and ordered by urgency. Max 4 items.`
         nextActions = ai.nextActions ?? []
       }
     } catch (err) {
-      console.error("[agent/run] narrative failed:", err)
+      logError("agent/run", err)
     }
   }
 

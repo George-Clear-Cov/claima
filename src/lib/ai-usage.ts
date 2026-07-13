@@ -9,8 +9,8 @@
  */
 
 export class AiGuardError extends Error {
-  reason: "rate" | "quota" | "input"
-  constructor(reason: "rate" | "quota" | "input", message: string) {
+  reason: "rate" | "quota" | "input" | "baa"
+  constructor(reason: "rate" | "quota" | "input" | "baa", message: string) {
     super(message)
     this.name = "AiGuardError"
     this.reason = reason

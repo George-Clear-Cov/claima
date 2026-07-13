@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { v4 as uuid } from "uuid"
 import bcrypt from "bcryptjs"
 import { signToken, COOKIE_NAME } from "@/lib/auth"
+import { logError } from "@/lib/log"
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl
@@ -58,7 +59,7 @@ export async function GET(req: NextRequest) {
     }
 
     const profile = await graphRes.json()
-    const email: string = profile.mail ?? profile.userPrincipalName
+    const email: string = (profile.mail ?? profile.userPrincipalName ?? "").toLowerCase().trim()
     const name: string = profile.displayName ?? email.split("@")[0]
 
     const { prisma } = await import("@/lib/prisma")
@@ -133,7 +134,7 @@ export async function GET(req: NextRequest) {
     })
     return res
   } catch (err) {
-    console.error("[azure/callback] failed:", err)
+    logError("azure/callback", err)
     return NextResponse.redirect(`${appUrl}/login?error=auth_failed`)
   }
 }
