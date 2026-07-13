@@ -15,6 +15,9 @@ const securityHeaders = [
 ]
 
 const nextConfig: NextConfig = {
+  // Standalone server output for containerized hosting (Azure App Service / Container Apps).
+  // No-op on Vercel. See docs/azure-migration.md.
+  output: "standalone",
   async headers() {
     return [{ source: "/(.*)", headers: securityHeaders }]
   },

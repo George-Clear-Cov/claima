@@ -1,13 +1,14 @@
 import { PrismaClient } from "@prisma/client"
 import { PrismaPg } from "@prisma/adapter-pg"
 import { Pool } from "pg"
+import { readFileSync } from "node:fs"
 
 // Supabase uses a self-signed CA in its certificate chain. We scope that TLS exception to
 // THIS database connection only, via the pg Pool's `ssl` option below. We must NOT set
 // NODE_TLS_REJECT_UNAUTHORIZED globally — that disables certificate verification for ALL
 // outbound HTTPS in the process (PHI to the AI provider, Claim.MD, Stripe), a MITM exposure.
-// TODO(azure-migration): switch the pool to `ssl: { ca: <azure-ca>, rejectUnauthorized: true }`
-// to verify the DB cert too, removing this exception entirely.
+// Azure-migration hook: set PGSSLROOTCERT to a CA-bundle path and the pool verifies the DB cert
+// (rejectUnauthorized: true); unset (current/Supabase) keeps the encrypted-but-unverified carve-out.
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient }
 
@@ -16,7 +17,13 @@ function createPrismaClient() {
   if (!connectionString) {
     return new PrismaClient()
   }
-  const pool = new Pool({ connectionString, ssl: { rejectUnauthorized: false } })
+  // Azure Postgres (post-migration): set PGSSLROOTCERT to the CA path -> verified TLS.
+  // Supabase (current): self-signed CA -> encrypted but unverified (temporary carve-out).
+  const caPath = process.env.PGSSLROOTCERT
+  const ssl = caPath
+    ? { ca: readFileSync(caPath).toString(), rejectUnauthorized: true }
+    : { rejectUnauthorized: false }
+  const pool = new Pool({ connectionString, ssl })
   const adapter = new PrismaPg(pool)
   return new PrismaClient({
     adapter,
