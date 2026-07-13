@@ -1,4 +1,5 @@
 import * as Sentry from "@sentry/nextjs"
+import { scrubEvent, scrubBreadcrumb } from "./sentry.scrub"
 
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
@@ -7,4 +8,7 @@ Sentry.init({
   replaysSessionSampleRate: 0.01,
   integrations: [Sentry.replayIntegration({ maskAllText: true, blockAllMedia: true })],
   enabled: process.env.NODE_ENV === "production",
+  sendDefaultPii: false,
+  beforeSend: scrubEvent,
+  beforeBreadcrumb: scrubBreadcrumb,
 })

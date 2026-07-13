@@ -95,6 +95,18 @@ export async function middleware(req: NextRequest) {
   const secret = new TextEncoder().encode(process.env.JWT_SECRET ?? "")
   try {
     const { payload } = await jwtVerify(token, secret, { algorithms: ["HS256"] })
+    // Server-side gate for the platform-admin console (/admin). The /api/admin/* routes keep their
+    // own role checks; this stops the page shell from rendering for non-platform-admins.
+    if (pathname === "/admin" || pathname.startsWith("/admin/")) {
+      const email = typeof payload.email === "string" ? payload.email.toLowerCase() : ""
+      const admins = (process.env.PLATFORM_ADMIN_EMAILS ?? "")
+        .split(",").map((s) => s.trim().toLowerCase()).filter(Boolean)
+      if (!admins.includes(email)) {
+        const url = req.nextUrl.clone()
+        url.pathname = "/"
+        return NextResponse.redirect(url)
+      }
+    }
     const res = NextResponse.next()
     // Sliding session: re-issue the token once it's older than REFRESH_AFTER_S so an active
     // user is never logged out mid-work, while an idle/leaked token still expires
