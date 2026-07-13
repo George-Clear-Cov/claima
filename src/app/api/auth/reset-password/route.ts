@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
+import { logAudit } from "@/lib/audit"
 import { validatePassword } from "@/lib/password"
 
 export async function POST(req: NextRequest) {
@@ -40,6 +41,8 @@ export async function POST(req: NextRequest) {
       data: { hashedPassword, failedLoginAttempts: 0, lockedUntil: null },
     }),
   ])
+
+  logAudit({ action: "auth.password_reset", practiceId: user.practiceId, userId: user.id, userEmail: user.email, req })
 
   return NextResponse.json({ ok: true })
 }

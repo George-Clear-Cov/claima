@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { getSessionFromRequest } from "@/lib/auth"
+import { logAudit } from "@/lib/audit"
 import { scrubClaim, multiLineScrub } from "@/lib/claim-scrub"
 
 const singleSchema = z.object({
@@ -27,6 +28,7 @@ const multiSchema = z.object({
 export async function POST(req: NextRequest) {
   const session = await getSessionFromRequest(req)
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  logAudit({ action: "ai.claim_scrub", practiceId: session.practiceId, userId: session.userId, userEmail: session.email, req })
 
   let body: unknown
   try { body = await req.json() } catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }) }

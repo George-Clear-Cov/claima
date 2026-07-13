@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
 import { aiComplete, isAIConfigured } from "@/lib/ai"
 import { getSessionFromRequest } from "@/lib/auth"
+import { logAudit } from "@/lib/audit"
 import { logError } from "@/lib/log"
 
 export async function POST(req: NextRequest) {
   const session = await getSessionFromRequest(req)
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  logAudit({ action: "ai.prior_auth_check", practiceId: session.practiceId, userId: session.userId, userEmail: session.email, req })
 
   const body = await req.json()
   const { patientId, payerName, payerId, cptCode, serviceDate, specialty } = body

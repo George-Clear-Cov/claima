@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
 import { v4 as uuid } from "uuid"
 import { signToken, COOKIE_NAME, SESSION_MAX_AGE_S } from "@/lib/auth"
+import { logAudit } from "@/lib/audit"
 import { validatePassword } from "@/lib/password"
 import { logError } from "@/lib/log"
 
@@ -69,6 +70,8 @@ export async function POST(req: NextRequest) {
     ])
 
     const token = await signToken({ userId, email: emailNorm, name, practiceId, role: "ADMIN" })
+
+    logAudit({ action: "auth.register", practiceId, userId, userEmail: emailNorm, req })
 
     const res = NextResponse.json({ success: true })
     res.cookies.set(COOKIE_NAME, token, {

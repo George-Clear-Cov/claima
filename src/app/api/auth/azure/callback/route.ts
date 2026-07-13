@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { v4 as uuid } from "uuid"
 import bcrypt from "bcryptjs"
 import { signToken, COOKIE_NAME, SESSION_MAX_AGE_S } from "@/lib/auth"
+import { logAudit } from "@/lib/audit"
 import { logError } from "@/lib/log"
 
 export async function GET(req: NextRequest) {
@@ -79,6 +80,7 @@ export async function GET(req: NextRequest) {
         practiceId: existing.practiceId,
         role: existing.role,
       })
+      logAudit({ action: "auth.login", practiceId: existing.practiceId, userId: existing.id, userEmail: existing.email, req })
       const res = NextResponse.redirect(appUrl + "/")
       clearState(res)
       res.cookies.set(COOKIE_NAME, token, {
@@ -123,6 +125,7 @@ export async function GET(req: NextRequest) {
     ])
 
     const token = await signToken({ userId, email, name, practiceId, role: "ADMIN" })
+    logAudit({ action: "auth.login", practiceId, userId, userEmail: email, req })
     const res = NextResponse.redirect(`${appUrl}/onboarding/setup`)
     clearState(res)
     res.cookies.set(COOKIE_NAME, token, {

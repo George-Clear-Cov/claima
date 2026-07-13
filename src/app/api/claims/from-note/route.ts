@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server"
 import { aiComplete, isAIConfigured } from "@/lib/ai"
 import { getSessionFromRequest } from "@/lib/auth"
+import { logAudit } from "@/lib/audit"
 import { taxonomyToSpecialtyLabel } from "@/lib/specialty"
 import { logError } from "@/lib/log"
 
 export async function POST(req: NextRequest) {
   const session = await getSessionFromRequest(req)
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  logAudit({ action: "ai.note_intake", practiceId: session.practiceId, userId: session.userId, userEmail: session.email, req })
   if (!isAIConfigured()) return NextResponse.json({ error: "ANTHROPIC_API_KEY required" }, { status: 503 })
 
   const { note, patients, providers } = await req.json()
