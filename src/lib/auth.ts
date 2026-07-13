@@ -4,7 +4,13 @@ import { NextRequest } from "next/server"
 import { setAiPracticeContext } from "@/lib/ai-context"
 
 export const COOKIE_NAME = "claima_session"
-export const JWT_EXPIRY = "7d"
+// Absolute session window — the server-side backstop to the client idle-timeout in
+// SessionTimeout. Sliding: middleware re-issues the token on activity, so an active user is
+// never logged out mid-work, while an idle/leaked/copied token expires SESSION_MAX_AGE_S after
+// its last use (was a 7-day static token — HIPAA §164.312(a)(2)(iii) automatic logoff).
+export const JWT_EXPIRY = "8h"
+export const SESSION_MAX_AGE_S = 60 * 60 * 8 // 8h — matches JWT_EXPIRY (used for cookie maxAge)
+export const REFRESH_AFTER_S = 5 * 60 // re-issue the sliding token at most once per 5 minutes
 
 function getSecret() {
   const secret = process.env.JWT_SECRET

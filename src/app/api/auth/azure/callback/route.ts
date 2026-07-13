@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { v4 as uuid } from "uuid"
 import bcrypt from "bcryptjs"
-import { signToken, COOKIE_NAME } from "@/lib/auth"
+import { signToken, COOKIE_NAME, SESSION_MAX_AGE_S } from "@/lib/auth"
 import { logError } from "@/lib/log"
 
 export async function GET(req: NextRequest) {
@@ -85,7 +85,7 @@ export async function GET(req: NextRequest) {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
-        maxAge: 60 * 60 * 24 * 7,
+        maxAge: SESSION_MAX_AGE_S,
         path: "/",
       })
       return res
@@ -129,7 +129,7 @@ export async function GET(req: NextRequest) {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 7,
+      maxAge: SESSION_MAX_AGE_S,
       path: "/",
     })
     return res

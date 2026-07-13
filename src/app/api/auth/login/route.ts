@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import bcrypt from "bcryptjs"
-import { signToken, COOKIE_NAME } from "@/lib/auth"
+import { signToken, COOKIE_NAME, SESSION_MAX_AGE_S } from "@/lib/auth"
 import { logAudit } from "@/lib/audit"
 import { logError } from "@/lib/log"
 
@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 7,
+      maxAge: SESSION_MAX_AGE_S,
       path: "/",
     })
 

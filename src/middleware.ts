@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { jwtVerify } from "jose"
-import { COOKIE_NAME } from "@/lib/auth"
+import { jwtVerify, SignJWT } from "jose"
+import { COOKIE_NAME, JWT_EXPIRY, SESSION_MAX_AGE_S, REFRESH_AFTER_S } from "@/lib/auth"
 
 const PUBLIC_PATHS = [
   "/",
@@ -94,8 +94,27 @@ export async function middleware(req: NextRequest) {
 
   const secret = new TextEncoder().encode(process.env.JWT_SECRET ?? "")
   try {
-    await jwtVerify(token, secret, { algorithms: ["HS256"] })
-    return NextResponse.next()
+    const { payload } = await jwtVerify(token, secret, { algorithms: ["HS256"] })
+    const res = NextResponse.next()
+    // Sliding session: re-issue the token once it's older than REFRESH_AFTER_S so an active
+    // user is never logged out mid-work, while an idle/leaked token still expires
+    // SESSION_MAX_AGE_S after its last use (server backstop to the client idle timeout).
+    const iat = typeof payload.iat === "number" ? payload.iat : 0
+    if (Date.now() / 1000 - iat > REFRESH_AFTER_S) {
+      const refreshed = await new SignJWT(payload)
+        .setProtectedHeader({ alg: "HS256" })
+        .setIssuedAt()
+        .setExpirationTime(JWT_EXPIRY)
+        .sign(secret)
+      res.cookies.set(COOKIE_NAME, refreshed, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: SESSION_MAX_AGE_S,
+        path: "/",
+      })
+    }
+    return res
   } catch {
     if (isApiRoute) {
       const res = NextResponse.json({ error: "Unauthorized" }, { status: 401 })
