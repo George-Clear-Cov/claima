@@ -190,10 +190,15 @@ export async function fetchAvailableERAs(): Promise<ClaimMdERAEntry[]> {
   try {
     const { ok, data } = await claimMdPost("/eralist/", { ERAID: "0" })
     if (!ok) return []
-    return asArray(data.era).map(mapERAEntry)
+    return parseERAList(data)
   } catch {
     return []
   }
+}
+
+/** Pure parser for a /eralist/ response — exported for fixture testing. */
+export function parseERAList(data: Record<string, unknown>): ClaimMdERAEntry[] {
+  return asArray(data.era).map(mapERAEntry)
 }
 
 /** Fetch structured ERA detail (claims + CARC) via POST /services/eradata/. */
@@ -202,16 +207,22 @@ export async function fetchERAById(eraId: string): Promise<ClaimMdERADetail | nu
   try {
     const { ok, data } = await claimMdPost("/eradata/", { eraid: eraId })
     if (!ok) return null
-    const claims = asArray(data.claim).map(mapERAClaimLine)
-    return {
-      ...mapERAEntry(data),
-      era_id: eraId,
-      claim_count: claims.length,
-      claims,
-      raw_835: data.x12 ? str(data.x12) : undefined,
-    }
+    return parseERADetail(data, eraId)
   } catch {
     return null
+  }
+}
+
+/** Pure parser for a /eradata/ (835) response — exported so the field mappings can be validated
+ *  with a fixture, without a live Claim.MD call. */
+export function parseERADetail(data: Record<string, unknown>, eraId: string): ClaimMdERADetail {
+  const claims = asArray(data.claim).map(mapERAClaimLine)
+  return {
+    ...mapERAEntry(data),
+    era_id: eraId,
+    claim_count: claims.length,
+    claims,
+    raw_835: data.x12 ? str(data.x12) : undefined,
   }
 }
 
