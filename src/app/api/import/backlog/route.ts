@@ -3,6 +3,9 @@ import { getSessionFromRequest } from "@/lib/auth"
 import { logAudit } from "@/lib/audit"
 import { logError } from "@/lib/log"
 import { parse835Backlog } from "@/lib/import/from835"
+import { parse837Backlog } from "@/lib/import/from837"
+import { parseCsvBacklog } from "@/lib/import/fromCsv"
+import { parseTextBacklog } from "@/lib/import/fromText"
 import { commitImport } from "@/lib/import/commit"
 import type { ImportParseResult } from "@/lib/import/types"
 
@@ -28,12 +31,12 @@ export async function POST(req: NextRequest) {
 
     let parsed: ImportParseResult
     switch (format) {
-      case "835":
-        parsed = parse835Backlog(contents)
-        break
-      // "837" | "csv" | "text" adapters are wired here as they land.
+      case "835": parsed = parse835Backlog(contents); break
+      case "837": parsed = parse837Backlog(contents); break
+      case "csv": parsed = parseCsvBacklog(contents.join("\n"), body?.mapping as Record<string, string> | undefined); break
+      case "text": parsed = await parseTextBacklog(contents.join("\n\n")); break
       default:
-        return NextResponse.json({ error: `Unsupported format "${format}". Supported: 835.` }, { status: 400 })
+        return NextResponse.json({ error: `Unsupported format "${format}". Supported: 835, 837, csv, text.` }, { status: 400 })
     }
 
     const dryRun = mode !== "commit"

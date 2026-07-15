@@ -107,6 +107,7 @@ const NAV_SECTIONS: NavSection[] = [
       { href: "/eligibility", label: "Eligibility", icon: ShieldCheckIcon },
       { href: "/billing", label: "Billing", icon: CreditCardIcon },
       { href: "/analytics", label: "Analytics", icon: BarChartIcon },
+      { href: "/import", label: "Import", icon: FileTextIcon },
     ],
   },
   {
