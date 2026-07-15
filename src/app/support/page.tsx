@@ -88,7 +88,7 @@ export default function SupportPage() {
         </div>
 
         {/* Legal links */}
-        <div className="mt-8 pt-6 border-t border-gray-200 flex gap-4 text-xs text-gray-400">
+        <div className="mt-8 pt-6 border-t border-gray-200 flex gap-4 text-xs text-gray-500">
           <Link href="/baa" className="hover:text-gray-600">BAA</Link>
           <Link href="/security" className="hover:text-gray-600">Security</Link>
           <Link href="/privacy" className="hover:text-gray-600">Privacy</Link>

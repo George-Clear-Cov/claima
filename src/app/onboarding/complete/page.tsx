@@ -16,7 +16,7 @@ function CompleteContent() {
   return (
     <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center p-8">
       <div className="max-w-md w-full text-center">
-        {status === "loading" && <div className="text-gray-500">Verifying account…</div>}
+        {status === "loading" && <div className="text-gray-400">Verifying account…</div>}
 
         {status === "active" && (
           <>

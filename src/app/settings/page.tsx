@@ -153,7 +153,7 @@ function PracticeTab({ practice, onSaved }: { practice: Practice | null; onSaved
 
   function field(key: keyof Practice, label: string, opts?: { placeholder?: string; half?: boolean; type?: string }) {
     return (
-      <div className={opts?.half ? "" : "col-span-2"}>
+      <div className={opts?.half ? "" : "sm:col-span-2"}>
         <label className="block text-xs font-medium text-gray-500 mb-1.5">{label}</label>
         <input
           type={opts?.type ?? "text"}
@@ -167,18 +167,18 @@ function PracticeTab({ practice, onSaved }: { practice: Practice | null; onSaved
   }
 
   if (!practice) {
-    return <div className="text-gray-400 text-sm py-8 text-center">Loading practice details…</div>
+    return <div className="text-gray-500 text-sm py-8 text-center">Loading practice details…</div>
   }
 
   return (
     <form onSubmit={handleSave} className="space-y-6 max-w-2xl">
       <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-4">
         <h3 className="text-xs text-gray-500 uppercase tracking-widest font-medium">Practice Information</h3>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {field("name", "Practice Name")}
           {field("npi", "NPI", { half: true })}
           {field("taxId", "Tax ID", { half: true })}
-          <div className="col-span-2">
+          <div className="sm:col-span-2">
             <label className="block text-xs font-medium text-gray-500 mb-1.5">Taxonomy Code</label>
             <select
               value={form.taxonomy ?? ""}
@@ -195,7 +195,7 @@ function PracticeTab({ practice, onSaved }: { practice: Practice | null; onSaved
 
       <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-4">
         <h3 className="text-xs text-gray-500 uppercase tracking-widest font-medium">Address & Contact</h3>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {field("addressLine1", "Address Line 1")}
           {field("addressLine2", "Address Line 2 (optional)")}
           {field("city", "City", { half: true })}
@@ -219,7 +219,7 @@ function PracticeTab({ practice, onSaved }: { practice: Practice | null; onSaved
               max="20"
               className="w-32 bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all"
             />
-            <span className="text-gray-400 text-sm">applied to patient payments only</span>
+            <span className="text-gray-500 text-sm">applied to patient payments only</span>
           </div>
         </div>
       </div>
@@ -302,7 +302,7 @@ function ProvidersTab() {
       {showForm && (
         <form onSubmit={handleAdd} className="bg-gray-50 border border-gray-200 rounded-xl p-5 mb-6 space-y-4 shadow-sm">
           <h4 className="text-xs text-gray-500 uppercase tracking-widest font-medium">New Provider</h4>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1.5">First Name</label>
               <input
@@ -359,11 +359,11 @@ function ProvidersTab() {
       )}
 
       {loading ? (
-        <div className="text-gray-400 text-sm py-8 text-center">Loading…</div>
+        <div className="text-gray-500 text-sm py-8 text-center">Loading…</div>
       ) : providers.length === 0 ? (
-        <div className="text-gray-400 text-sm py-8 text-center">No providers yet. Add one above.</div>
+        <div className="text-gray-500 text-sm py-8 text-center">No providers yet. Add one above.</div>
       ) : (
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+        <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto shadow-sm">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
@@ -379,7 +379,7 @@ function ProvidersTab() {
                     {p.firstName} {p.lastName}
                   </td>
                   <td className="px-5 py-3.5 font-mono text-gray-500 text-xs">{p.npi}</td>
-                  <td className="px-5 py-3.5 font-mono text-gray-400 text-xs">{p.taxonomy}</td>
+                  <td className="px-5 py-3.5 font-mono text-gray-500 text-xs">{p.taxonomy}</td>
                 </tr>
               ))}
             </tbody>
@@ -480,7 +480,7 @@ function PatientsTab() {
       {showForm && (
         <form onSubmit={handleAdd} className="bg-gray-50 border border-gray-200 rounded-xl p-5 mb-6 space-y-4 shadow-sm">
           <h4 className="text-xs text-gray-500 uppercase tracking-widest font-medium">Patient Demographics</h4>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1.5">First Name</label>
               <input value={form.firstName} onChange={(e) => setForm({ ...form, firstName: e.target.value })} required className={inputClass} />
@@ -504,7 +504,7 @@ function PatientsTab() {
           </div>
 
           <h4 className="text-xs text-gray-500 uppercase tracking-widest font-medium pt-2">Insurance</h4>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1.5">Payer</label>
               <select value={form.payerId} onChange={(e) => payerChange(e.target.value)} className={inputClass}>
@@ -524,8 +524,8 @@ function PatientsTab() {
           </div>
 
           <h4 className="text-xs text-gray-500 uppercase tracking-widest font-medium pt-2">Address</h4>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="sm:col-span-2">
               <label className="block text-xs font-medium text-gray-500 mb-1.5">Street Address</label>
               <input value={form.addressLine1} onChange={(e) => setForm({ ...form, addressLine1: e.target.value })} required placeholder="123 Main St" className={inputClass} />
             </div>
@@ -562,13 +562,13 @@ function PatientsTab() {
       </div>
 
       {loading ? (
-        <div className="text-gray-400 text-sm py-8 text-center">Loading…</div>
+        <div className="text-gray-500 text-sm py-8 text-center">Loading…</div>
       ) : filtered.length === 0 ? (
-        <div className="text-gray-400 text-sm py-8 text-center">
+        <div className="text-gray-500 text-sm py-8 text-center">
           {search ? `No patients matching "${search}"` : "No patients yet. Add one above."}
         </div>
       ) : (
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+        <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto shadow-sm">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
@@ -668,7 +668,7 @@ function IntegrationsTab() {
 
   return (
     <div className="max-w-2xl space-y-4">
-      <div className="text-xs text-gray-400 mb-2">
+      <div className="text-xs text-gray-500 mb-2">
         Set env vars in <code className="bg-gray-100 px-1.5 py-0.5 rounded font-mono text-gray-600">.env.local</code> then restart the dev server.
       </div>
 
@@ -679,7 +679,7 @@ function IntegrationsTab() {
               <div className="flex items-center gap-2 mb-0.5">
                 <h3 className="font-semibold text-gray-900 text-sm">{integ.name}</h3>
                 {loading ? (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-400">checking…</span>
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-500">checking…</span>
                 ) : integ.configured ? (
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-green-50 text-green-700 font-medium">
                     <span className="w-1.5 h-1.5 rounded-full bg-green-500" /> Connected
@@ -899,11 +899,11 @@ function AuditTab() {
         <p className="text-sm text-gray-500 mt-0.5">All PHI access and data changes — required for HIPAA compliance.</p>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+      <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto">
         {loading ? (
-          <div className="p-8 text-center text-sm text-gray-400">Loading…</div>
+          <div className="p-8 text-center text-sm text-gray-500">Loading…</div>
         ) : logs.length === 0 ? (
-          <div className="p-8 text-center text-sm text-gray-400">No audit events yet. Events will appear here as users interact with the system.</div>
+          <div className="p-8 text-center text-sm text-gray-500">No audit events yet. Events will appear here as users interact with the system.</div>
         ) : (
           <table className="w-full text-sm">
             <thead>
@@ -921,7 +921,7 @@ function AuditTab() {
                     {new Date(log.createdAt).toLocaleString()}
                   </td>
                   <td className="px-4 py-3 text-gray-700 max-w-[160px] truncate">
-                    {log.userEmail ?? <span className="text-gray-400">—</span>}
+                    {log.userEmail ?? <span className="text-gray-500">—</span>}
                   </td>
                   <td className="px-4 py-3">
                     <span className={`inline-flex items-center gap-1.5 ${log.action === "auth.login_failed" ? "text-red-600" : "text-gray-800"}`}>
@@ -929,7 +929,7 @@ function AuditTab() {
                       {ACTION_LABELS[log.action] ?? log.action}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-gray-400 font-mono text-xs hidden md:table-cell">
+                  <td className="px-4 py-3 text-gray-500 font-mono text-xs hidden md:table-cell">
                     {log.ip ?? "—"}
                   </td>
                 </tr>
@@ -1040,7 +1040,7 @@ function PayersTab() {
       </div>
 
       {loading ? (
-        <div className="text-sm text-gray-400 py-8 text-center">Loading…</div>
+        <div className="text-sm text-gray-500 py-8 text-center">Loading…</div>
       ) : enrollments.length === 0 ? (
         <div className="border border-dashed border-gray-200 rounded-xl p-10 text-center">
           <p className="text-sm text-gray-500 mb-3">No payer enrollments yet.</p>
@@ -1049,7 +1049,7 @@ function PayersTab() {
           </a>
         </div>
       ) : (
-        <div className="border border-gray-200 rounded-xl overflow-hidden">
+        <div className="border border-gray-200 rounded-xl overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
@@ -1065,7 +1065,7 @@ function PayersTab() {
                 <tr key={e.id} className="hover:bg-gray-50">
                   <td className="px-4 py-3">
                     <div className="font-medium text-gray-900">{e.payerName}</div>
-                    <div className="text-xs text-gray-400">{e.payerId}</div>
+                    <div className="text-xs text-gray-500">{e.payerId}</div>
                   </td>
                   <td className="px-4 py-3">
                     <select
@@ -1080,7 +1080,7 @@ function PayersTab() {
                     </select>
                   </td>
                   <td className="px-4 py-3 text-gray-500 text-xs hidden md:table-cell">{e.claimMdPayerId ?? "—"}</td>
-                  <td className="px-4 py-3 text-gray-400 text-xs hidden lg:table-cell">
+                  <td className="px-4 py-3 text-gray-500 text-xs hidden lg:table-cell">
                     {e.enrolledAt ? new Date(e.enrolledAt).toLocaleDateString() : "—"}
                   </td>
                   <td className="px-4 py-3 text-right">

@@ -209,6 +209,7 @@ export default function AssistantPage() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
+            aria-label="Ask the billing assistant a question"
             placeholder="Ask about denials, claims, collections, billing rules…"
             disabled={streaming}
             rows={1}
@@ -216,7 +217,7 @@ export default function AssistantPage() {
             style={{ minHeight: "52px", maxHeight: "160px" }}
           />
           <div className="px-4 pb-3 flex items-center justify-between">
-            <span className="text-xs text-gray-400">Enter to send · Shift+Enter for new line</span>
+            <span className="text-xs text-gray-500">Enter to send · Shift+Enter for new line</span>
             <button
               onClick={() => send(input)}
               disabled={!input.trim() || streaming}
@@ -227,7 +228,7 @@ export default function AssistantPage() {
           </div>
         </div>
 
-        <p className="text-center text-xs text-gray-400 mt-3">
+        <p className="text-center text-xs text-gray-500 mt-3">
           Powered by Claude · Not a substitute for a licensed billing specialist
         </p>
       </div>

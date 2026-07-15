@@ -102,7 +102,7 @@ function CallScriptModal({ claimId, onClose }: { claimId: string; onClose: () =>
         </div>
 
         {loading && (
-          <div className="flex items-center justify-center py-16 text-gray-400 gap-2">
+          <div className="flex items-center justify-center py-16 text-gray-500 gap-2">
             <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
             Generating script…
           </div>
@@ -110,7 +110,7 @@ function CallScriptModal({ claimId, onClose }: { claimId: string; onClose: () =>
 
         {script && (
           <div className="p-6 space-y-5">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="bg-blue-50 border border-blue-200 rounded-xl p-3">
                 <div className="text-xs font-medium text-blue-700 uppercase tracking-wide mb-1">Provider Line</div>
                 <div className="text-sm text-blue-900 font-medium">{script.providerLine}</div>
@@ -325,7 +325,7 @@ export default function ClaimsPage() {
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-24 text-gray-400">
+          <div className="flex items-center justify-center py-24 text-gray-500">
             <svg className="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24" fill="none">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
@@ -340,13 +340,13 @@ export default function ClaimsPage() {
               </svg>
             </div>
             <p className="text-gray-700 font-medium mb-1">No claims yet</p>
-            <p className="text-gray-400 text-sm mb-6">Submit your first 837P claim to get started</p>
+            <p className="text-gray-500 text-sm mb-6">Submit your first 837P claim to get started</p>
             <Link href="/claims/new" className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-sm">
               Submit first claim →
             </Link>
           </div>
         ) : (
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+          <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto shadow-sm">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-200 bg-gray-50">

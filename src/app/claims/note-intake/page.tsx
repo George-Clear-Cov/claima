@@ -144,7 +144,7 @@ export default function NoteIntakePage() {
     <AppLayout>
       <div className="max-w-5xl mx-auto px-8 py-10">
         <div className="mb-8">
-          <div className="text-xs text-gray-400 mb-1">
+          <div className="text-xs text-gray-500 mb-1">
             <span className="hover:text-gray-600 cursor-pointer" onClick={() => router.push("/claims")}>Claims</span>
             <span className="mx-1.5">›</span>
             <span>From Session Note</span>
@@ -153,7 +153,7 @@ export default function NoteIntakePage() {
           <p className="text-gray-500 text-sm mt-0.5">Paste a session note — AI extracts CPT codes, diagnoses, and creates a draft claim</p>
         </div>
 
-        <div className={`grid gap-6 ${extracted ? "grid-cols-2" : "grid-cols-1 max-w-2xl"}`}>
+        <div className={`grid gap-6 ${extracted ? "grid-cols-1 lg:grid-cols-2" : "grid-cols-1 max-w-2xl"}`}>
           {/* Left: Note input */}
           <div className="space-y-4">
             <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
@@ -168,6 +168,7 @@ export default function NoteIntakePage() {
               <textarea
                 value={note}
                 onChange={(e) => { setNote(e.target.value); setExtracted(null) }}
+                aria-label="Session note"
                 placeholder={"Paste SOAP note, progress note, or any session documentation here…\n\nWorks with any format — structured or free text."}
                 rows={16}
                 className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 resize-none transition-all font-mono leading-relaxed"
@@ -248,7 +249,7 @@ export default function NoteIntakePage() {
                 </div>
 
                 {/* Date + CPT */}
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-medium text-gray-500 mb-1.5">Service Date</label>
                     <input type="date" value={serviceDate} onChange={(e) => setServiceDate(e.target.value)} className={inputClass} />
@@ -283,7 +284,7 @@ export default function NoteIntakePage() {
                 </div>
 
                 {/* Charge + modifier */}
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-medium text-gray-500 mb-1.5">Charge ($)</label>
                     <input type="number" value={chargeAmount} onChange={(e) => setChargeAmount(e.target.value)} step="0.01" min="0" className={inputClass} />

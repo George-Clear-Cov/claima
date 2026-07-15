@@ -116,9 +116,9 @@ export default function OigPage() {
 
   return (
     <AppLayout>
-      <div className="flex h-[calc(100vh-56px)]">
+      <div className="flex flex-col lg:flex-row h-[calc(100vh-56px)]">
         {/* Left panel */}
-        <div className="w-[420px] shrink-0 border-r border-gray-200 flex flex-col bg-white">
+        <div className="w-full lg:w-[420px] shrink-0 border-r border-gray-200 flex flex-col bg-white">
           <div className="px-5 pt-5 pb-4 border-b border-gray-100">
             <div className="flex items-start justify-between mb-4">
               <div>
@@ -137,7 +137,7 @@ export default function OigPage() {
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
               <div className="text-center p-2 bg-green-50 rounded-lg">
                 <div className="text-lg font-bold text-green-700">{clear.length}</div>
                 <div className="text-xs text-green-600">Clear</div>
@@ -169,9 +169,9 @@ export default function OigPage() {
           {/* Provider list */}
           <div className="flex-1 overflow-y-auto">
             {loading ? (
-              <div className="p-6 text-center text-xs text-gray-400">Loading…</div>
+              <div className="p-6 text-center text-xs text-gray-500">Loading…</div>
             ) : providers.length === 0 ? (
-              <div className="p-6 text-center text-xs text-gray-400">No providers found. Add providers in Settings.</div>
+              <div className="p-6 text-center text-xs text-gray-500">No providers found. Add providers in Settings.</div>
             ) : (
               providers.map((p) => {
                 const lc = lastCheck(p)
@@ -198,17 +198,17 @@ export default function OigPage() {
                         <div className="text-xs text-gray-500 mt-0.5">NPI {p.npi}</div>
                         {lc ? (
                           <div className="flex items-center gap-2 mt-1">
-                            <span className={`text-xs ${isStale ? "text-amber-600" : "text-gray-400"}`}>
+                            <span className={`text-xs ${isStale ? "text-amber-600" : "text-gray-500"}`}>
                               {isStale ? "⚠ " : ""}Checked {daysSince(lc.checkedAt)}d ago
                             </span>
                           </div>
                         ) : (
-                          <div className="text-xs text-gray-400 mt-1">Never checked</div>
+                          <div className="text-xs text-gray-500 mt-1">Never checked</div>
                         )}
                       </div>
                       <div className="flex flex-col items-end gap-2 shrink-0">
                         {lc ? <StatusBadge status={lc.status} /> : (
-                          <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">Not checked</span>
+                          <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">Not checked</span>
                         )}
                         <button
                           onClick={(e) => { e.stopPropagation(); checkProvider(p.id) }}
@@ -227,12 +227,12 @@ export default function OigPage() {
         </div>
 
         {/* Right detail panel */}
-        <div className="flex-1 overflow-y-auto bg-gray-50">
+        <div className="flex-1 min-w-0 overflow-y-auto bg-gray-50">
           {!selected ? (
-            <div className="flex flex-col items-center justify-center h-full gap-3 text-gray-400">
+            <div className="flex flex-col items-center justify-center h-full gap-3 text-gray-500">
               <div className="text-4xl">🔍</div>
               <div className="text-sm">Select a provider to view OIG check details</div>
-              <div className="text-xs text-gray-300 max-w-xs text-center">
+              <div className="text-xs text-gray-500 max-w-xs text-center">
                 Checks run against the HHS Office of Inspector General List of Excluded Individuals/Entities (LEIE), updated monthly.
               </div>
             </div>
@@ -325,29 +325,29 @@ export default function OigPage() {
                       </h3>
                       {selectedCheck.matchDetails.map((m, i) => (
                         <div key={i} className={`${i > 0 ? "mt-4 pt-4 border-t border-gray-100" : ""}`}>
-                          <div className="grid grid-cols-2 gap-3 text-sm">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                             <div>
-                              <div className="text-xs text-gray-400">Name</div>
+                              <div className="text-xs text-gray-500">Name</div>
                               <div className="font-medium text-gray-900">{m.lastName}, {m.firstName}</div>
                             </div>
                             <div>
-                              <div className="text-xs text-gray-400">NPI on Record</div>
+                              <div className="text-xs text-gray-500">NPI on Record</div>
                               <div className="font-medium text-gray-900">{m.npi || "—"}</div>
                             </div>
                             <div>
-                              <div className="text-xs text-gray-400">Exclusion Type</div>
+                              <div className="text-xs text-gray-500">Exclusion Type</div>
                               <div className="text-gray-900">{m.exclusionType || "—"}</div>
                             </div>
                             <div>
-                              <div className="text-xs text-gray-400">Exclusion Date</div>
+                              <div className="text-xs text-gray-500">Exclusion Date</div>
                               <div className="text-gray-900">{m.exclusionDate || "—"}</div>
                             </div>
                             <div>
-                              <div className="text-xs text-gray-400">Specialty</div>
+                              <div className="text-xs text-gray-500">Specialty</div>
                               <div className="text-gray-900">{m.specialty || "—"}</div>
                             </div>
                             <div>
-                              <div className="text-xs text-gray-400">State</div>
+                              <div className="text-xs text-gray-500">State</div>
                               <div className="text-gray-900">{m.state || "—"}</div>
                             </div>
                           </div>
@@ -360,7 +360,7 @@ export default function OigPage() {
                 <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
                   <div className="text-3xl mb-3">🔍</div>
                   <p className="text-sm text-gray-600 mb-1">No OIG check on record for this provider.</p>
-                  <p className="text-xs text-gray-400 mb-4">
+                  <p className="text-xs text-gray-500 mb-4">
                     CMS requires practices to screen providers against the LEIE before hire and monthly thereafter.
                   </p>
                   <button
@@ -380,7 +380,7 @@ export default function OigPage() {
                   <p>The <strong>LEIE</strong> (List of Excluded Individuals/Entities) is maintained by the HHS Office of Inspector General. Excluded individuals cannot bill Medicare, Medicaid, or any other federal healthcare program.</p>
                   <p><strong>CMS guidance:</strong> Screen all providers before hire, and at least monthly thereafter. Keep records of each check.</p>
                   <p><strong>Penalty:</strong> Civil Monetary Penalties up to $10,000 per item billed by an excluded individual, plus treble damages and exclusion of the practice.</p>
-                  <p className="text-gray-400">Data sourced from: exclusions.oig.hhs.gov (updated monthly by HHS)</p>
+                  <p className="text-gray-500">Data sourced from: exclusions.oig.hhs.gov (updated monthly by HHS)</p>
                 </div>
               </div>
             </div>

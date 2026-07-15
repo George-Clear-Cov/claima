@@ -52,7 +52,7 @@ function daysUntil(dateStr: string | null): number | null {
 }
 
 function ExpiryLabel({ expiresAt }: { expiresAt: string | null }) {
-  if (!expiresAt) return <span className="text-gray-400 text-xs">—</span>
+  if (!expiresAt) return <span className="text-gray-500 text-xs">—</span>
   const days = daysUntil(expiresAt)!
   if (days < 0) return <span className="text-xs text-red-600 font-medium">Expired {Math.abs(days)}d ago</span>
   if (days <= 14) return <span className="text-xs text-amber-600 font-medium">Expires in {days}d</span>
@@ -188,9 +188,9 @@ export default function PriorAuthPage() {
 
   return (
     <AppLayout>
-      <div className="flex h-[calc(100vh-56px)]">
+      <div className="flex flex-col lg:flex-row h-[calc(100vh-56px)]">
         {/* Left panel */}
-        <div className="w-[420px] shrink-0 border-r border-gray-200 flex flex-col bg-white">
+        <div className="w-full lg:w-[420px] shrink-0 border-r border-gray-200 flex flex-col bg-white">
           {/* Header */}
           <div className="px-5 pt-5 pb-4 border-b border-gray-100">
             <div className="flex items-center justify-between mb-4">
@@ -207,7 +207,7 @@ export default function PriorAuthPage() {
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-3 gap-2 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mb-4">
               <div className="text-center p-2 bg-green-50 rounded-lg">
                 <div className="text-lg font-bold text-green-700">{active.length}</div>
                 <div className="text-xs text-green-600">Active</div>
@@ -245,6 +245,7 @@ export default function PriorAuthPage() {
               <form onSubmit={handleCreate} className="space-y-2">
                 <select
                   required
+                  aria-label="Select patient"
                   value={form.patientId}
                   onChange={(e) => handlePatientSelect(e.target.value)}
                   className="w-full text-xs border border-gray-300 rounded-md px-2.5 py-1.5 bg-white"
@@ -255,27 +256,30 @@ export default function PriorAuthPage() {
                   ))}
                 </select>
                 <input
+                  aria-label="CPT codes"
                   placeholder="CPT codes (comma-separated, e.g. 97110, 97530)"
                   value={form.cptCodes}
                   onChange={(e) => setForm((f) => ({ ...f, cptCodes: e.target.value }))}
                   required
                   className="w-full text-xs border border-gray-300 rounded-md px-2.5 py-1.5"
                 />
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <input
+                    aria-label="Payer ID"
                     placeholder="Payer ID (auto-filled)"
                     value={form.payerId}
                     onChange={(e) => setForm((f) => ({ ...f, payerId: e.target.value }))}
                     className="text-xs border border-gray-300 rounded-md px-2.5 py-1.5"
                   />
                   <input
+                    aria-label="Auth number"
                     placeholder="Auth number (if known)"
                     value={form.authNumber}
                     onChange={(e) => setForm((f) => ({ ...f, authNumber: e.target.value }))}
                     className="text-xs border border-gray-300 rounded-md px-2.5 py-1.5"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <div>
                     <label className="text-xs text-gray-500 mb-0.5 block">Expiry date</label>
                     <input
@@ -297,6 +301,7 @@ export default function PriorAuthPage() {
                   </div>
                 </div>
                 <textarea
+                  aria-label="Notes"
                   placeholder="Notes (optional)"
                   value={form.notes}
                   onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
@@ -327,9 +332,9 @@ export default function PriorAuthPage() {
           {/* List */}
           <div className="flex-1 overflow-y-auto">
             {loading ? (
-              <div className="p-6 text-center text-xs text-gray-400">Loading…</div>
+              <div className="p-6 text-center text-xs text-gray-500">Loading…</div>
             ) : filtered.length === 0 ? (
-              <div className="p-6 text-center text-xs text-gray-400">
+              <div className="p-6 text-center text-xs text-gray-500">
                 {filter === "ALL" ? "No prior authorizations yet. Click + New PA to add one." : `No ${filter.toLowerCase()} authorizations.`}
               </div>
             ) : (
@@ -384,9 +389,9 @@ export default function PriorAuthPage() {
         </div>
 
         {/* Right detail panel */}
-        <div className="flex-1 overflow-y-auto bg-gray-50">
+        <div className="flex-1 min-w-0 overflow-y-auto bg-gray-50">
           {!selected ? (
-            <div className="flex items-center justify-center h-full text-gray-400 text-sm">
+            <div className="flex items-center justify-center h-full text-gray-500 text-sm">
               Select a prior authorization to view details
             </div>
           ) : (
@@ -404,7 +409,7 @@ export default function PriorAuthPage() {
               {/* Info grid */}
               <div className="bg-white rounded-xl border border-gray-200 p-5 mb-5">
                 <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Authorization Details</h3>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <div className="text-xs text-gray-500">CPT Codes</div>
                     <div className="flex gap-1 flex-wrap mt-1">
@@ -416,7 +421,7 @@ export default function PriorAuthPage() {
                   <div>
                     <div className="text-xs text-gray-500">Auth Number</div>
                     <div className="text-sm font-medium text-gray-900 mt-1">
-                      {selected.authNumber ?? <span className="text-gray-400 font-normal">Not yet received</span>}
+                      {selected.authNumber ?? <span className="text-gray-500 font-normal">Not yet received</span>}
                     </div>
                   </div>
                   <div>
@@ -426,7 +431,7 @@ export default function PriorAuthPage() {
                   <div>
                     <div className="text-xs text-gray-500">Approved</div>
                     <div className="text-sm text-gray-900 mt-1">
-                      {selected.approvedAt ? new Date(selected.approvedAt).toLocaleDateString() : <span className="text-gray-400">—</span>}
+                      {selected.approvedAt ? new Date(selected.approvedAt).toLocaleDateString() : <span className="text-gray-500">—</span>}
                     </div>
                   </div>
                   <div>
@@ -438,7 +443,7 @@ export default function PriorAuthPage() {
                     <div className="text-sm text-gray-900 mt-1">
                       {selected.sessionsApproved
                         ? `${selected.sessionsUsed} used / ${selected.sessionsApproved} approved`
-                        : <span className="text-gray-400">—</span>}
+                        : <span className="text-gray-500">—</span>}
                     </div>
                   </div>
                 </div>
@@ -452,7 +457,7 @@ export default function PriorAuthPage() {
                         style={{ width: `${Math.min((selected.sessionsUsed / selected.sessionsApproved) * 100, 100)}%` }}
                       />
                     </div>
-                    <div className="text-xs text-gray-400 mt-1 text-right">
+                    <div className="text-xs text-gray-500 mt-1 text-right">
                       {Math.round((selected.sessionsUsed / selected.sessionsApproved) * 100)}% of sessions used
                     </div>
                   </div>
@@ -469,7 +474,7 @@ export default function PriorAuthPage() {
               <div className="bg-white rounded-xl border border-gray-200 p-5">
                 <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Update Authorization</h3>
                 <form onSubmit={handleUpdate} className="space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="text-xs text-gray-500 mb-1 block">Auth Number</label>
                       <input

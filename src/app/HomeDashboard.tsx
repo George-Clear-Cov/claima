@@ -124,7 +124,7 @@ export default function HomeDashboard() {
         )}
 
         {loading && (
-          <div className="flex items-center justify-center py-24 text-gray-400">
+          <div className="flex items-center justify-center py-24 text-gray-500">
             <svg className="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24" fill="none">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
@@ -183,7 +183,7 @@ export default function HomeDashboard() {
 
             <div>
               <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">At a Glance</h2>
-              <div className="grid grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 {[
                   { label: "Payments In", value: fmt(briefing.totalPaidAmount), sub: `${briefing.paidYesterday} claims`, accent: "bg-green-500", color: "text-green-700" },
                   { label: "New Denials", value: String(briefing.newDenials), sub: fmt(briefing.newDenialsAmount), accent: briefing.newDenials > 0 ? "bg-red-500" : "bg-gray-300", color: briefing.newDenials > 0 ? "text-red-700" : "text-gray-600" },
@@ -191,9 +191,9 @@ export default function HomeDashboard() {
                   { label: "Overdue AR", value: fmt(briefing.overdueAmount), sub: `${briefing.overdueStatements} stmts`, accent: "bg-amber-500", color: "text-amber-700" },
                 ].map((stat) => (
                   <div key={stat.label} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-                    <div className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-2">{stat.label}</div>
+                    <div className="text-xs text-gray-500 font-medium uppercase tracking-wider mb-2">{stat.label}</div>
                     <div className={`text-xl font-bold font-mono ${stat.color}`}>{stat.value}</div>
-                    <div className="text-xs text-gray-400 mt-0.5">{stat.sub}</div>
+                    <div className="text-xs text-gray-500 mt-0.5">{stat.sub}</div>
                   </div>
                 ))}
               </div>

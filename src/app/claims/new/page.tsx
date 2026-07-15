@@ -289,7 +289,7 @@ export default function NewClaimPage() {
         </div>
 
         {ctxLoading ? (
-          <div className="flex items-center justify-center py-20 text-gray-400">
+          <div className="flex items-center justify-center py-20 text-gray-500">
             <svg className="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24" fill="none">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
@@ -299,7 +299,7 @@ export default function NewClaimPage() {
         ) : !ctx?.practice ? (
           <div className="text-center py-20 bg-white border border-gray-200 rounded-2xl shadow-sm">
             <p className="text-gray-500 font-medium mb-1">Unable to load practice data</p>
-            <p className="text-gray-400 text-sm">Please check your connection and try refreshing the page.</p>
+            <p className="text-gray-500 text-sm">Please check your connection and try refreshing the page.</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -314,6 +314,7 @@ export default function NewClaimPage() {
                   value={nlpText}
                   onChange={(e) => { setNlpText(e.target.value); setNlpNote(null) }}
                   onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleNLPParse() } }}
+                  aria-label="Describe the session"
                   placeholder="e.g. &quot;Sarah had a 60-min session with Dr. Chen today, depression and anxiety&quot;"
                   rows={2}
                   className="flex-1 bg-white border border-blue-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 resize-none transition-all"
@@ -340,7 +341,7 @@ export default function NewClaimPage() {
             {/* Visit Details */}
             <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
               <h2 className="text-xs text-gray-500 uppercase tracking-widest font-medium mb-4">Visit Details</h2>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1.5">Service Date</label>
                   <input
@@ -371,7 +372,7 @@ export default function NewClaimPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 mt-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1.5">Place of Service</label>
                   <select value={placeOfService} onChange={(e) => setPlaceOfService(e.target.value)} className={inputClass}>
@@ -386,7 +387,7 @@ export default function NewClaimPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1.5">Referring Provider NPI <span className="text-gray-400 font-normal">(optional)</span></label>
+                  <label className="block text-xs font-medium text-gray-500 mb-1.5">Referring Provider NPI <span className="text-gray-500 font-normal">(optional)</span></label>
                   <input
                     value={referringProviderNpi}
                     onChange={(e) => setReferringProviderNpi(e.target.value.replace(/\D/g, "").slice(0, 10))}
@@ -430,7 +431,7 @@ export default function NewClaimPage() {
                   <div className="border border-blue-200 bg-blue-50/40 rounded-xl p-4 space-y-3">
                     <div className="text-xs font-semibold text-blue-800 uppercase tracking-wider mb-1">New Patient</div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label className="block text-xs font-medium text-gray-500 mb-1">First Name</label>
                         <input value={newPatient.firstName} onChange={e => setNewPatient(p => ({ ...p, firstName: e.target.value }))} placeholder="Sarah" className={inputClass} />
@@ -441,7 +442,7 @@ export default function NewClaimPage() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label className="block text-xs font-medium text-gray-500 mb-1">Date of Birth</label>
                         <input type="date" value={newPatient.dob} onChange={e => setNewPatient(p => ({ ...p, dob: e.target.value }))} className={inputClass} />
@@ -456,7 +457,7 @@ export default function NewClaimPage() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label className="block text-xs font-medium text-gray-500 mb-1">Insurance Payer</label>
                         <select
@@ -483,13 +484,13 @@ export default function NewClaimPage() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label className="block text-xs font-medium text-gray-500 mb-1">Member ID</label>
                         <input value={newPatient.memberId} onChange={e => setNewPatient(p => ({ ...p, memberId: e.target.value }))} placeholder="W123456789" className={inputClass} />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-gray-500 mb-1">Group Number <span className="text-gray-400 font-normal">(optional)</span></label>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">Group Number <span className="text-gray-500 font-normal">(optional)</span></label>
                         <input value={newPatient.groupNumber} onChange={e => setNewPatient(p => ({ ...p, groupNumber: e.target.value }))} placeholder="GRP001" className={inputClass} />
                       </div>
                     </div>
@@ -499,7 +500,7 @@ export default function NewClaimPage() {
                       <input value={newPatient.addressLine1} onChange={e => setNewPatient(p => ({ ...p, addressLine1: e.target.value }))} placeholder="123 Main St" className={inputClass} />
                     </div>
 
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                       <div className="col-span-1">
                         <label className="block text-xs font-medium text-gray-500 mb-1">City</label>
                         <input value={newPatient.city} onChange={e => setNewPatient(p => ({ ...p, city: e.target.value }))} placeholder="Chicago" className={inputClass} />
@@ -534,7 +535,7 @@ export default function NewClaimPage() {
               </div>
 
               {selectedPatient && !showNewPatient && (
-                <div className="mt-3 text-xs text-gray-400 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2">
+                <div className="mt-3 text-xs text-gray-500 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2">
                   DOB: {new Date(selectedPatient.dob).toLocaleDateString()} ·
                   Member ID: <span className="font-mono">{selectedPatient.memberId}</span> ·
                   Payer: {selectedPatient.payerName}
@@ -559,7 +560,7 @@ export default function NewClaimPage() {
                 {lines.map((line, idx) => (
                   <div key={idx} className="border border-gray-200 rounded-xl p-4 space-y-4 bg-gray-50">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs text-gray-400 uppercase font-medium">Line {idx + 1}</span>
+                      <span className="text-xs text-gray-500 uppercase font-medium">Line {idx + 1}</span>
                       {lines.length > 1 && (
                         <button
                           type="button"
@@ -598,7 +599,7 @@ export default function NewClaimPage() {
                       <label className="block text-xs font-medium text-gray-500 mb-2">
                         Diagnosis Codes (ICD-10) — select up to 4
                       </label>
-                      <div className="grid grid-cols-2 gap-1.5">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                         {COMMON_ICD10_CODES.map((c) => {
                           const sel = line.icd10Codes.includes(c.code)
                           return (
@@ -623,7 +624,7 @@ export default function NewClaimPage() {
                       )}
                     </div>
 
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                       <div>
                         <label className="block text-xs font-medium text-gray-500 mb-1.5">Modifier</label>
                         <input

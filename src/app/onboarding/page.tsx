@@ -162,7 +162,7 @@ export default function OnboardingPage() {
                       className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-bold mt-0.5 ${
                         done
                           ? "bg-green-500/20 text-green-400"
-                          : "bg-gray-800 text-gray-500"
+                          : "bg-gray-800 text-gray-400"
                       }`}
                     >
                       {done ? "✓" : index + 1}
@@ -174,7 +174,7 @@ export default function OnboardingPage() {
                           {step.title}
                         </span>
                       </div>
-                      <p className="text-xs text-gray-500 mt-0.5">{step.description}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">{step.description}</p>
 
                       {/* Stripe connect inline error */}
                       {isStripe && connectError && (
@@ -213,9 +213,9 @@ export default function OnboardingPage() {
               })}
         </div>
 
-        <div className="mt-8 flex gap-4 text-xs text-gray-600">
-          <Link href="/" className="hover:text-gray-400">Skip for now →</Link>
-          <Link href="/support" className="hover:text-gray-400">Need help?</Link>
+        <div className="mt-8 flex gap-4 text-xs text-gray-400">
+          <Link href="/" className="hover:text-gray-200">Skip for now →</Link>
+          <Link href="/support" className="hover:text-gray-200">Need help?</Link>
         </div>
       </div>
     </div>

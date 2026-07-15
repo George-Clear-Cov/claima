@@ -99,7 +99,7 @@ function AzureMarketplaceContent() {
             >
               Create Your Account
             </a>
-            <p className="text-xs text-gray-400 mt-3">Already have an account? <a href="/login" className="text-blue-600 hover:underline">Sign in</a></p>
+            <p className="text-xs text-gray-500 mt-3">Already have an account? <a href="/login" className="text-blue-600 hover:underline">Sign in</a></p>
           </div>
         )}
 
