@@ -2,13 +2,12 @@ import { NextRequest, NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
 import { logAudit } from "@/lib/audit"
 import { validatePassword } from "@/lib/password"
+import { parseJson, resetPasswordSchema } from "@/lib/validation"
 
 export async function POST(req: NextRequest) {
-  const { token, password } = await req.json()
-
-  if (!token || !password) {
-    return NextResponse.json({ error: "Invalid request" }, { status: 400 })
-  }
+  const parsed = await parseJson(req, resetPasswordSchema)
+  if (!parsed.ok) return parsed.response
+  const { token, password } = parsed.data
 
   const pwCheck = validatePassword(password)
   if (!pwCheck.valid) {

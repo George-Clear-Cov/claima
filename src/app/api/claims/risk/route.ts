@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getSessionFromRequest } from "@/lib/auth"
 import { logAudit } from "@/lib/audit"
+import { parseJson, claimsRiskSchema } from "@/lib/validation"
 
 export interface ClaimRisk {
   claimId: string
@@ -16,8 +17,10 @@ export async function POST(req: NextRequest) {
 
   if (!process.env.DATABASE_URL) return NextResponse.json([])
 
-  const { claimIds } = await req.json()
-  if (!Array.isArray(claimIds) || claimIds.length === 0) return NextResponse.json([])
+  const parsed = await parseJson(req, claimsRiskSchema)
+  if (!parsed.ok) return parsed.response
+  const { claimIds } = parsed.data
+  if (claimIds.length === 0) return NextResponse.json([])
   logAudit({ action: "claims.risk_check", practiceId: session.practiceId, userId: session.userId, userEmail: session.email, req })
 
   const { prisma } = await import("@/lib/prisma")

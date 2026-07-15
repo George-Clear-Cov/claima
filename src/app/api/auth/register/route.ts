@@ -5,14 +5,13 @@ import { signToken, COOKIE_NAME, SESSION_MAX_AGE_S } from "@/lib/auth"
 import { logAudit } from "@/lib/audit"
 import { validatePassword } from "@/lib/password"
 import { logError } from "@/lib/log"
+import { parseJson, registerSchema } from "@/lib/validation"
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, email, password, practiceName, baaAccepted } = await req.json()
-
-    if (!name || !email || !password || !practiceName) {
-      return NextResponse.json({ error: "All fields are required" }, { status: 400 })
-    }
+    const parsed = await parseJson(req, registerSchema)
+    if (!parsed.ok) return parsed.response
+    const { name, email, password, practiceName, baaAccepted } = parsed.data
 
     const emailNorm = email.toLowerCase().trim()
 

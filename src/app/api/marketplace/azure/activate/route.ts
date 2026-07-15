@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { resolveSubscription, activateSubscription } from "@/lib/azure-marketplace"
+import { parseJson, azureActivateSchema } from "@/lib/validation"
 
 /**
  * POST /api/marketplace/azure/activate
@@ -7,11 +8,9 @@ import { resolveSubscription, activateSubscription } from "@/lib/azure-marketpla
  * Resolves the token → subscription details, activates it, stores in DB.
  */
 export async function POST(req: NextRequest) {
-  const { marketplaceToken } = await req.json()
-
-  if (!marketplaceToken) {
-    return NextResponse.json({ error: "marketplaceToken required" }, { status: 400 })
-  }
+  const parsed = await parseJson(req, azureActivateSchema)
+  if (!parsed.ok) return parsed.response
+  const { marketplaceToken } = parsed.data
 
   try {
     const azureSub = await resolveSubscription(marketplaceToken)

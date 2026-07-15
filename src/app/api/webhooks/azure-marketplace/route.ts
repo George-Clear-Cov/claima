@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { acknowledgeOperation } from "@/lib/azure-marketplace"
+import { parseJson, azureWebhookSchema } from "@/lib/validation"
 
 /**
  * POST /api/webhooks/azure-marketplace
@@ -43,32 +44,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  let body: Record<string, unknown>
-  try {
-    body = await req.json()
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 })
-  }
-
-  const {
-    id: operationId,
-    subscriptionId,
-    action,
-    planId,
-    quantity,
-    status,
-  } = body as {
-    id: string
-    subscriptionId: string
-    action: string
-    planId?: string
-    quantity?: number
-    status?: string
-  }
-
-  if (!operationId || !subscriptionId) {
-    return NextResponse.json({ error: "Missing operationId or subscriptionId" }, { status: 400 })
-  }
+  const parsed = await parseJson(req, azureWebhookSchema)
+  if (!parsed.ok) return parsed.response
+  const { id: operationId, subscriptionId, action, planId, quantity, status } = parsed.data
 
   // Process async — ack first, then update DB
   void processAzureWebhook({ operationId, subscriptionId, action, planId, quantity, status })

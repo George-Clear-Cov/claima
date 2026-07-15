@@ -2,6 +2,7 @@ import { NextRequest } from "next/server"
 import { getSessionFromRequest } from "@/lib/auth"
 import { logAudit } from "@/lib/audit"
 import { aiStream, isAIConfigured } from "@/lib/ai"
+import { parseJson, assistantSchema } from "@/lib/validation"
 
 export async function POST(req: NextRequest) {
   const session = await getSessionFromRequest(req)
@@ -11,14 +12,9 @@ export async function POST(req: NextRequest) {
     return new Response("AI not configured", { status: 503 })
   }
 
-  let messages: { role: "user" | "assistant"; content: string }[]
-  try {
-    const body = await req.json()
-    if (!Array.isArray(body?.messages)) return new Response("messages must be an array", { status: 400 })
-    messages = body.messages
-  } catch {
-    return new Response("Invalid JSON body", { status: 400 })
-  }
+  const parsed = await parseJson(req, assistantSchema)
+  if (!parsed.ok) return parsed.response
+  const { messages } = parsed.data
   const practiceId = session.practiceId
 
   logAudit({ action: "assistant.query", practiceId, userId: session.userId, userEmail: session.email, req })

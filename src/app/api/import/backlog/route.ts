@@ -8,6 +8,7 @@ import { parseCsvBacklog } from "@/lib/import/fromCsv"
 import { parseTextBacklog } from "@/lib/import/fromText"
 import { commitImport } from "@/lib/import/commit"
 import type { ImportParseResult } from "@/lib/import/types"
+import { parseJson, importBacklogSchema } from "@/lib/validation"
 
 /**
  * POST /api/import/backlog — load a practice's historical claim/denial backlog.
@@ -20,23 +21,17 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   try {
-    const body = await req.json()
-    const format = String(body?.format ?? "")
-    const contents = body?.contents
-    const mode = body?.mode === "commit" ? "commit" : "preview"
-
-    if (!Array.isArray(contents) || contents.length === 0 || !contents.every((c) => typeof c === "string")) {
-      return NextResponse.json({ error: "Provide `contents` as a non-empty array of file text strings." }, { status: 400 })
-    }
+    const input = await parseJson(req, importBacklogSchema)
+    if (!input.ok) return input.response
+    const { format, contents, mapping } = input.data
+    const mode = input.data.mode === "commit" ? "commit" : "preview"
 
     let parsed: ImportParseResult
     switch (format) {
       case "835": parsed = parse835Backlog(contents); break
       case "837": parsed = parse837Backlog(contents); break
-      case "csv": parsed = parseCsvBacklog(contents.join("\n"), body?.mapping as Record<string, string> | undefined); break
+      case "csv": parsed = parseCsvBacklog(contents.join("\n"), mapping); break
       case "text": parsed = await parseTextBacklog(contents.join("\n\n")); break
-      default:
-        return NextResponse.json({ error: `Unsupported format "${format}". Supported: 835, 837, csv, text.` }, { status: 400 })
     }
 
     const dryRun = mode !== "commit"

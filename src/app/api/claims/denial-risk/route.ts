@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getSessionFromRequest } from "@/lib/auth"
 import { logAudit } from "@/lib/audit"
+import { parseJson, denialRiskSchema } from "@/lib/validation"
 
 export interface DenialRiskResult {
   denialRate: number
@@ -19,10 +20,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ denialRate: 0, sampleSize: 0, topReasons: [], riskLevel: "low", message: "No history yet" })
   }
 
-  const { payerName, cptCode } = await req.json()
-  if (!payerName || !cptCode) {
-    return NextResponse.json({ error: "payerName and cptCode required" }, { status: 400 })
-  }
+  const parsed = await parseJson(req, denialRiskSchema)
+  if (!parsed.ok) return parsed.response
+  const { payerName, cptCode } = parsed.data
 
   const { prisma } = await import("@/lib/prisma")
 
