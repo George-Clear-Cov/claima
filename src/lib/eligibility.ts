@@ -159,14 +159,22 @@ export async function checkEligibility(req: EligibilityRequest): Promise<Eligibi
 
     const data = await res.json()
 
-    if (!res.ok) {
+    // Claim.MD returns errors as HTTP 200 with an { error: { error_mesg, error_code } } body,
+    // so surface an error field regardless of HTTP status (don't silently return "not eligible").
+    const errObj = (data as Record<string, unknown>)?.error
+    const errMsg =
+      typeof errObj === "string" ? errObj
+      : errObj && typeof errObj === "object"
+        ? String((errObj as Record<string, unknown>).error_mesg ?? (errObj as Record<string, unknown>).message ?? JSON.stringify(errObj))
+        : !res.ok ? String((data as Record<string, unknown>).message ?? "Eligibility check failed") : null
+    if (errMsg) {
       return {
         eligible: false,
         coverageActive: false,
         coverage: null,
         rawResponse: data,
         checkedAt: new Date().toISOString(),
-        errors: [data.message ?? data.error ?? "Eligibility check failed"],
+        errors: [errMsg],
       }
     }
 

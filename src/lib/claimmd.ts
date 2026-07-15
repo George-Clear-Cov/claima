@@ -250,7 +250,9 @@ export interface ClaimMdPayerInfo {
 export async function lookupPayer(payerIdOrName: string): Promise<ClaimMdPayerInfo | null> {
   if (!isClaimMdConfigured()) return null
   try {
-    const byId = /^[A-Z0-9]{4,10}$/i.test(payerIdOrName)
+    // Payer IDs are 4–10 alphanumerics that contain a digit (e.g. "60054", "SB580"); a pure-alpha
+    // token like "aetna" is a name, not an id — search by name so we don't miss it.
+    const byId = /^[A-Z0-9]{4,10}$/i.test(payerIdOrName) && /\d/.test(payerIdOrName)
     const { ok, data } = await claimMdPost("/payerlist/", byId ? { payerid: payerIdOrName } : { payer_name: payerIdOrName })
     if (!ok) return null
     const p = firstOf(data.payer)
