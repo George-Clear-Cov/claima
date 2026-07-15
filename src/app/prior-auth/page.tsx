@@ -72,6 +72,8 @@ export default function PriorAuthPage() {
   const [updating, setUpdating] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [updateError, setUpdateError] = useState<string | null>(null)
+  const [updateSuccess, setUpdateSuccess] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
   // new PA form state
   const [form, setForm] = useState({
@@ -85,13 +87,21 @@ export default function PriorAuthPage() {
   })
 
   async function load() {
-    const [authRes, patRes] = await Promise.all([
-      fetch("/api/prior-auth"),
-      fetch("/api/patients"),
-    ])
-    if (authRes.ok) setAuths(await authRes.json())
-    if (patRes.ok) setPatients(await patRes.json())
-    setLoading(false)
+    setLoading(true)
+    setLoadError(null)
+    try {
+      const [authRes, patRes] = await Promise.all([
+        fetch("/api/prior-auth"),
+        fetch("/api/patients"),
+      ])
+      if (!authRes.ok || !patRes.ok) throw new Error()
+      setAuths(await authRes.json())
+      setPatients(await patRes.json())
+    } catch {
+      setLoadError("Couldn't load this page. Please try again.")
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => { load() }, [])
@@ -158,6 +168,7 @@ export default function PriorAuthPage() {
     if (!selected) return
     setUpdating(true)
     setUpdateError(null)
+    setUpdateSuccess(false)
     const res = await fetch(`/api/prior-auth/${selected.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -174,6 +185,8 @@ export default function PriorAuthPage() {
       const updated = await res.json()
       setAuths((prev) => prev.map((a) => a.id === updated.id ? { ...a, ...updated } : a))
       setSelected((prev) => prev ? { ...prev, ...updated } : null)
+      setUpdateSuccess(true)
+      setTimeout(() => setUpdateSuccess(false), 2500)
     } else {
       const err = await res.json().catch(() => ({}))
       setUpdateError(err.error ?? "Failed to save changes")
@@ -331,7 +344,12 @@ export default function PriorAuthPage() {
 
           {/* List */}
           <div className="flex-1 overflow-y-auto">
-            {loading ? (
+            {loadError ? (
+              <div className="p-6 text-center">
+                <div className="text-xs text-gray-600 mb-3">{loadError}</div>
+                <button onClick={load} className="bg-gray-900 text-white text-sm rounded-lg px-4 py-2">Try again</button>
+              </div>
+            ) : loading ? (
               <div className="p-6 text-center text-xs text-gray-500">Loading…</div>
             ) : filtered.length === 0 ? (
               <div className="p-6 text-center text-xs text-gray-500">
@@ -544,6 +562,7 @@ export default function PriorAuthPage() {
                     {updating ? "Saving…" : "Save Changes"}
                   </button>
                   {updateError && <p className="text-xs text-red-600 mt-2">{updateError}</p>}
+                  {updateSuccess && <p className="text-xs text-green-600 mt-2">Saved ✓</p>}
                 </form>
               </div>
             </div>

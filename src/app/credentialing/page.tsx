@@ -136,6 +136,9 @@ export default function CredentialingPage() {
   const [addingPayer, setAddingPayer] = useState(false)
   const [payerError, setPayerError] = useState<string | null>(null)
   const [healthFilter, setHealthFilter] = useState<"all" | "issues">("all")
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [statusError, setStatusError] = useState<string | null>(null)
+  const [statusSuccess, setStatusSuccess] = useState<string | null>(null)
 
   // License edit form
   const [licenseForm, setLicenseForm] = useState({
@@ -153,16 +156,22 @@ export default function CredentialingPage() {
   const [showPayerForm, setShowPayerForm] = useState(false)
 
   const load = useCallback(async () => {
-    const res = await fetch("/api/credentialing")
-    if (res.ok) {
+    setLoading(true)
+    setLoadError(null)
+    try {
+      const res = await fetch("/api/credentialing")
+      if (!res.ok) throw new Error()
       const data: Provider[] = await res.json()
       setProviders(data)
       if (selected) {
         const refreshed = data.find((p) => p.id === selected.id)
         if (refreshed) setSelected(refreshed)
       }
+    } catch {
+      setLoadError("Couldn't load this page. Please try again.")
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }, [selected])
 
   useEffect(() => { load() }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -240,12 +249,21 @@ export default function CredentialingPage() {
   }
 
   async function handleUpdatePayerStatus(credId: string, status: CredentialStatus) {
-    await fetch(`/api/credentialing/payers/${credId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
-    })
-    await load()
+    setStatusError(null)
+    setStatusSuccess(null)
+    try {
+      const res = await fetch(`/api/credentialing/payers/${credId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      })
+      if (!res.ok) throw new Error()
+      await load()
+      setStatusSuccess("Status updated ✓")
+      setTimeout(() => setStatusSuccess(null), 2500)
+    } catch {
+      setStatusError("Couldn't update status. Please try again.")
+    }
   }
 
   async function handleDeletePayer(credId: string, payerName: string) {
@@ -321,7 +339,12 @@ export default function CredentialingPage() {
           </div>
 
           <div className="flex-1 overflow-y-auto">
-            {loading ? (
+            {loadError ? (
+              <div className="p-6 text-center">
+                <div className="text-xs text-gray-600 mb-3">{loadError}</div>
+                <button onClick={load} className="bg-gray-900 text-white text-sm rounded-lg px-4 py-2">Try again</button>
+              </div>
+            ) : loading ? (
               <div className="p-6 text-center text-xs text-gray-500">Loading…</div>
             ) : filtered.length === 0 ? (
               <div className="p-6 text-center text-xs text-gray-500">
@@ -494,6 +517,9 @@ export default function CredentialingPage() {
                     + Add Payer
                   </button>
                 </div>
+
+                {statusError && <div className="mb-3 p-2.5 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700">{statusError}</div>}
+                {statusSuccess && <div className="mb-3 p-2.5 bg-green-50 border border-green-200 rounded-lg text-xs text-green-700">{statusSuccess}</div>}
 
                 {showPayerForm && (
                   <form onSubmit={handleAddPayer} className="mb-4 p-4 bg-blue-50 rounded-xl space-y-3">

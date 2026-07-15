@@ -73,6 +73,7 @@ export default function NewClaimPage() {
 
   const [ctx, setCtx] = useState<Context | null>(null)
   const [ctxLoading, setCtxLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
   const [serviceDate, setServiceDate] = useState(new Date().toISOString().slice(0, 10))
   const [providerId, setProviderId] = useState("")
@@ -100,17 +101,24 @@ export default function NewClaimPage() {
   const [nlpParsing, setNlpParsing] = useState(false)
   const [nlpNote, setNlpNote] = useState<string | null>(null)
 
-  useEffect(() => {
-    fetch("/api/context")
-      .then((r) => r.json())
-      .then((data: Context) => {
-        setCtx(data)
-        if (data.providers.length > 0) setProviderId(data.providers[0].id)
-        if (data.patients.length > 0) setPatientId(data.patients[0].id)
-      })
-      .catch(() => {})
-      .finally(() => setCtxLoading(false))
-  }, [])
+  async function load() {
+    setCtxLoading(true)
+    setLoadError(null)
+    try {
+      const r = await fetch("/api/context")
+      if (!r.ok) throw new Error()
+      const data: Context = await r.json()
+      setCtx(data)
+      if (data.providers.length > 0) setProviderId(data.providers[0].id)
+      if (data.patients.length > 0) setPatientId(data.patients[0].id)
+    } catch {
+      setLoadError("Couldn't load this page. Please try again.")
+    } finally {
+      setCtxLoading(false)
+    }
+  }
+
+  useEffect(() => { load() }, [])
 
   const totalCharge = lines.reduce(
     (sum, l) => sum + (parseFloat(l.chargeAmount) || 0) * l.units,
@@ -264,7 +272,7 @@ export default function NewClaimPage() {
       const data = await res.json()
 
       if (!res.ok) {
-        setResult({ status: "error", errors: [JSON.stringify(data.error)] })
+        setResult({ status: "error", errors: [data.error?.message ?? "Something went wrong"] })
       } else {
         setResult({ status: data.clearinghouseStatus, errors: data.errors })
         if (data.clearinghouseStatus === "accepted") {
@@ -288,7 +296,14 @@ export default function NewClaimPage() {
           <p className="text-gray-500 text-sm mt-0.5">837P EDI via Claim.MD clearinghouse</p>
         </div>
 
-        {ctxLoading ? (
+        {loadError ? (
+          <div className="text-center py-20 bg-white border border-gray-200 rounded-2xl shadow-sm">
+            <p className="text-gray-700 font-medium mb-4">{loadError}</p>
+            <button onClick={load} className="inline-flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+              Try again
+            </button>
+          </div>
+        ) : ctxLoading ? (
           <div className="flex items-center justify-center py-20 text-gray-500">
             <svg className="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24" fill="none">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />

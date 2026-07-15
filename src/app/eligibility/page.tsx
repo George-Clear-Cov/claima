@@ -92,9 +92,14 @@ export default function EligibilityPage() {
   const [authLoading, setAuthLoading] = useState(false)
   const [authResult, setAuthResult] = useState<AuthResult | null>(null)
   const [authError, setAuthError] = useState<string | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
-  useEffect(() => {
-    fetch("/api/context").then(r => r.ok ? r.json() : null).then(d => {
+  async function load() {
+    setLoadError(null)
+    try {
+      const r = await fetch("/api/context")
+      if (!r.ok) throw new Error()
+      const d = await r.json()
       if (d?.patients) {
         setPatients(d.patients)
         if (d.patients.length > 0) setAuthPatientId(d.patients[0].id)
@@ -103,8 +108,12 @@ export default function EligibilityPage() {
         setProviders(d.providers)
         if (d.providers.length > 0) setForm(f => ({ ...f, npi: d.providers[0].npi }))
       }
-    }).catch(() => {})
-  }, [])
+    } catch {
+      setLoadError("Couldn't load patient and provider data. Please try again.")
+    }
+  }
+
+  useEffect(() => { load() }, [])
 
   const selectedPatient = patients.find(p => p.id === authPatientId)
 
@@ -172,6 +181,13 @@ export default function EligibilityPage() {
           <h1 className="text-2xl font-bold tracking-tight">Eligibility & Prior Auth</h1>
           <p className="text-gray-500 text-sm mt-1">Verify coverage and check authorization requirements before the appointment</p>
         </div>
+
+        {loadError && (
+          <div className="mb-6 rounded-xl px-4 py-3 text-sm flex items-center justify-between border bg-red-50 border-red-200 text-red-700">
+            <span>{loadError}</span>
+            <button onClick={load} className="bg-gray-900 hover:bg-gray-800 text-white text-xs rounded-lg px-3 py-1.5 ml-4 whitespace-nowrap">Try again</button>
+          </div>
+        )}
 
         <div className="flex gap-0.5 bg-white border border-gray-200 rounded-xl p-1 shadow-sm w-fit mb-6">
           {(["eligibility", "prior-auth"] as const).map(t => (

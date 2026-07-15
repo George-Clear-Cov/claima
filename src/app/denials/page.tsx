@@ -79,12 +79,27 @@ export default function DenialsPage() {
   const [roi, setRoi] = useState<ROIResult | null>(null)
   const [roiLoading, setRoiLoading] = useState(false)
   const [resubmitting, setResubmitting] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
+  const [statusPending, setStatusPending] = useState(false)
+  const [confirmWriteOff, setConfirmWriteOff] = useState(false)
 
-  useEffect(() => {
-    fetch("/api/denials").then((r) => r.json()).then((data) => {
-      if (Array.isArray(data)) setDenials(data)
-    }).catch(() => {}).finally(() => setLoading(false))
-  }, [])
+  async function load() {
+    setLoading(true)
+    setLoadError(null)
+    try {
+      const r = await fetch("/api/denials")
+      if (!r.ok) throw new Error()
+      const data = await r.json()
+      setDenials(Array.isArray(data) ? data : [])
+    } catch {
+      setLoadError("Couldn't load this page. Please try again.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { load() }, [])
 
   const filtered = filter === "ALL" ? denials
     : denials.filter((d) =>
@@ -100,6 +115,7 @@ export default function DenialsPage() {
     .reduce((sum, d) => sum + parseFloat(d.claim.totalCharge), 0)
 
   useEffect(() => {
+    setConfirmWriteOff(false)
     if (!selected) { setRoi(null); return }
     setRoi(null)
     setRoiLoading(true)
@@ -140,35 +156,50 @@ export default function DenialsPage() {
   async function handleAutoProcess() {
     setAutoProcessing(true)
     setAutoResult(null)
+    setActionError(null)
     try {
       const res = await fetch("/api/denials/auto-process", { method: "POST" })
+      if (!res.ok) throw new Error()
       const data = await res.json()
       setAutoResult({ processed: data.processed ?? 0, total: data.total ?? 0 })
       // Refresh denials list to show AI-drafted letters
       const refreshed = await fetch("/api/denials").then((r) => r.json())
       if (Array.isArray(refreshed) && refreshed.length > 0) setDenials(refreshed)
-    } catch {}
+    } catch {
+      setActionError("Couldn't auto-process denials. Please try again.")
+    }
     finally { setAutoProcessing(false) }
   }
 
   async function handleResubmit(denial: Denial) {
     setResubmitting(true)
+    setActionError(null)
     try {
       const res = await fetch(`/api/denials/${denial.id}/resubmit`, { method: "POST" })
+      if (!res.ok) throw new Error()
       const data = await res.json()
       if (data.claimId) {
         window.location.href = `/claims?resubmit=${data.claimId}`
       }
-    } catch {}
+    } catch {
+      setActionError("Couldn't create a corrected claim. Please try again.")
+    }
     finally { setResubmitting(false) }
   }
 
   async function handleUpdateStatus(denial: Denial, status: string) {
+    setStatusPending(true)
+    setActionError(null)
     try {
-      await fetch(`/api/denials/${denial.id}/appeal`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ appealStatus: status }) })
+      const res = await fetch(`/api/denials/${denial.id}/appeal`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ appealStatus: status }) })
+      if (!res.ok) throw new Error()
       setDenials((prev) => prev.map((d) => d.id === denial.id ? { ...d, appealStatus: status } : d))
       if (selected?.id === denial.id) setSelected({ ...denial, appealStatus: status })
-    } catch {}
+    } catch {
+      setActionError("Couldn't update the denial status. Please try again.")
+    } finally {
+      setStatusPending(false)
+    }
   }
 
   const statCards = [
@@ -225,6 +256,13 @@ export default function DenialsPage() {
           </div>
         )}
 
+        {actionError && (
+          <div className="mb-6 rounded-xl px-4 py-3 text-sm flex items-center justify-between border bg-red-50 border-red-200 text-red-700">
+            <span>{actionError}</span>
+            <button onClick={() => setActionError(null)} className="text-xs opacity-60 hover:opacity-100 ml-4">✕</button>
+          </div>
+        )}
+
         <div className="flex flex-col lg:flex-row gap-6">
           <div className="flex-1 min-w-0">
             <div className="flex gap-2 mb-4 flex-wrap">
@@ -237,7 +275,14 @@ export default function DenialsPage() {
             </div>
 
             <div className="space-y-2">
-              {loading ? (
+              {loadError ? (
+                <div className="text-center py-16 bg-white border border-gray-200 rounded-xl shadow-sm">
+                  <p className="text-gray-700 font-medium mb-4">{loadError}</p>
+                  <button onClick={load} className="inline-flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                    Try again
+                  </button>
+                </div>
+              ) : loading ? (
                 <div className="flex items-center justify-center gap-2 py-16 text-gray-500 bg-white border border-gray-200 rounded-xl shadow-sm">
                   <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
                   Loading denials…
@@ -251,7 +296,11 @@ export default function DenialsPage() {
                 <div className="text-center text-gray-500 py-16 bg-white border border-gray-200 rounded-xl shadow-sm">No denials match this filter</div>
               ) : null}
               {!loading && filtered.map((denial) => (
-                <div key={denial.id} onClick={() => { setSelected(denial); setAppealLetter(denial.appealLetter) }}
+                <div key={denial.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => { setSelected(denial); setAppealLetter(denial.appealLetter) }}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelected(denial); setAppealLetter(denial.appealLetter) } }}
                   className={`bg-white border rounded-xl p-4 cursor-pointer transition-all shadow-sm ${selected?.id === denial.id ? "border-blue-400 ring-1 ring-blue-400/20" : "border-gray-200 hover:border-gray-300 hover:shadow-md"}`}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
@@ -387,16 +436,26 @@ export default function DenialsPage() {
                         <div className="flex gap-2 mt-3">
                           <button onClick={() => navigator.clipboard.writeText(appealLetter)}
                             className="flex-1 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 py-2 rounded-lg text-xs font-medium transition-colors shadow-sm">Copy Letter</button>
-                          <button onClick={() => handleUpdateStatus(selected, "SUBMITTED")}
-                            className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg text-xs font-medium transition-colors shadow-sm">Mark Submitted ✓</button>
+                          <button onClick={() => { setConfirmWriteOff(false); handleUpdateStatus(selected, "SUBMITTED") }}
+                            disabled={statusPending}
+                            className="flex-1 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white py-2 rounded-lg text-xs font-medium transition-colors shadow-sm">Mark Submitted ✓</button>
                         </div>
                       </div>
                     )}
                     {selected.appealStatus !== "PENDING" && (
                       <div className="flex gap-2">
-                        <button onClick={() => handleUpdateStatus(selected, "WON")} className="flex-1 bg-green-50 hover:bg-green-100 border border-green-200 text-green-700 py-1.5 rounded-lg text-xs font-medium transition-colors">Won ✓</button>
-                        <button onClick={() => handleUpdateStatus(selected, "LOST")} className="flex-1 bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 py-1.5 rounded-lg text-xs font-medium transition-colors">Lost ✗</button>
-                        <button onClick={() => handleUpdateStatus(selected, "WRITE_OFF")} className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-600 py-1.5 rounded-lg text-xs font-medium transition-colors">Write Off</button>
+                        <button onClick={() => { setConfirmWriteOff(false); handleUpdateStatus(selected, "WON") }} disabled={statusPending} className="flex-1 bg-green-50 hover:bg-green-100 disabled:opacity-50 border border-green-200 text-green-700 py-1.5 rounded-lg text-xs font-medium transition-colors">Won ✓</button>
+                        <button onClick={() => { setConfirmWriteOff(false); handleUpdateStatus(selected, "LOST") }} disabled={statusPending} className="flex-1 bg-red-50 hover:bg-red-100 disabled:opacity-50 border border-red-200 text-red-700 py-1.5 rounded-lg text-xs font-medium transition-colors">Lost ✗</button>
+                        <button
+                          onClick={() => {
+                            if (confirmWriteOff) { setConfirmWriteOff(false); handleUpdateStatus(selected, "WRITE_OFF") }
+                            else setConfirmWriteOff(true)
+                          }}
+                          disabled={statusPending}
+                          className={`flex-1 disabled:opacity-50 py-1.5 rounded-lg text-xs font-medium transition-colors ${confirmWriteOff ? "bg-red-600 hover:bg-red-700 text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-600"}`}
+                        >
+                          {confirmWriteOff ? "Confirm write-off?" : "Write Off"}
+                        </button>
                       </div>
                     )}
                   </div>

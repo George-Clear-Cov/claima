@@ -106,7 +106,7 @@ export default function ImportPage() {
           />
         ) : (
           <div className="mb-4">
-            <input type="file" multiple onChange={(e) => onFiles(e.target.files)} accept=".835,.837,.era,.edi,.txt,.csv" className="text-sm" />
+            <input type="file" multiple aria-label="Upload backlog files to import" onChange={(e) => onFiles(e.target.files)} accept=".835,.837,.era,.edi,.txt,.csv" className="text-sm" />
             {contents.length > 0 && <p className="text-xs text-gray-500 mt-1.5">{contents.length} file(s) loaded</p>}
           </div>
         )}

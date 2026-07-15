@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import AppLayout from "@/components/AppLayout"
 import { COMMON_CPT_CODES, COMMON_ICD10_CODES } from "@/types/claim"
 
@@ -61,10 +62,20 @@ export default function NoteIntakePage() {
   const [placeOfService, setPlaceOfService] = useState("11")
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
-  useEffect(() => {
-    fetch("/api/context").then((r) => r.json()).then((d) => setCtx(d)).catch(() => {})
-  }, [])
+  async function load() {
+    setLoadError(null)
+    try {
+      const r = await fetch("/api/context")
+      if (!r.ok) throw new Error()
+      setCtx(await r.json())
+    } catch {
+      setLoadError("Couldn't load patient and provider data. Please try again.")
+    }
+  }
+
+  useEffect(() => { load() }, [])
 
   async function handleExtract() {
     if (!note.trim()) return
@@ -124,7 +135,7 @@ export default function NoteIntakePage() {
         }),
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(JSON.stringify(data.error))
+      if (!res.ok) throw new Error(data.error?.message ?? "Something went wrong")
       router.push("/claims")
     } catch (e) {
       setSubmitError(e instanceof Error ? e.message : "Submission failed")
@@ -145,13 +156,20 @@ export default function NoteIntakePage() {
       <div className="max-w-5xl mx-auto px-8 py-10">
         <div className="mb-8">
           <div className="text-xs text-gray-500 mb-1">
-            <span className="hover:text-gray-600 cursor-pointer" onClick={() => router.push("/claims")}>Claims</span>
+            <Link href="/claims" className="hover:text-gray-600 cursor-pointer">Claims</Link>
             <span className="mx-1.5">›</span>
             <span>From Session Note</span>
           </div>
           <h1 className="text-2xl font-bold tracking-tight">Note → Claim</h1>
           <p className="text-gray-500 text-sm mt-0.5">Paste a session note — AI extracts CPT codes, diagnoses, and creates a draft claim</p>
         </div>
+
+        {loadError && (
+          <div className="mb-6 rounded-xl px-4 py-3 text-sm flex items-center justify-between border bg-red-50 border-red-200 text-red-700">
+            <span>{loadError}</span>
+            <button onClick={load} className="bg-gray-900 hover:bg-gray-800 text-white text-xs rounded-lg px-3 py-1.5 ml-4 whitespace-nowrap">Try again</button>
+          </div>
+        )}
 
         <div className={`grid gap-6 ${extracted ? "grid-cols-1 lg:grid-cols-2" : "grid-cols-1 max-w-2xl"}`}>
           {/* Left: Note input */}

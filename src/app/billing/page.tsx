@@ -739,14 +739,25 @@ export default function BillingPage() {
   const [batchResult, setBatchResult] = useState<{
     processed: number; totalInsurancePaid: number; totalPatientStatements: number; message?: string
   } | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
 
-  useEffect(() => {
-    fetch("/api/statements")
-      .then((r) => r.ok ? r.json() : [])
-      .then((data) => setStatements(Array.isArray(data) ? data : []))
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [])
+  async function load() {
+    setLoading(true)
+    setLoadError(null)
+    try {
+      const r = await fetch("/api/statements")
+      if (!r.ok) throw new Error()
+      const data = await r.json()
+      setStatements(Array.isArray(data) ? data : [])
+    } catch {
+      setLoadError("Couldn't load this page. Please try again.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { load() }, [])
 
   const handlePaid = useCallback((id: string, amount: number) => {
     setStatements((prev) => prev.map((s) => {
@@ -771,8 +782,10 @@ export default function BillingPage() {
   async function handleBatchPost() {
     setBatchPosting(true)
     setBatchResult(null)
+    setActionError(null)
     try {
       const res = await fetch("/api/era/batch-post", { method: "POST" })
+      if (!res.ok) throw new Error()
       const data = await res.json()
       setBatchResult(data)
       if (data.processed > 0) {
@@ -780,7 +793,9 @@ export default function BillingPage() {
         const refreshed = await fetch("/api/statements").then((r) => r.ok ? r.json() : [])
         if (Array.isArray(refreshed)) setStatements(refreshed)
       }
-    } catch {}
+    } catch {
+      setActionError("Couldn't auto-post ERAs. Please try again.")
+    }
     finally { setBatchPosting(false) }
   }
 
@@ -847,7 +862,21 @@ export default function BillingPage() {
           </div>
         )}
 
-        {loading ? (
+        {actionError && (
+          <div className="mb-6 rounded-xl px-4 py-3 text-sm flex items-center justify-between border bg-red-50 border-red-200 text-red-700">
+            <span>{actionError}</span>
+            <button onClick={() => setActionError(null)} className="text-xs opacity-60 hover:opacity-100 ml-4">✕</button>
+          </div>
+        )}
+
+        {loadError ? (
+          <div className="text-center py-24 bg-white border border-gray-200 rounded-2xl shadow-sm">
+            <p className="text-gray-700 font-medium mb-4">{loadError}</p>
+            <button onClick={load} className="inline-flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+              Try again
+            </button>
+          </div>
+        ) : loading ? (
           <div className="flex items-center justify-center py-24 text-gray-500">
             <svg className="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
             Loading statements…

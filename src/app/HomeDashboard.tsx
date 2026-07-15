@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
 import AppLayout from "@/components/AppLayout"
 import BaaGate from "@/components/BaaGate"
@@ -48,20 +48,30 @@ export default function HomeDashboard() {
   const [briefing, setBriefing] = useState<BriefingData | null>(null)
   const [loading, setLoading] = useState(true)
   const [baaAccepted, setBaaAccepted] = useState(true)
+  const [loadError, setLoadError] = useState(false)
 
-  useEffect(() => {
-    Promise.all([
-      fetch("/api/auth/me").then(r => r.ok ? r.json() : null),
-      fetch("/api/context").then(r => r.ok ? r.json() : null),
-      fetch("/api/briefing").then(r => r.ok ? r.json() : null),
-      fetch("/api/onboarding/status").then(r => r.ok ? r.json() : null),
-    ]).then(([me, ctx, brief, onb]) => {
+  const load = useCallback(async () => {
+    setLoading(true)
+    setLoadError(false)
+    try {
+      const [me, ctx, brief, onb] = await Promise.all([
+        fetch("/api/auth/me").then(r => r.ok ? r.json() : null),
+        fetch("/api/context").then(r => r.ok ? r.json() : null),
+        fetch("/api/briefing").then(r => r.ok ? r.json() : null),
+        fetch("/api/onboarding/status").then(r => r.ok ? r.json() : null),
+      ])
       if (me?.user?.name) setUserName(me.user.name)
       if (ctx) setBaaAccepted(!!ctx.practice?.baaAcceptedAt)
       if (brief && !brief.error) setBriefing(brief)
       if (onb) setOnboarding(onb)
-    }).finally(() => setLoading(false))
+    } catch {
+      setLoadError(true)
+    } finally {
+      setLoading(false)
+    }
   }, [])
+
+  useEffect(() => { load() }, [load])
 
   const greeting = (() => {
     const h = new Date().getHours()
@@ -130,6 +140,19 @@ export default function HomeDashboard() {
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
             Generating briefing…
+          </div>
+        )}
+
+        {loadError && !loading && !briefing && (
+          <div className="rounded-xl border border-red-200 bg-red-50 p-5 shadow-sm">
+            <div className="text-sm font-semibold text-red-800 mb-1">Couldn&apos;t load your briefing</div>
+            <p className="text-sm text-red-700 mb-3">Something went wrong while generating your daily briefing.</p>
+            <button
+              onClick={() => load()}
+              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            >
+              Try again
+            </button>
           </div>
         )}
 

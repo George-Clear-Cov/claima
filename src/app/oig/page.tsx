@@ -58,47 +58,76 @@ export default function OigPage() {
   const [checkingAll, setCheckingAll] = useState(false)
   const [checkAllProgress, setCheckAllProgress] = useState<{ done: number; total: number } | null>(null)
   const [selected, setSelected] = useState<ProviderRow | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
+  const [actionSuccess, setActionSuccess] = useState<string | null>(null)
 
   const load = useCallback(async () => {
-    const res = await fetch("/api/oig/checks")
-    if (res.ok) {
+    setLoading(true)
+    setLoadError(null)
+    try {
+      const res = await fetch("/api/oig/checks")
+      if (!res.ok) throw new Error()
       const data: ProviderRow[] = await res.json()
       setProviders(data)
       // Keep selected panel fresh after reload
       setSelected((prev) => prev ? (data.find((p) => p.id === prev.id) ?? prev) : null)
+    } catch {
+      setLoadError("Couldn't load this page. Please try again.")
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }, [])
 
   useEffect(() => { load() }, [load])
 
   async function checkProvider(providerId: string) {
     setCheckingId(providerId)
-    await fetch("/api/oig/check", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ providerId }),
-    })
-    await load()
-    setCheckingId(null)
+    setActionError(null)
+    setActionSuccess(null)
+    try {
+      const res = await fetch("/api/oig/check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ providerId }),
+      })
+      if (!res.ok) throw new Error()
+      await load()
+      setActionSuccess("OIG check complete ✓")
+      setTimeout(() => setActionSuccess(null), 2500)
+    } catch {
+      setActionError("OIG check failed. Please try again.")
+    } finally {
+      setCheckingId(null)
+    }
   }
 
   async function checkAll() {
     setCheckingAll(true)
+    setActionError(null)
+    setActionSuccess(null)
     setCheckAllProgress({ done: 0, total: providers.length })
+    let failed = 0
     for (let i = 0; i < providers.length; i++) {
       const p = providers[i]
       setCheckingId(p.id)
-      await fetch("/api/oig/check", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ providerId: p.id }),
-      })
+      try {
+        const res = await fetch("/api/oig/check", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ providerId: p.id }),
+        })
+        if (!res.ok) throw new Error()
+      } catch {
+        failed++
+      }
       setCheckAllProgress({ done: i + 1, total: providers.length })
     }
     setCheckingId(null)
     setCheckAllProgress(null)
     await load()
+    if (failed > 0) setActionError(`${failed} of ${providers.length} check${providers.length !== 1 ? "s" : ""} failed. Please try again.`)
+    else { setActionSuccess("All OIG checks complete ✓"); setTimeout(() => setActionSuccess(null), 2500) }
     setCheckingAll(false)
   }
 
@@ -164,11 +193,23 @@ export default function OigPage() {
                 </div>
               </div>
             )}
+
+            {actionError && (
+              <div className="mt-3 p-2.5 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700">{actionError}</div>
+            )}
+            {actionSuccess && (
+              <div className="mt-3 p-2.5 bg-green-50 border border-green-200 rounded-lg text-xs text-green-700">{actionSuccess}</div>
+            )}
           </div>
 
           {/* Provider list */}
           <div className="flex-1 overflow-y-auto">
-            {loading ? (
+            {loadError ? (
+              <div className="p-6 text-center">
+                <div className="text-xs text-gray-600 mb-3">{loadError}</div>
+                <button onClick={load} className="bg-gray-900 text-white text-sm rounded-lg px-4 py-2">Try again</button>
+              </div>
+            ) : loading ? (
               <div className="p-6 text-center text-xs text-gray-500">Loading…</div>
             ) : providers.length === 0 ? (
               <div className="p-6 text-center text-xs text-gray-500">No providers found. Add providers in Settings.</div>

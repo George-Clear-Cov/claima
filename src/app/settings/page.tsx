@@ -726,6 +726,7 @@ function IntegrationsTab() {
 
 function DataPrivacyTab() {
   const [exporting, setExporting] = useState(false)
+  const [exportError, setExportError] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [confirmText, setConfirmText] = useState("")
   const [deleteError, setDeleteError] = useState<string | null>(null)
@@ -733,11 +734,12 @@ function DataPrivacyTab() {
 
   async function handleExport() {
     setExporting(true)
+    setExportError(null)
     try {
       const res = await fetch("/api/admin/export")
       if (!res.ok) {
-        const d = await res.json()
-        alert(d.error ?? "Export failed")
+        const d = await res.json().catch(() => ({}))
+        setExportError(d.error ?? "Export failed")
         return
       }
       const blob = await res.blob()
@@ -750,7 +752,7 @@ function DataPrivacyTab() {
       a.click()
       URL.revokeObjectURL(url)
     } catch {
-      alert("Export failed. Please try again.")
+      setExportError("Export failed. Please try again.")
     } finally {
       setExporting(false)
     }
@@ -790,6 +792,9 @@ function DataPrivacyTab() {
         >
           {exporting ? "Preparing export…" : "Download data export"}
         </button>
+        {exportError && (
+          <div className="text-red-600 text-xs bg-red-50 border border-red-200 rounded-lg px-3 py-2 mt-3">{exportError}</div>
+        )}
       </div>
 
       {/* Delete */}
@@ -978,6 +983,8 @@ function PayersTab() {
   const [enrollments, setEnrollments] = useState<PayerEnrollment[]>([])
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [saved, setSaved] = useState(false)
 
   const load = useCallback(async () => {
     try {
@@ -995,14 +1002,23 @@ function PayersTab() {
 
   async function updateStatus(payerId: string, enrollmentStatus: "PENDING" | "ACTIVE" | "INACTIVE") {
     setUpdating(payerId)
+    setError(null)
     try {
-      await fetch(`/api/practices/payers/${payerId}`, {
+      const res = await fetch(`/api/practices/payers/${payerId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ enrollmentStatus }),
       })
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}))
+        throw new Error(d.error ?? "Failed to update status")
+      }
       await load()
-    } catch {} finally {
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update status")
+    } finally {
       setUpdating(null)
     }
   }
@@ -1010,10 +1026,19 @@ function PayersTab() {
   async function remove(payerId: string) {
     if (!confirm("Remove this payer enrollment?")) return
     setUpdating(payerId)
+    setError(null)
     try {
-      await fetch(`/api/practices/payers/${payerId}`, { method: "DELETE" })
+      const res = await fetch(`/api/practices/payers/${payerId}`, { method: "DELETE" })
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}))
+        throw new Error(d.error ?? "Failed to remove payer")
+      }
       await load()
-    } catch {} finally {
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to remove payer")
+    } finally {
       setUpdating(null)
     }
   }
@@ -1038,6 +1063,11 @@ function PayersTab() {
           + Add payers
         </a>
       </div>
+
+      {error && (
+        <div className="text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg px-4 py-2">{error}</div>
+      )}
+      {saved && <div className="text-green-600 text-sm font-medium">Saved ✓</div>}
 
       {loading ? (
         <div className="text-sm text-gray-500 py-8 text-center">Loading…</div>

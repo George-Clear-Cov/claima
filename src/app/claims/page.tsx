@@ -259,21 +259,27 @@ export default function ClaimsPage() {
   const [practiceId, setPracticeId] = useState<string | null>(null)
   const [callScriptClaimId, setCallScriptClaimId] = useState<string | null>(null)
   const [denyingClaimId, setDenyingClaimId] = useState<string | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
   function handleDenied(claimId: string) {
     setClaims(prev => prev.map(c => c.id === claimId ? { ...c, claimStatus: "DENIED" } : c))
     setDenyingClaimId(null)
   }
 
-  useEffect(() => {
-    Promise.all([
-      fetch("/api/claims").then((r) => r.json()),
-      fetch("/api/context").then((r) => r.json()),
-    ]).then(([claimsData, ctx]) => {
+  async function load() {
+    setLoading(true)
+    setLoadError(null)
+    try {
+      const [rClaims, rCtx] = await Promise.all([
+        fetch("/api/claims"),
+        fetch("/api/context"),
+      ])
+      if (!rClaims.ok || !rCtx.ok) throw new Error()
+      const claimsData = await rClaims.json()
+      const ctx = await rCtx.json()
       const list = Array.isArray(claimsData) ? claimsData : []
       setClaims(list)
       setPracticeId(ctx?.practice?.id ?? null)
-      setLoading(false)
 
       // Score pending claims for denial risk
       const pendingIds = list
@@ -294,8 +300,14 @@ export default function ClaimsPage() {
           })
           .catch(() => {})
       }
-    }).catch(() => setLoading(false))
-  }, [])
+    } catch {
+      setLoadError("Couldn't load this page. Please try again.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { load() }, [])
 
   const highRiskCount = Object.values(riskMap).filter((r) => r.risk === "high").length
 
@@ -324,7 +336,14 @@ export default function ClaimsPage() {
           </div>
         </div>
 
-        {loading ? (
+        {loadError ? (
+          <div className="text-center py-24 bg-white border border-gray-200 rounded-2xl shadow-sm">
+            <p className="text-gray-700 font-medium mb-4">{loadError}</p>
+            <button onClick={load} className="inline-flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+              Try again
+            </button>
+          </div>
+        ) : loading ? (
           <div className="flex items-center justify-center py-24 text-gray-500">
             <svg className="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24" fill="none">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />

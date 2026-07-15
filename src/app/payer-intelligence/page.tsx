@@ -128,18 +128,26 @@ export default function PayerIntelligencePage() {
   const [sortKey, setSortKey] = useState<SortKey>("billed")
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc")
   const [period, setPeriod] = useState("12m")
+  const [loadError, setLoadError] = useState<string | null>(null)
 
   const load = useCallback(async (p: string) => {
     setLoading(true)
+    setLoadError(null)
     const now = new Date()
     let from: string
     if (p === "3m")  from = new Date(now.getFullYear(), now.getMonth() - 3, 1).toISOString().slice(0, 10)
     else if (p === "6m") from = new Date(now.getFullYear(), now.getMonth() - 6, 1).toISOString().slice(0, 10)
     else from = new Date(now.getFullYear() - 1, now.getMonth(), 1).toISOString().slice(0, 10)
 
-    const res = await fetch(`/api/analytics/payer-intel?from=${from}`)
-    if (res.ok) setData(await res.json())
-    setLoading(false)
+    try {
+      const res = await fetch(`/api/analytics/payer-intel?from=${from}`)
+      if (!res.ok) throw new Error()
+      setData(await res.json())
+    } catch {
+      setLoadError("Couldn't load this page. Please try again.")
+    } finally {
+      setLoading(false)
+    }
   }, [])
 
   useEffect(() => { load(period) }, [load, period])
@@ -164,11 +172,14 @@ export default function PayerIntelligencePage() {
   })
 
   const SortHeader = ({ k, label }: { k: SortKey; label: string }) => (
-    <th
-      onClick={() => handleSort(k)}
-      className="text-right text-xs font-medium text-gray-500 uppercase tracking-wide cursor-pointer hover:text-gray-800 select-none px-3 py-2.5"
-    >
-      {label}{sortKey === k ? (sortDir === "desc" ? " ↓" : " ↑") : ""}
+    <th className="px-3 py-2.5">
+      <button
+        type="button"
+        onClick={() => handleSort(k)}
+        className="w-full text-right text-xs font-medium text-gray-500 uppercase tracking-wide cursor-pointer hover:text-gray-800 select-none"
+      >
+        {label}{sortKey === k ? (sortDir === "desc" ? " ↓" : " ↑") : ""}
+      </button>
     </th>
   )
 
@@ -241,7 +252,12 @@ export default function PayerIntelligencePage() {
 
             {/* Payer table */}
             <div className="bg-white rounded-xl border border-gray-200 overflow-x-auto">
-              {loading ? (
+              {loadError ? (
+                <div className="p-10 text-center">
+                  <div className="text-sm text-gray-600 mb-3">{loadError}</div>
+                  <button onClick={() => load(period)} className="bg-gray-900 text-white text-sm rounded-lg px-4 py-2">Try again</button>
+                </div>
+              ) : loading ? (
                 <div className="p-10 text-center text-sm text-gray-500">Loading payer data…</div>
               ) : sorted.length === 0 ? (
                 <div className="p-10 text-center text-sm text-gray-500">No claim data found for this period.</div>
@@ -263,6 +279,10 @@ export default function PayerIntelligencePage() {
                       <tr
                         key={p.payerId || p.payerName}
                         onClick={() => setSelected(p)}
+                        role="button"
+                        tabIndex={0}
+                        aria-label={`View details for ${p.payerName}`}
+                        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelected(p) } }}
                         className={`hover:bg-blue-50/40 cursor-pointer transition-colors ${selected?.payerName === p.payerName ? "bg-blue-50 border-l-2 border-l-blue-500" : ""}`}
                       >
                         <td className="px-4 py-3">
