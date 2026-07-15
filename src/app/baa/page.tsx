@@ -74,7 +74,7 @@ export default function BaaPage() {
           <section>
             <h2 className="text-lg font-semibold text-gray-900 mt-8 mb-3">5. Subcontractors</h2>
             <p>
-              Business Associate shall ensure that any subcontractor or agent that creates, receives, maintains, or transmits PHI on behalf of Business Associate agrees to the same restrictions and conditions that apply to Business Associate through a written agreement that complies with the HIPAA Rules. Current subprocessors that may handle PHI include: Supabase (database), Vercel (hosting), and Stripe (payment processing). Claima will maintain and make available a current list of subprocessors upon request.
+              Business Associate shall ensure that any subcontractor or agent that creates, receives, maintains, or transmits PHI on behalf of Business Associate agrees to the same restrictions and conditions that apply to Business Associate through a written agreement that complies with the HIPAA Rules. Current subprocessors that may handle PHI include: Microsoft Azure (database), Vercel (hosting), and Stripe (payment processing). Claima will maintain and make available a current list of subprocessors upon request.
             </p>
           </section>
 

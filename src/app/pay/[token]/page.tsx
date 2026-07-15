@@ -41,17 +41,12 @@ function PaymentForm({ token, amount }: { token: string; amount: number }) {
       return
     }
 
-    const res = await fetch(`/api/pay/${token}`, { method: "POST" })
-    const data = await res.json()
-    if (!res.ok) {
-      setError(data.error ?? "Failed to initialize payment")
-      setLoading(false)
-      return
-    }
-
+    // Confirm against the PaymentIntent already mounted on `elements` (created
+    // once in PaymentWrapper). Do NOT re-POST for a fresh clientSecret here —
+    // that created a second, orphaned PaymentIntent and a clientSecret that
+    // didn't match the mounted Elements, which could fail the charge.
     const { error: confirmErr } = await stripe.confirmPayment({
       elements,
-      clientSecret: data.clientSecret,
       confirmParams: { return_url: `${window.location.origin}/pay/${token}?success=1` },
       redirect: "if_required",
     })

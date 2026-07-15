@@ -96,7 +96,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
     intentParams.transfer_data = { destination: practice.stripeAccountId }
   }
 
-  const intent = await stripe.paymentIntents.create(intentParams)
+  // Idempotency key scoped to this statement + amount: repeated POSTs (React
+  // effect re-fires, remounts, retries) return the SAME PaymentIntent instead
+  // of creating orphaned duplicates. Changes only if the balance changes.
+  const intent = await stripe.paymentIntents.create(intentParams, {
+    idempotencyKey: `pay_${statement.id}_${amountCents}`,
+  })
 
   return NextResponse.json({
     clientSecret: intent.client_secret,

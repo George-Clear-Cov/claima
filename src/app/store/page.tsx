@@ -79,13 +79,13 @@ export default function StorePage() {
           </div>
         ) : products.length === 0 ? (
           <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
-            <p className="text-gray-400 text-sm">No services available yet.</p>
-            <Link
-              href="/billing"
+            <p className="text-gray-500 text-sm">No services available yet.</p>
+            <a
+              href="mailto:support@claima.io"
               className="mt-4 inline-block text-sm text-blue-600 hover:text-blue-700 font-medium"
             >
-              Go to billing →
-            </Link>
+              Questions? Contact us →
+            </a>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
