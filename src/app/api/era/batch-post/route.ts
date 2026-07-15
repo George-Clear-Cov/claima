@@ -3,7 +3,7 @@ import { getSessionFromRequest } from "@/lib/auth"
 import { logAudit } from "@/lib/audit"
 import { sendEmail } from "@/lib/email"
 import { isClaimMdConfigured, fetchAvailableERAs, fetchERAById } from "@/lib/claimmd"
-import { classifyDenial } from "@/lib/denial-codes"
+import { classifyDenial, normalizeCarc } from "@/lib/denial-codes"
 
 const PAYER_RATES: Record<string, { insRate: number; adjRate: number }> = {
   "Aetna":                { insRate: 0.70, adjRate: 0.10 },
@@ -113,8 +113,9 @@ async function postRealERAs(_req: NextRequest, practiceId: string, adminEmail: s
 
       try {
         if (matched) {
-          const primaryCarc = line.carc_codes?.[0]
           // A remittance line with $0 paid and CARC code(s) is a denial, not a payment.
+          const rawCarc = line.carc_codes?.[0]
+          const primaryCarc = rawCarc ? normalizeCarc(rawCarc) : undefined
           const isDenial = line.paid_amount === 0 && !!primaryCarc
 
           if (isDenial) {

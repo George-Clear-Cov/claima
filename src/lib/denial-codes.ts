@@ -167,10 +167,23 @@ export const CARC_CODES: Record<string, { description: string } & DenialCategory
   },
 }
 
+/**
+ * Normalize a CARC to its bare code for lookup. Sources vary: an 835 CAS segment carries the group
+ * code (CO/PR/OA/PI/CR) and reason code in separate elements, but some feeds/imports combine them
+ * as "CO-45", "CO45", or "PR 1". Strip a leading group-code prefix only when a digit follows, so a
+ * bare "45" and RARC-style codes (M1, MA01) are left untouched.
+ */
+export function normalizeCarc(carcCode: string): string {
+  const c = String(carcCode ?? "").trim().toUpperCase()
+  const m = c.match(/^(?:CO|PR|OA|PI|CR)[-_\s]?(\d.*)$/)
+  return m ? m[1] : c
+}
+
 export function classifyDenial(carcCode: string): DenialCategory & { description: string } {
+  const code = normalizeCarc(carcCode)
   return (
-    CARC_CODES[carcCode] ?? {
-      description: `Unknown denial code: ${carcCode}`,
+    CARC_CODES[code] ?? {
+      description: `Unknown denial code: ${code}`,
       category: "APPEAL" as const,
       priority: "MEDIUM" as const,
       action: "Review denial reason and determine appropriate action",
