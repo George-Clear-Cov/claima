@@ -47,6 +47,7 @@ function getProvider(params?: { provider?: Provider; tier?: Tier }): Provider {
   if (explicit) return explicit
   const split = parseSplit()
   if (split) return weightedPick(split)
+  if (process.env.BEDROCK_API_KEY || process.env.AWS_BEARER_TOKEN_BEDROCK) return "bedrock"
   if (process.env.AWS_BEDROCK_REGION && process.env.AWS_ACCESS_KEY_ID) return "bedrock"
   if (process.env.AZURE_OPENAI_ENDPOINT && process.env.AZURE_OPENAI_KEY) return "azure"
   return "anthropic"
@@ -69,9 +70,11 @@ export function isAIConfigured(): boolean {
   const p = getProvider()
   if (p === "bedrock")
     return !!(
-      process.env.AWS_BEDROCK_REGION &&
-      process.env.AWS_ACCESS_KEY_ID &&
-      process.env.AWS_SECRET_ACCESS_KEY
+      process.env.BEDROCK_API_KEY ||
+      process.env.AWS_BEARER_TOKEN_BEDROCK ||
+      (process.env.AWS_BEDROCK_REGION &&
+        process.env.AWS_ACCESS_KEY_ID &&
+        process.env.AWS_SECRET_ACCESS_KEY)
     )
   if (p === "azure")
     return !!(process.env.AZURE_OPENAI_ENDPOINT && process.env.AZURE_OPENAI_KEY)
@@ -85,8 +88,7 @@ export function isAIConfigured(): boolean {
 
 const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL ?? "claude-sonnet-4-6"
 const ANTHROPIC_FAST_MODEL = process.env.ANTHROPIC_FAST_MODEL ?? "claude-haiku-4-5-20251001"
-const BEDROCK_MODEL =
-  process.env.AWS_BEDROCK_MODEL_ID ?? "us.anthropic.claude-sonnet-4-6-20260909-v1:0"
+const BEDROCK_MODEL = process.env.AWS_BEDROCK_MODEL_ID ?? "us.anthropic.claude-sonnet-4-6"
 
 function pickModel(provider: Provider, tier?: Tier): string {
   const fast = tier === "fast"
@@ -315,11 +317,9 @@ function sigV4Headers(
 }
 
 async function bedrockComplete(params: AIMessageParams): Promise<string> {
-  const region = process.env.AWS_BEDROCK_REGION!
-  const accessKey = process.env.AWS_ACCESS_KEY_ID!
-  const secretKey = process.env.AWS_SECRET_ACCESS_KEY!
-  const sessionToken = process.env.AWS_SESSION_TOKEN
+  const region = process.env.AWS_BEDROCK_REGION ?? "us-east-1"
   const model = pickModel("bedrock", params.tier)
+  const bearer = process.env.BEDROCK_API_KEY || process.env.AWS_BEARER_TOKEN_BEDROCK
 
   const body = JSON.stringify({
     anthropic_version: "bedrock-2023-05-31",
@@ -330,16 +330,19 @@ async function bedrockComplete(params: AIMessageParams): Promise<string> {
   })
 
   const path = `/model/${encodeURIComponent(model)}/invoke`
-  const headers = sigV4Headers(
-    "POST",
-    path,
-    region,
-    "bedrock-runtime",
-    body,
-    accessKey,
-    secretKey,
-    sessionToken,
-  )
+  // Auth: a Bedrock API key (bearer token) is simplest — no signing. Otherwise SigV4-sign IAM creds.
+  const headers: Record<string, string> = bearer
+    ? { "content-type": "application/json", Authorization: `Bearer ${bearer}` }
+    : sigV4Headers(
+        "POST",
+        path,
+        region,
+        "bedrock-runtime",
+        body,
+        process.env.AWS_ACCESS_KEY_ID!,
+        process.env.AWS_SECRET_ACCESS_KEY!,
+        process.env.AWS_SESSION_TOKEN,
+      )
 
   const res = await fetch(`https://bedrock-runtime.${region}.amazonaws.com${path}`, {
     method: "POST",
