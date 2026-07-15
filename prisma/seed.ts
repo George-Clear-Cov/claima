@@ -5,9 +5,12 @@ import { PrismaClient } from "@prisma/client"
 import { PrismaPg } from "@prisma/adapter-pg"
 import bcrypt from "bcryptjs"
 
-// ssl scoped to this pool only (matches src/lib/prisma.ts) so the seed works against a
-// TLS-requiring server like Azure Postgres — not a global TLS bypass.
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL!, ssl: { rejectUnauthorized: false } })
+// ssl scoped to this pool only (matches src/lib/prisma.ts): verify the server cert by default
+// (Azure & others chain to system roots); only Supabase's self-signed CA is carved out. Never a
+// global TLS bypass.
+const seedConn = process.env.DATABASE_URL!
+const seedSsl = /\.supabase\.co(?::|\/|$)/i.test(seedConn) ? { rejectUnauthorized: false } : { rejectUnauthorized: true }
+const adapter = new PrismaPg({ connectionString: seedConn, ssl: seedSsl })
 const prisma = new PrismaClient({ adapter })
 
 function daysAgo(n: number) {
