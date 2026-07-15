@@ -191,30 +191,52 @@ export async function checkEligibility(req: EligibilityRequest): Promise<Eligibi
   }
 }
 
-function parseClearinghouseResponse(data: Record<string, unknown>): EligibilityResult {
-  // Parse 271 response format into our normalized structure
-  const benefits = (data.benefitsInformation as Record<string, unknown>[] | undefined) ?? []
+// Claim.MD's /eligdata/ 271 shape: { elig: { plan_begin_date, group_number, benefit: [...] } }.
+// Each benefit: benefit_coverage_description ("Active Coverage"|"Deductible"|"Out of Pocket
+// (Stop Loss)"|"Co-Payment"|"Co-Insurance"), benefit_amount, benefit_percent, and EB06
+// benefit_period_code (23=Calendar Year total, 24=Year-to-Date met, 29=Remaining).
+// Exported so it can be validated with a fixture (see scripts/eligibility-271-test.ts).
+export function parseClearinghouseResponse(data: Record<string, unknown>): EligibilityResult {
+  const elig = ((data.elig as Record<string, unknown>) ?? data) ?? {}
+  const raw = elig.benefit
+  const benefits: Record<string, unknown>[] = Array.isArray(raw)
+    ? (raw as Record<string, unknown>[])
+    : raw
+      ? [raw as Record<string, unknown>]
+      : []
 
-  const active = benefits.some(
-    (b: Record<string, unknown>) =>
-      (b.code as string) === "1" && (b.name as string)?.toLowerCase().includes("active")
-  )
+  const cov = (b: Record<string, unknown>) => String(b.benefit_coverage_description ?? "").trim().toLowerCase()
+  const per = (b: Record<string, unknown>) => String(b.benefit_period_code ?? "")
+  const amt = (b: Record<string, unknown>) => {
+    const n = parseFloat(String(b.benefit_amount ?? ""))
+    return Number.isFinite(n) ? n : 0
+  }
 
-  const deductibleBenefit = benefits.find(
-    (b: Record<string, unknown>) => (b.code as string) === "C" && (b.name as string)?.toLowerCase().includes("deductible")
-  ) as Record<string, unknown> | undefined
+  // X12 EB01: active statuses start with "Active" (Active Coverage, Active - Full Risk Capitation…);
+  // inactive/terminated start with "Inactive". Use startsWith so "Inactive" (which *contains*
+  // "active") is never a false positive — a terminated member must parse as ineligible.
+  const active = benefits.some((b) => cov(b).startsWith("active"))
 
-  const oopBenefit = benefits.find(
-    (b: Record<string, unknown>) =>
-      (b.code as string) === "G" && (b.name as string)?.toLowerCase().includes("out-of-pocket")
-  ) as Record<string, unknown> | undefined
+  // First benefit matching a coverage keyword (+ optional EB06 period). 271 lists in-network first.
+  const find = (kw: string, periods?: string[]) =>
+    benefits.find((b) => cov(b).includes(kw) && (!periods || periods.includes(per(b))))
 
-  const copayBenefit = benefits.find(
-    (b: Record<string, unknown>) => (b.code as string) === "B"
-  ) as Record<string, unknown> | undefined
+  const deductible = find("deductible", ["23"])   // Calendar-Year total
+  const deductibleMet = find("deductible", ["24"]) // Year-to-Date met
+  const oopMax = find("out of pocket", ["23"])
+  const oopMet = find("out of pocket", ["24"])
+  const copay = find("co-payment") ?? find("copay")
+  const coins = benefits.find((b) => cov(b).includes("insurance"))
 
-  const subscriber = data.subscriber as Record<string, unknown> | undefined
-  const plan = (subscriber?.eligibilityBeginDate as string) ?? ""
+  const coinsurance = (() => {
+    const p = parseFloat(String(coins?.benefit_percent ?? ""))
+    if (!Number.isFinite(p)) return 0
+    return p <= 1 ? Math.round(p * 100) : Math.round(p)
+  })()
+
+  const planName = String(benefits.find((b) => b.insurance_plan)?.insurance_plan ?? elig.plan_number ?? "") || "Unknown Plan"
+  const begin = String(elig.plan_begin_date ?? "").split(/[-–]/)[0].trim()
+  const effectiveDate = begin.length >= 8 ? `${begin.slice(0, 4)}-${begin.slice(4, 6)}-${begin.slice(6, 8)}` : ""
 
   return {
     eligible: active,
@@ -224,18 +246,18 @@ function parseClearinghouseResponse(data: Record<string, unknown>): EligibilityR
     coverage: active
       ? {
           inNetwork: true,
-          deductible: parseFloat(String((deductibleBenefit?.benefitAmount as string) ?? "0")),
-          deductibleMet: 0,
-          outOfPocketMax: parseFloat(String((oopBenefit?.benefitAmount as string) ?? "0")),
-          outOfPocketMet: 0,
-          copay: parseFloat(String((copayBenefit?.benefitAmount as string) ?? "0")),
-          coinsurance: 20,
+          deductible: deductible ? amt(deductible) : 0,
+          deductibleMet: deductibleMet ? amt(deductibleMet) : 0,
+          outOfPocketMax: oopMax ? amt(oopMax) : 0,
+          outOfPocketMet: oopMet ? amt(oopMet) : 0,
+          copay: copay ? amt(copay) : 0,
+          coinsurance,
           visitLimit: null,
           visitsUsed: null,
           priorAuthRequired: false,
-          planName: String((data.planDescription as string) ?? "Unknown Plan"),
-          groupNumber: String((subscriber?.groupNumber as string) ?? ""),
-          effectiveDate: plan,
+          planName,
+          groupNumber: String(elig.group_number ?? ""),
+          effectiveDate,
           terminationDate: null,
         }
       : null,

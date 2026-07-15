@@ -136,7 +136,9 @@ export async function submitClaim(edi837p: string): Promise<ClearinghouseSubmitR
     })
 
     const claim = firstOf(data.claim)
-    const claimId = str(claim?.claimid ?? claim?.remote_claimid ?? data.batchid)
+    // Claim.MD returns claimid="" on the initial ACK; fall back to its internal claimmd_id so the
+    // claim is trackable (|| not ?? — treat empty string as absent).
+    const claimId = str(claim?.claimid || claim?.claimmd_id || claim?.remote_claimid || data.batchid)
     const status = str(claim?.status).toUpperCase() // "A" = acknowledged/accepted
     const messages = collectMessages(data)
     const accepted = ok && (status.startsWith("A") || (status === "" && messages.length === 0))
@@ -170,15 +172,29 @@ export async function getClaimStatus(claimId: string): Promise<ClaimStatusResult
     const { ok, data } = await claimMdPost("/response/", { ResponseID: "0", ClaimID: claimId })
     if (!ok) return null
 
-    const claim = firstOf(data.claim)
-    const raw = str(claim?.status).toUpperCase() // "A" acknowledged
+    // /response/ is keyed off ResponseID and can echo back several claims, so match the exact claim
+    // we asked about by its Claim.MD id / pcn. Never blindly take the first — that reports a stale,
+    // unrelated claim's status. If our claim isn't in the response yet, report "pending".
+    const claims = asArray(data.claim)
+    const match =
+      claims.find(
+        (c) => str(c?.claimmd_id) === claimId || str(c?.claimid) === claimId || str(c?.pcn) === claimId,
+      ) ?? (claims.length === 1 ? claims[0] : undefined)
+    if (!match) return { claimId, status: "pending", message: undefined }
+
+    const raw = str(match.status).toUpperCase() // "A" acknowledged
     const status: ClaimStatusResult["status"] =
       raw.startsWith("A") ? "accepted" :
       raw.startsWith("R") ? "rejected" :
       raw.startsWith("P") ? "paid" :
       raw.startsWith("D") ? "denied" : "pending"
 
-    return { claimId, status, message: collectMessages(data)[0] }
+    const messages: string[] = []
+    for (const m of asArray(match.messages)) {
+      const msg = str(m.message ?? m.error ?? m.desc)
+      if (msg) messages.push(m.fields ? `${msg} (${str(m.fields)})` : msg)
+    }
+    return { claimId, status, message: messages[0] }
   } catch {
     return null
   }
