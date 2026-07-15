@@ -30,6 +30,7 @@ function sleep(ms: number) {
 
 export default function HeroDashboardMockup() {
   const ref = useRef<HTMLDivElement>(null)
+  const playedRef = useRef(false)
   const [inView, setInView] = useState(false)
 
   const [headline, setHeadline] = useState("")
@@ -49,48 +50,54 @@ export default function HeroDashboardMockup() {
   }, [])
 
   useEffect(() => {
-    if (!inView) {
-      setHeadline(""); setShowSub(false); setVisible(0); setMetrics([0, 0, 0, 0])
+    // Play the intro once when it first enters view, then hold the finished
+    // state. (Previously an infinite while-loop that reset every ~10s, so a
+    // glance could always catch the dashboard flashing back to $0.0k / 0.)
+    if (!inView || playedRef.current) return
+    playedRef.current = true
+
+    const reduce = typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    if (reduce) {
+      setHeadline(HEADLINE); setShowSub(true)
+      setVisible(PRIORITIES.length); setMetrics(METRIC_TARGETS)
       return
     }
 
     let cancelled = false
 
     async function run() {
-      while (!cancelled) {
-        setHeadline(""); setShowSub(false); setVisible(0); setMetrics([0, 0, 0, 0])
-        await sleep(500)
+      setHeadline(""); setShowSub(false); setVisible(0); setMetrics([0, 0, 0, 0])
+      await sleep(500)
 
-        for (let i = 1; i <= HEADLINE.length; i++) {
-          if (cancelled) return
-          setHeadline(HEADLINE.slice(0, i))
-          await sleep(38)
-        }
-        await sleep(180)
-        if (!cancelled) setShowSub(true)
-
-        for (let i = 1; i <= PRIORITIES.length; i++) {
-          if (cancelled) return
-          await sleep(360)
-          setVisible(i)
-        }
-
-        await sleep(250)
-        const start = Date.now()
-        const dur = 1200
-        await new Promise<void>(resolve => {
-          function tick() {
-            if (cancelled) { resolve(); return }
-            const p = Math.min((Date.now() - start) / dur, 1)
-            const e = 1 - Math.pow(1 - p, 3)
-            setMetrics(METRIC_TARGETS.map(t => Math.round(t * e)))
-            if (p < 1) requestAnimationFrame(tick); else resolve()
-          }
-          requestAnimationFrame(tick)
-        })
-
-        await sleep(5000)
+      for (let i = 1; i <= HEADLINE.length; i++) {
+        if (cancelled) return
+        setHeadline(HEADLINE.slice(0, i))
+        await sleep(38)
       }
+      await sleep(180)
+      if (!cancelled) setShowSub(true)
+
+      for (let i = 1; i <= PRIORITIES.length; i++) {
+        if (cancelled) return
+        await sleep(360)
+        setVisible(i)
+      }
+
+      await sleep(250)
+      const start = Date.now()
+      const dur = 1200
+      await new Promise<void>(resolve => {
+        function tick() {
+          if (cancelled) { resolve(); return }
+          const p = Math.min((Date.now() - start) / dur, 1)
+          const e = 1 - Math.pow(1 - p, 3)
+          setMetrics(METRIC_TARGETS.map(t => Math.round(t * e)))
+          if (p < 1) requestAnimationFrame(tick); else resolve()
+        }
+        requestAnimationFrame(tick)
+      })
+      if (!cancelled) setMetrics(METRIC_TARGETS)
     }
 
     run()

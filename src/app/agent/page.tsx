@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { LogoMark } from "@/components/Logo"
 import AppLayout from "@/components/AppLayout"
 import Link from "next/link"
 
@@ -113,7 +114,7 @@ export default function AgentPage() {
             {/* Narrative */}
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-5">
               <div className="flex items-center gap-2 mb-2">
-                <div className="w-5 h-5 rounded bg-blue-600 flex items-center justify-center text-white text-xs font-bold shrink-0">C</div>
+                <LogoMark size={20} className="shrink-0" />
                 <span className="text-xs font-semibold text-blue-800 uppercase tracking-wider">Agent Report</span>
                 <span className="text-xs text-blue-400 ml-auto">{(result.durationMs / 1000).toFixed(1)}s · {new Date(result.runAt).toLocaleTimeString()}</span>
               </div>

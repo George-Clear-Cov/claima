@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
+import { LogoMark } from "@/components/Logo"
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
   PieChart, Pie, Cell, LineChart, Line, ReferenceLine,
@@ -230,7 +231,7 @@ export default function AnalyticsPage() {
               <>
                 <SectionLabel>
                   <span className="flex items-center gap-2">
-                    <span className="w-4 h-4 rounded bg-blue-600 flex items-center justify-center text-white text-xs font-bold">C</span>
+                    <LogoMark size={16} />
                     AI Insights
                   </span>
                 </SectionLabel>

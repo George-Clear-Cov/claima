@@ -67,3 +67,21 @@ body {
 .tick-in {
   animation: tickIn 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
+
+/* Respect users who ask the OS to minimize motion: kill the payer marquee,
+   the pulsing dots, and any transition-based reveals. The mockups also read
+   prefers-reduced-motion in JS and jump straight to their finished state. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .animate-marquee {
+    animation: none !important;
+    transform: none !important;
+  }
+}

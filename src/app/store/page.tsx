@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { LogoMark } from "@/components/Logo"
 import Link from "next/link"
 import type Stripe from "stripe"
 
@@ -45,7 +46,7 @@ export default function StorePage() {
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">C</div>
+          <LogoMark size={28} className="shrink-0" />
           <span className="font-semibold text-gray-900">Claima Services</span>
         </div>
         <Link href="/" className="text-sm text-gray-500 hover:text-gray-700 transition-colors">

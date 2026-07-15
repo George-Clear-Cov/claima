@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { LogoMark } from "@/components/Logo"
 import AppLayout from "@/components/AppLayout"
 import { COMMON_CPT_CODES } from "@/types/claim"
 
@@ -255,7 +256,7 @@ export default function EligibilityPage() {
                 {(interpreting || interpretation) && (
                   <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4">
                     <div className="flex items-center gap-2 mb-2">
-                      <div className="w-5 h-5 rounded bg-blue-600 flex items-center justify-center text-white text-xs font-bold shrink-0">C</div>
+                      <LogoMark size={20} className="shrink-0" />
                       <span className="text-xs font-semibold text-blue-800 uppercase tracking-wider">AI Summary</span>
                       {interpreting && <svg className="animate-spin h-3.5 w-3.5 text-blue-500 ml-auto" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>}
                     </div>

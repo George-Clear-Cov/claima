@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { LogoMark } from "@/components/Logo"
 import { useRouter } from "next/navigation"
 import { COMMON_CPT_CODES, COMMON_ICD10_CODES } from "@/types/claim"
 import AppLayout from "@/components/AppLayout"
@@ -305,7 +306,7 @@ export default function NewClaimPage() {
             {/* NLP Quick Entry */}
             <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-5 shadow-sm">
               <div className="flex items-center gap-2 mb-3">
-                <div className="w-5 h-5 rounded bg-blue-600 flex items-center justify-center text-white text-xs font-bold">C</div>
+                <LogoMark size={20} className="shrink-0" />
                 <span className="text-xs font-semibold text-blue-800 uppercase tracking-wider">Quick Entry — describe the session</span>
               </div>
               <div className="flex gap-2">

@@ -59,8 +59,23 @@ function isRateLimited(ip: string, pathname: string): boolean {
   return entry.n > rule[1]
 }
 
+// Root-level SEO / metadata / icon files that crawlers and social unfurlers
+// must be able to fetch without an auth redirect. Next generates these from
+// the app/ file conventions (robots.ts, sitemap.ts, opengraph-image, etc.).
+const PUBLIC_FILES = new Set([
+  "/robots.txt",
+  "/sitemap.xml",
+  "/opengraph-image.png",
+  "/twitter-image.png",
+  "/icon.svg",
+  "/apple-icon.png",
+  "/og.png",
+  "/manifest.webmanifest",
+])
+
 function isPublic(pathname: string) {
   return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"))
+    || PUBLIC_FILES.has(pathname)
     || pathname.startsWith("/_next/")
     || pathname.startsWith("/favicon")
     || pathname.startsWith("/public/")
