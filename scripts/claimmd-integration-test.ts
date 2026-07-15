@@ -27,7 +27,7 @@ async function main() {
 
   // 2) Eligibility 270/271
   hr("2) checkEligibility (270/271 via /eligdata/)")
-  const elig = await checkEligibility({ payerId, memberId: "W123456789", firstName: "Sarah", lastName: "Johnson", dob: "1985-03-15", npi: "1234567890", serviceType: "30" })
+  const elig = await checkEligibility({ payerId, memberId: "W123456789", firstName: "Sarah", lastName: "Johnson", dob: "1985-03-15", npi: "1111111112", serviceType: "30" })
   console.log("PARSED:", { eligible: elig.eligible, coverageActive: elig.coverageActive, errors: elig.errors, coverage: elig.coverage })
   const rr = elig.rawResponse
   console.log("RAW keys:", rr && typeof rr === "object" ? Object.keys(rr as object) : rr)
@@ -36,8 +36,8 @@ async function main() {
   // 3) Claim submit 837P
   hr("3) submitClaim (837P upload via /upload/)")
   const edi = generate837P({
-    practice: { npi: "9876543210", taxId: "123456789", name: "Riverside Medical Group", taxonomy: "193400000X", addressLine1: "123 Main St", city: "New York", state: "NY", zip: "10001", phone: "2125551234" },
-    provider: { npi: "1234567890", firstName: "Emily", lastName: "Chen", taxonomy: "207Q00000X" },
+    practice: { npi: "1111111112", taxId: "999999999", name: "Sample Practice", taxonomy: "193400000X", addressLine1: "123 Main St", city: "New York", state: "NY", zip: "10001", phone: "2125551234" },
+    provider: { npi: "1111111112", firstName: "Emily", lastName: "Chen", taxonomy: "207Q00000X" },
     patient: { memberId: "W123456789", firstName: "Sarah", lastName: "Johnson", dob: new Date("1985-03-15"), gender: "F", addressLine1: "1 Test St", city: "New York", state: "NY", zip: "10001", payerId, payerName: payer?.payerName || "Aetna", relationshipToSubscriber: "18" },
     serviceDate: new Date(),
     lineItems: [{ cptCode: "99213", icd10Codes: ["I10"], units: 1, chargeAmount: 150 }],
