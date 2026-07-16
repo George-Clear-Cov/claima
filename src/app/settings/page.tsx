@@ -1183,6 +1183,12 @@ function SettingsInner() {
               {label}
             </button>
           ))}
+          <a
+            href="/settings/security"
+            className="px-5 py-2 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-all"
+          >
+            Security
+          </a>
         </div>
 
         {tab === "practice" && <PracticeTab practice={practice} onSaved={loadPractice} />}
