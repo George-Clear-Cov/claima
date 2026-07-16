@@ -1,6 +1,6 @@
 import { SignJWT, jwtVerify } from "jose"
 import { cookies } from "next/headers"
-import { NextRequest } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { setAiPracticeContext } from "@/lib/ai-context"
 
 export const COOKIE_NAME = "claima_session"
@@ -58,4 +58,38 @@ export async function getSessionFromRequest(req: NextRequest): Promise<SessionPa
   const session = await verifyToken(token)
   if (session?.practiceId) setAiPracticeContext(session.practiceId)
   return session
+}
+
+/** Set the signed session cookie on a response (shared by login + MFA-completion routes). */
+export function setSessionCookie(res: NextResponse, token: string): void {
+  res.cookies.set(COOKIE_NAME, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: SESSION_MAX_AGE_S,
+    path: "/",
+  })
+}
+
+// ── MFA challenge token ──────────────────────────────────────────────────────
+// Short-lived, single-purpose token issued after a correct password when MFA is on. It proves
+// "password step passed" between the two login calls — it is NOT a session and grants no access.
+const MFA_CHALLENGE_EXPIRY = "5m"
+
+export async function signMfaChallenge(userId: string): Promise<string> {
+  return new SignJWT({ userId, purpose: "mfa" })
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setExpirationTime(MFA_CHALLENGE_EXPIRY)
+    .sign(getSecret())
+}
+
+export async function verifyMfaChallenge(token: string): Promise<string | null> {
+  try {
+    const { payload } = await jwtVerify(token, getSecret(), { algorithms: ["HS256"] })
+    if (payload.purpose !== "mfa" || typeof payload.userId !== "string") return null
+    return payload.userId
+  } catch {
+    return null
+  }
 }

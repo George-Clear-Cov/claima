@@ -18,6 +18,11 @@ model User {
   lockedUntil          DateTime?
   createdAt            DateTime  @default(now())
 
+  // TOTP multi-factor auth for email/password logins (SSO logins inherit MFA from the IdP).
+  mfaEnabled           Boolean   @default(false)
+  mfaSecret            String?   // base32 TOTP secret; stored at setup, enforced once mfaEnabled
+  mfaBackupCodes       String[]  @default([]) // bcrypt hashes of unused single-use backup codes
+
   practice Practice @relation(fields: [practiceId], references: [id])
 }
 
