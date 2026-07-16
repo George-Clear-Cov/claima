@@ -234,11 +234,11 @@ function ERAModal({ onClose, onCreated }: { onClose: () => void; onCreated: (stm
         </div>
 
         {loadingClaims ? (
-          <div className="p-8 text-center text-gray-400 text-sm">Loading eligible claims…</div>
+          <div className="p-8 text-center text-gray-500 text-sm">Loading eligible claims…</div>
         ) : claims.length === 0 ? (
           <div className="p-8 text-center">
             <p className="text-gray-500 font-medium mb-1">No eligible claims</p>
-            <p className="text-gray-400 text-sm">Submit a claim first, then come back to post the insurance payment.</p>
+            <p className="text-gray-500 text-sm">Submit a claim first, then come back to post the insurance payment.</p>
           </div>
         ) : tab === "parse" ? (
           <div className="p-6 space-y-4">
@@ -246,6 +246,7 @@ function ERAModal({ onClose, onCreated }: { onClose: () => void; onCreated: (stm
             <textarea
               value={eobText}
               onChange={(e) => setEobText(e.target.value)}
+              aria-label="EOB or ERA text"
               placeholder="Paste EOB / ERA text here…&#10;&#10;Example: Claim # 12345678. Billed: $200.00. Allowed: $160.00. Paid: $140.00. Adjustment CO-45: $20.00. Member responsibility: $40.00."
               rows={8}
               className="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 resize-none transition-all font-mono"
@@ -301,7 +302,7 @@ function ERAModal({ onClose, onCreated }: { onClose: () => void; onCreated: (stm
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-medium text-gray-500 mb-1.5">Insurance Paid ($)</label>
                 <input type="number" value={insurancePaid} onChange={(e) => setInsurancePaid(e.target.value)} step="0.01" min="0" max={totalCharge} required placeholder="0.00" className={inputClass} />
@@ -384,7 +385,7 @@ function OutreachModal({ stmt, onClose }: { stmt: DBStatement; onClose: () => vo
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-16 text-gray-400">
+          <div className="flex items-center justify-center py-16 text-gray-500">
             <svg className="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
             Drafting messages…
           </div>
@@ -408,7 +409,7 @@ function OutreachModal({ stmt, onClose }: { stmt: DBStatement; onClose: () => vo
               {content}
             </div>
             {tab === "sms" && (
-              <div className="text-xs text-gray-400 text-right">{content.length} / 160 chars</div>
+              <div className="text-xs text-gray-500 text-right">{content.length} / 160 chars</div>
             )}
             <button onClick={() => copy(content)} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg text-sm font-semibold transition-colors shadow-sm">
               {copied ? "✓ Copied!" : "Copy to Clipboard"}
@@ -519,13 +520,13 @@ function StatementModal({ stmt, onClose, onPaid }: {
             </div>
             <button onClick={onClose} className="w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-700 transition-colors text-sm">✕</button>
           </div>
-          <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
-            <div><div className="text-xs text-gray-400 uppercase tracking-wider mb-1">Patient</div><div className="font-medium text-gray-900">{stmt.patient.firstName} {stmt.patient.lastName}</div></div>
-            <div className="text-right"><div className="text-xs text-gray-400 uppercase tracking-wider mb-1">Due Date</div><div className="text-gray-700">{fmt(stmt.dueDate)}</div></div>
+          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+            <div><div className="text-xs text-gray-500 uppercase tracking-wider mb-1">Patient</div><div className="font-medium text-gray-900">{stmt.patient.firstName} {stmt.patient.lastName}</div></div>
+            <div className="text-right"><div className="text-xs text-gray-500 uppercase tracking-wider mb-1">Due Date</div><div className="text-gray-700">{fmt(stmt.dueDate)}</div></div>
           </div>
         </div>
 
-        <div className="px-6 py-2.5 bg-gray-50 border-b border-gray-200 text-xs text-gray-400 flex gap-4">
+        <div className="px-6 py-2.5 bg-gray-50 border-b border-gray-200 text-xs text-gray-500 flex gap-4">
           <span>Claim: <span className="font-mono text-gray-600">{stmt.claimId.slice(0, 8)}…</span></span>
           <span>Service: <span className="text-gray-600">{fmt(stmt.claim.serviceDate)}</span></span>
         </div>
@@ -533,7 +534,7 @@ function StatementModal({ stmt, onClose, onPaid }: {
         <div className="p-6">
           <table className="w-full text-sm mb-6">
             <thead>
-              <tr className="text-xs text-gray-400 uppercase tracking-wider border-b border-gray-200">
+              <tr className="text-xs text-gray-500 uppercase tracking-wider border-b border-gray-200">
                 <th className="text-left pb-2.5">Service</th>
                 <th className="text-right pb-2.5">Charge</th>
               </tr>
@@ -542,7 +543,7 @@ function StatementModal({ stmt, onClose, onPaid }: {
               {stmt.claim.lineItems.map((line, i) => (
                 <tr key={i} className="border-b border-gray-100">
                   <td className="py-3">
-                    <div className="font-mono text-xs text-gray-400">{line.cptCode}</div>
+                    <div className="font-mono text-xs text-gray-500">{line.cptCode}</div>
                     <div className="text-gray-800 mt-0.5">{line.description ?? line.cptCode}</div>
                   </td>
                   <td className="text-right py-3 font-mono text-gray-900">${(parseFloat(line.chargeAmount) * line.units).toFixed(2)}</td>
@@ -554,7 +555,7 @@ function StatementModal({ stmt, onClose, onPaid }: {
           <div className="border border-gray-200 rounded-xl p-4 space-y-2.5 text-sm bg-gray-50 mb-4">
             <div className="flex justify-between text-gray-500"><span>Total Charges</span><span className="font-mono">${totalCharge.toFixed(2)}</span></div>
             <div className="flex justify-between text-green-600"><span>Insurance Payment</span><span className="font-mono">−${insurancePaid.toFixed(2)}</span></div>
-            {adjustments > 0 && <div className="flex justify-between text-gray-400"><span>Contractual Adjustments</span><span className="font-mono">−${adjustments.toFixed(2)}</span></div>}
+            {adjustments > 0 && <div className="flex justify-between text-gray-500"><span>Contractual Adjustments</span><span className="font-mono">−${adjustments.toFixed(2)}</span></div>}
             <div className="flex justify-between font-semibold border-t border-gray-200 pt-2.5">
               <span className="text-gray-700">Patient Responsibility</span>
               <span className="font-mono text-gray-900">${patientOwes.toFixed(2)}</span>
@@ -578,6 +579,7 @@ function StatementModal({ stmt, onClose, onPaid }: {
                         type="number"
                         value={payAmount}
                         onChange={(e) => setPayAmount(e.target.value)}
+                        aria-label="Payment amount"
                         step="0.01" min="0.01" max={balanceDue}
                         className="w-full bg-white border border-gray-300 rounded-lg pl-7 pr-3 py-2.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all"
                       />
@@ -600,7 +602,7 @@ function StatementModal({ stmt, onClose, onPaid }: {
               )}
 
               {payMode === "initiating" && (
-                <div className="flex items-center justify-center py-6 text-gray-400">
+                <div className="flex items-center justify-center py-6 text-gray-500">
                   <svg className="animate-spin h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
                   Setting up payment…
                 </div>
@@ -624,7 +626,7 @@ function StatementModal({ stmt, onClose, onPaid }: {
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-sm font-medium text-gray-700">Pay ${parseFloat(payAmount).toFixed(2)} by card</span>
-                    <button onClick={() => { setPayMode("idle"); setClientSecret(null) }} className="text-xs text-gray-400 hover:text-gray-600 transition-colors">← Back</button>
+                    <button onClick={() => { setPayMode("idle"); setClientSecret(null) }} className="text-xs text-gray-500 hover:text-gray-600 transition-colors">← Back</button>
                   </div>
                   <Elements stripe={stripePromise} options={{ clientSecret, appearance: stripeAppearance }}>
                     <StripeCheckoutForm
@@ -737,14 +739,25 @@ export default function BillingPage() {
   const [batchResult, setBatchResult] = useState<{
     processed: number; totalInsurancePaid: number; totalPatientStatements: number; message?: string
   } | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
 
-  useEffect(() => {
-    fetch("/api/statements")
-      .then((r) => r.ok ? r.json() : [])
-      .then((data) => setStatements(Array.isArray(data) ? data : []))
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [])
+  async function load() {
+    setLoading(true)
+    setLoadError(null)
+    try {
+      const r = await fetch("/api/statements")
+      if (!r.ok) throw new Error()
+      const data = await r.json()
+      setStatements(Array.isArray(data) ? data : [])
+    } catch {
+      setLoadError("Couldn't load this page. Please try again.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { load() }, [])
 
   const handlePaid = useCallback((id: string, amount: number) => {
     setStatements((prev) => prev.map((s) => {
@@ -769,8 +782,10 @@ export default function BillingPage() {
   async function handleBatchPost() {
     setBatchPosting(true)
     setBatchResult(null)
+    setActionError(null)
     try {
       const res = await fetch("/api/era/batch-post", { method: "POST" })
+      if (!res.ok) throw new Error()
       const data = await res.json()
       setBatchResult(data)
       if (data.processed > 0) {
@@ -778,7 +793,9 @@ export default function BillingPage() {
         const refreshed = await fetch("/api/statements").then((r) => r.ok ? r.json() : [])
         if (Array.isArray(refreshed)) setStatements(refreshed)
       }
-    } catch {}
+    } catch {
+      setActionError("Couldn't auto-post ERAs. Please try again.")
+    }
     finally { setBatchPosting(false) }
   }
 
@@ -820,7 +837,7 @@ export default function BillingPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {stats.map((stat) => (
             <div key={stat.label} className="bg-white border border-gray-200 rounded-xl p-4 relative overflow-hidden shadow-sm hover:shadow-md transition-shadow">
               <div className={`absolute inset-x-0 top-0 h-0.5 ${stat.accent}`} />
@@ -845,8 +862,22 @@ export default function BillingPage() {
           </div>
         )}
 
-        {loading ? (
-          <div className="flex items-center justify-center py-24 text-gray-400">
+        {actionError && (
+          <div className="mb-6 rounded-xl px-4 py-3 text-sm flex items-center justify-between border bg-red-50 border-red-200 text-red-700">
+            <span>{actionError}</span>
+            <button onClick={() => setActionError(null)} className="text-xs opacity-60 hover:opacity-100 ml-4">✕</button>
+          </div>
+        )}
+
+        {loadError ? (
+          <div className="text-center py-24 bg-white border border-gray-200 rounded-2xl shadow-sm">
+            <p className="text-gray-700 font-medium mb-4">{loadError}</p>
+            <button onClick={load} className="inline-flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+              Try again
+            </button>
+          </div>
+        ) : loading ? (
+          <div className="flex items-center justify-center py-24 text-gray-500">
             <svg className="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
             Loading statements…
           </div>
@@ -856,13 +887,13 @@ export default function BillingPage() {
               <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2z" /></svg>
             </div>
             <p className="text-gray-700 font-medium mb-1">No statements yet</p>
-            <p className="text-gray-400 text-sm mb-6">Submit a claim, then post the insurance payment to generate a patient statement.</p>
+            <p className="text-gray-500 text-sm mb-6">Submit a claim, then post the insurance payment to generate a patient statement.</p>
             <button onClick={() => setShowERA(true)} className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-sm">
               Post Insurance Payment →
             </button>
           </div>
         ) : (
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+          <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto shadow-sm">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-200 bg-gray-50">

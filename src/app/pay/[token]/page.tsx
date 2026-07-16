@@ -88,7 +88,7 @@ function PaymentForm({ token, amount }: { token: string; amount: number }) {
       >
         {loading ? "Processing…" : `Pay $${amount.toFixed(2)} securely`}
       </button>
-      <p className="text-center text-xs text-gray-400">Secured by Stripe · Your card is never stored by us</p>
+      <p className="text-center text-xs text-gray-500">Secured by Stripe · Your card is never stored by us</p>
     </form>
   )
 }
@@ -156,18 +156,19 @@ export default function PayPage({ params }: { params: Promise<{ token: string }>
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
       <div className="w-full max-w-sm">
+        <h1 className="sr-only">Pay your balance</h1>
         <div className="flex items-center gap-3 mb-8">
           <LogoMark size={36} />
           <div>
             <div className="text-lg font-semibold tracking-tight text-gray-900">Claima</div>
-            <div className="text-xs text-gray-400 -mt-0.5">Secure patient billing</div>
+            <div className="text-xs text-gray-500 -mt-0.5">Secure patient billing</div>
           </div>
         </div>
 
         {error ? (
           <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-8 text-center">
             <div className="text-sm text-gray-500 mb-4">{error}</div>
-            <p className="text-xs text-gray-400">This link may have expired. Contact your provider for a new one.</p>
+            <p className="text-xs text-gray-500">This link may have expired. Contact your provider for a new one.</p>
           </div>
         ) : !statement ? (
           <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-8 animate-pulse space-y-4">
@@ -188,7 +189,7 @@ export default function PayPage({ params }: { params: Promise<{ token: string }>
         ) : (
           <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-8">
             <div className="mb-6">
-              <div className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1">{statement.practiceName}</div>
+              <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">{statement.practiceName}</div>
               <div className="text-3xl font-bold text-gray-900">${statement.balanceDue.toFixed(2)}</div>
               <div className="text-sm text-gray-500 mt-0.5">
                 Hi {statement.patientFirstName} — your balance after insurance

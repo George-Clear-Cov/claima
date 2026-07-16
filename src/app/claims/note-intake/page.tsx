@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import AppLayout from "@/components/AppLayout"
 import { COMMON_CPT_CODES, COMMON_ICD10_CODES } from "@/types/claim"
 
@@ -61,10 +62,20 @@ export default function NoteIntakePage() {
   const [placeOfService, setPlaceOfService] = useState("11")
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
-  useEffect(() => {
-    fetch("/api/context").then((r) => r.json()).then((d) => setCtx(d)).catch(() => {})
-  }, [])
+  async function load() {
+    setLoadError(null)
+    try {
+      const r = await fetch("/api/context")
+      if (!r.ok) throw new Error()
+      setCtx(await r.json())
+    } catch {
+      setLoadError("Couldn't load patient and provider data. Please try again.")
+    }
+  }
+
+  useEffect(() => { load() }, [])
 
   async function handleExtract() {
     if (!note.trim()) return
@@ -124,7 +135,7 @@ export default function NoteIntakePage() {
         }),
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(JSON.stringify(data.error))
+      if (!res.ok) throw new Error(data.error?.message ?? "Something went wrong")
       router.push("/claims")
     } catch (e) {
       setSubmitError(e instanceof Error ? e.message : "Submission failed")
@@ -144,8 +155,8 @@ export default function NoteIntakePage() {
     <AppLayout>
       <div className="max-w-5xl mx-auto px-8 py-10">
         <div className="mb-8">
-          <div className="text-xs text-gray-400 mb-1">
-            <span className="hover:text-gray-600 cursor-pointer" onClick={() => router.push("/claims")}>Claims</span>
+          <div className="text-xs text-gray-500 mb-1">
+            <Link href="/claims" className="hover:text-gray-600 cursor-pointer">Claims</Link>
             <span className="mx-1.5">›</span>
             <span>From Session Note</span>
           </div>
@@ -153,7 +164,14 @@ export default function NoteIntakePage() {
           <p className="text-gray-500 text-sm mt-0.5">Paste a session note — AI extracts CPT codes, diagnoses, and creates a draft claim</p>
         </div>
 
-        <div className={`grid gap-6 ${extracted ? "grid-cols-2" : "grid-cols-1 max-w-2xl"}`}>
+        {loadError && (
+          <div className="mb-6 rounded-xl px-4 py-3 text-sm flex items-center justify-between border bg-red-50 border-red-200 text-red-700">
+            <span>{loadError}</span>
+            <button onClick={load} className="bg-gray-900 hover:bg-gray-800 text-white text-xs rounded-lg px-3 py-1.5 ml-4 whitespace-nowrap">Try again</button>
+          </div>
+        )}
+
+        <div className={`grid gap-6 ${extracted ? "grid-cols-1 lg:grid-cols-2" : "grid-cols-1 max-w-2xl"}`}>
           {/* Left: Note input */}
           <div className="space-y-4">
             <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
@@ -168,6 +186,7 @@ export default function NoteIntakePage() {
               <textarea
                 value={note}
                 onChange={(e) => { setNote(e.target.value); setExtracted(null) }}
+                aria-label="Session note"
                 placeholder={"Paste SOAP note, progress note, or any session documentation here…\n\nWorks with any format — structured or free text."}
                 rows={16}
                 className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 resize-none transition-all font-mono leading-relaxed"
@@ -248,7 +267,7 @@ export default function NoteIntakePage() {
                 </div>
 
                 {/* Date + CPT */}
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-medium text-gray-500 mb-1.5">Service Date</label>
                     <input type="date" value={serviceDate} onChange={(e) => setServiceDate(e.target.value)} className={inputClass} />
@@ -283,7 +302,7 @@ export default function NoteIntakePage() {
                 </div>
 
                 {/* Charge + modifier */}
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-medium text-gray-500 mb-1.5">Charge ($)</label>
                     <input type="number" value={chargeAmount} onChange={(e) => setChargeAmount(e.target.value)} step="0.01" min="0" className={inputClass} />

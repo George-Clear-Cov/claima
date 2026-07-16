@@ -81,22 +81,27 @@ export default function CcmPage() {
   const [logForm, setLogForm] = useState<TimeLogForm | null>(null)
   const [loggingTime, setLoggingTime] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+  const [loadError, setLoadError] = useState<string | null>(null)
 
   const loadData = useCallback(async () => {
-    const [eligRes, dashRes] = await Promise.all([
-      fetch("/api/ccm/eligible"),
-      fetch("/api/ccm/dashboard"),
-    ])
-    if (eligRes.ok) {
-      const data: EligiblePatient[] = await eligRes.json()
-      setEligible(data)
+    setLoading(true)
+    setLoadError(null)
+    try {
+      const [eligRes, dashRes] = await Promise.all([
+        fetch("/api/ccm/eligible"),
+        fetch("/api/ccm/dashboard"),
+      ])
+      if (!eligRes.ok || !dashRes.ok) throw new Error()
+      const eligData: EligiblePatient[] = await eligRes.json()
+      setEligible(eligData)
+      const dashData = await dashRes.json()
+      setEnrolled(dashData.enrolled)
+      setStats(dashData.stats)
+    } catch {
+      setLoadError("Couldn't load this page. Please try again.")
+    } finally {
+      setLoading(false)
     }
-    if (dashRes.ok) {
-      const data = await dashRes.json()
-      setEnrolled(data.enrolled)
-      setStats(data.stats)
-    }
-    setLoading(false)
   }, [])
 
   useEffect(() => { loadData() }, [loadData])
@@ -163,7 +168,7 @@ export default function CcmPage() {
 
         {/* Stats */}
         {stats && (
-          <div className="grid grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div className="bg-white rounded-xl border border-gray-200 p-4">
               <div className="text-xs text-gray-500 mb-1">CCM Eligible</div>
               <div className="text-2xl font-bold text-gray-900">{notEnrolled.length}</div>
@@ -243,6 +248,7 @@ export default function CcmPage() {
             </button>
           </div>
           <input
+            aria-label="Search patients"
             placeholder="Search patients…"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -269,7 +275,7 @@ export default function CcmPage() {
                     className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2"
                     autoFocus
                   />
-                  <p className="text-xs text-gray-400 mt-1">20+ min/month triggers CPT 99490 billing. 40+ min adds CPT 99439.</p>
+                  <p className="text-xs text-gray-500 mt-1">20+ min/month triggers CPT 99490 billing. 40+ min adds CPT 99439.</p>
                 </div>
                 <div>
                   <label className="text-xs text-gray-500 mb-1 block">Description (optional)</label>
@@ -303,12 +309,17 @@ export default function CcmPage() {
         )}
 
         {/* Content */}
-        {loading ? (
-          <div className="text-center text-sm text-gray-400 py-12">Loading…</div>
+        {loadError ? (
+          <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
+            <div className="text-sm text-gray-600 mb-3">{loadError}</div>
+            <button onClick={loadData} className="bg-gray-900 text-white text-sm rounded-lg px-4 py-2">Try again</button>
+          </div>
+        ) : loading ? (
+          <div className="text-center text-sm text-gray-500 py-12">Loading…</div>
         ) : tab === "eligible" ? (
           <div className="space-y-3">
             {filteredEligible.length === 0 ? (
-              <div className="text-center text-sm text-gray-400 py-12 bg-white rounded-xl border border-gray-200">
+              <div className="text-center text-sm text-gray-500 py-12 bg-white rounded-xl border border-gray-200">
                 {searchQuery ? "No patients match your search." : "No unenrolled eligible patients found. All qualifying patients may already be enrolled."}
               </div>
             ) : (
@@ -351,7 +362,7 @@ export default function CcmPage() {
         ) : (
           <div className="space-y-3">
             {filteredEnrolled.length === 0 ? (
-              <div className="text-center text-sm text-gray-400 py-12 bg-white rounded-xl border border-gray-200">
+              <div className="text-center text-sm text-gray-500 py-12 bg-white rounded-xl border border-gray-200">
                 {searchQuery ? "No patients match your search." : "No patients enrolled in CCM yet. Enroll eligible patients from the Eligible Patients tab."}
               </div>
             ) : (
@@ -396,7 +407,7 @@ export default function CcmPage() {
                       )}
                       <button
                         onClick={() => handleUnenroll(p.id, `${p.firstName} ${p.lastName}`)}
-                        className="text-xs text-gray-400 hover:text-red-500 transition-colors text-center"
+                        className="text-xs text-gray-500 hover:text-red-500 transition-colors text-center"
                       >
                         Unenroll
                       </button>

@@ -22,7 +22,7 @@ function PasswordStrength({ password }: { password: string }) {
         {PASSWORD_RULES.map((rule) => {
           const ok = !check.errors.includes(rule)
           return (
-            <li key={rule} className={`text-xs flex items-center gap-1 ${ok ? "text-green-600" : "text-gray-400"}`}>
+            <li key={rule} className={`text-xs flex items-center gap-1 ${ok ? "text-green-600" : "text-gray-500"}`}>
               <span>{ok ? "✓" : "·"}</span>
               {rule}
             </li>
@@ -75,7 +75,7 @@ function SignupForm() {
     }
   }
 
-  const inputClass = "w-full bg-white border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all placeholder-gray-300"
+  const inputClass = "w-full bg-white border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all placeholder-gray-400"
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-8">
@@ -84,7 +84,7 @@ function SignupForm() {
           <LogoMark size={40} />
           <div>
             <div className="text-xl font-semibold tracking-tight text-gray-900">Claima</div>
-            <div className="text-xs text-gray-400 -mt-0.5">Medical billing platform</div>
+            <div className="text-xs text-gray-500 -mt-0.5">Medical billing platform</div>
           </div>
         </div>
 
@@ -101,6 +101,8 @@ function SignupForm() {
                 onChange={(e) => setName(e.target.value)}
                 required
                 autoFocus
+                autoComplete="name"
+                aria-label="Your Name"
                 placeholder="Dr. Jane Smith"
                 className={inputClass}
               />
@@ -113,6 +115,8 @@ function SignupForm() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                autoComplete="email"
+                aria-label="Work Email"
                 placeholder="jane@yourpractice.com"
                 className={inputClass}
               />
@@ -125,6 +129,8 @@ function SignupForm() {
                 value={practiceName}
                 onChange={(e) => setPracticeName(e.target.value)}
                 required
+                autoComplete="organization"
+                aria-label="Practice Name"
                 placeholder="Riverside Medical Group"
                 className={inputClass}
               />
@@ -137,6 +143,8 @@ function SignupForm() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                autoComplete="new-password"
+                aria-label="Password"
                 placeholder="Create a strong password"
                 className={inputClass}
               />

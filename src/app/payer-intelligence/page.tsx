@@ -71,7 +71,7 @@ const $ = (n: number, dec = 0) =>
 function DeltaBadge({ delta, invert = false, suffix = "pp" }: { delta: number; invert?: boolean; suffix?: string }) {
   const positive = invert ? delta < 0 : delta > 0
   const zero = Math.abs(delta) < 0.5
-  if (zero) return <span className="text-xs text-gray-400">= Benchmark</span>
+  if (zero) return <span className="text-xs text-gray-500">= Benchmark</span>
   return (
     <span className={`text-xs font-semibold ${positive ? "text-green-600" : "text-red-600"}`}>
       {positive ? "▲" : "▼"} {Math.abs(delta).toFixed(0)}{suffix} {positive ? "above" : "below"} avg
@@ -93,7 +93,7 @@ function CollectionBar({ rate, benchmark }: { rate: number; benchmark: number })
     <div>
       <div className="flex items-center justify-between text-xs mb-1">
         <span className={`font-semibold ${rate >= benchmark ? "text-green-700" : "text-red-600"}`}>{rate}%</span>
-        <span className="text-gray-400 text-xs">avg {benchmark}%</span>
+        <span className="text-gray-500 text-xs">avg {benchmark}%</span>
       </div>
       <div className="relative h-2 bg-gray-100 rounded-full overflow-hidden">
         <div className={`h-full rounded-full ${color} transition-all`} style={{ width: `${rate}%` }} />
@@ -109,7 +109,7 @@ function DenialBar({ rate, benchmark }: { rate: number; benchmark: number }) {
     <div>
       <div className="flex items-center justify-between text-xs mb-1">
         <span className={`font-semibold ${rate <= benchmark ? "text-green-700" : "text-red-600"}`}>{rate}%</span>
-        <span className="text-gray-400 text-xs">avg {benchmark}%</span>
+        <span className="text-gray-500 text-xs">avg {benchmark}%</span>
       </div>
       <div className="relative h-2 bg-gray-100 rounded-full overflow-hidden">
         <div className={`h-full rounded-full ${color} transition-all`} style={{ width: `${Math.min(rate * 3, 100)}%` }} />
@@ -128,18 +128,26 @@ export default function PayerIntelligencePage() {
   const [sortKey, setSortKey] = useState<SortKey>("billed")
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc")
   const [period, setPeriod] = useState("12m")
+  const [loadError, setLoadError] = useState<string | null>(null)
 
   const load = useCallback(async (p: string) => {
     setLoading(true)
+    setLoadError(null)
     const now = new Date()
     let from: string
     if (p === "3m")  from = new Date(now.getFullYear(), now.getMonth() - 3, 1).toISOString().slice(0, 10)
     else if (p === "6m") from = new Date(now.getFullYear(), now.getMonth() - 6, 1).toISOString().slice(0, 10)
     else from = new Date(now.getFullYear() - 1, now.getMonth(), 1).toISOString().slice(0, 10)
 
-    const res = await fetch(`/api/analytics/payer-intel?from=${from}`)
-    if (res.ok) setData(await res.json())
-    setLoading(false)
+    try {
+      const res = await fetch(`/api/analytics/payer-intel?from=${from}`)
+      if (!res.ok) throw new Error()
+      setData(await res.json())
+    } catch {
+      setLoadError("Couldn't load this page. Please try again.")
+    } finally {
+      setLoading(false)
+    }
   }, [])
 
   useEffect(() => { load(period) }, [load, period])
@@ -164,11 +172,14 @@ export default function PayerIntelligencePage() {
   })
 
   const SortHeader = ({ k, label }: { k: SortKey; label: string }) => (
-    <th
-      onClick={() => handleSort(k)}
-      className="text-right text-xs font-medium text-gray-500 uppercase tracking-wide cursor-pointer hover:text-gray-800 select-none px-3 py-2.5"
-    >
-      {label}{sortKey === k ? (sortDir === "desc" ? " ↓" : " ↑") : ""}
+    <th className="px-3 py-2.5">
+      <button
+        type="button"
+        onClick={() => handleSort(k)}
+        className="w-full text-right text-xs font-medium text-gray-500 uppercase tracking-wide cursor-pointer hover:text-gray-800 select-none"
+      >
+        {label}{sortKey === k ? (sortDir === "desc" ? " ↓" : " ↑") : ""}
+      </button>
     </th>
   )
 
@@ -177,7 +188,7 @@ export default function PayerIntelligencePage() {
 
   return (
     <AppLayout>
-      <div className="flex h-[calc(100vh-56px)]">
+      <div className="flex flex-col lg:flex-row h-[calc(100vh-56px)]">
         {/* Left panel — table */}
         <div className="flex-1 min-w-0 overflow-y-auto bg-gray-50">
           <div className="px-6 pt-6 pb-4">
@@ -199,16 +210,16 @@ export default function PayerIntelligencePage() {
 
             {/* Summary cards */}
             {summary && benchmarks && (
-              <div className="grid grid-cols-5 gap-3 mb-6">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
                 <div className="bg-white rounded-xl border border-gray-200 p-4">
-                  <div className="text-xs text-gray-400 mb-1">Total Billed</div>
+                  <div className="text-xs text-gray-500 mb-1">Total Billed</div>
                   <div className="text-xl font-bold text-gray-900">{$(summary.totalBilled)}</div>
-                  <div className="text-xs text-gray-400 mt-1">{summary.payerCount} payers</div>
+                  <div className="text-xs text-gray-500 mt-1">{summary.payerCount} payers</div>
                 </div>
                 <div className="bg-white rounded-xl border border-gray-200 p-4">
-                  <div className="text-xs text-gray-400 mb-1">Total Collected</div>
+                  <div className="text-xs text-gray-500 mb-1">Total Collected</div>
                   <div className="text-xl font-bold text-gray-900">{$(summary.totalPaid)}</div>
-                  <div className="text-xs text-gray-400 mt-1">
+                  <div className="text-xs text-gray-500 mt-1">
                     <span className={summary.overallCollectionRate >= benchmarks.collectionRate ? "text-green-600 font-medium" : "text-red-500 font-medium"}>
                       {summary.overallCollectionRate}%
                     </span>
@@ -216,35 +227,40 @@ export default function PayerIntelligencePage() {
                   </div>
                 </div>
                 <div className="bg-white rounded-xl border border-gray-200 p-4">
-                  <div className="text-xs text-gray-400 mb-1">Open AR</div>
+                  <div className="text-xs text-gray-500 mb-1">Open AR</div>
                   <div className="text-xl font-bold text-gray-900">{$(summary.totalOpenAR)}</div>
-                  <div className="text-xs text-gray-400 mt-1">Pending payment</div>
+                  <div className="text-xs text-gray-500 mt-1">Pending payment</div>
                 </div>
                 <div className="bg-white rounded-xl border border-gray-200 p-4">
-                  <div className="text-xs text-gray-400 mb-1">Denial Rate</div>
+                  <div className="text-xs text-gray-500 mb-1">Denial Rate</div>
                   <div className={`text-xl font-bold ${summary.overallDenialRate <= benchmarks.denialRate ? "text-green-700" : "text-red-600"}`}>
                     {summary.overallDenialRate}%
                   </div>
-                  <div className="text-xs text-gray-400 mt-1">Industry avg {benchmarks.denialRate}%</div>
+                  <div className="text-xs text-gray-500 mt-1">Industry avg {benchmarks.denialRate}%</div>
                 </div>
                 <div className="bg-white rounded-xl border border-gray-200 p-4">
-                  <div className="text-xs text-gray-400 mb-1">Avg Days to Pay</div>
+                  <div className="text-xs text-gray-500 mb-1">Avg Days to Pay</div>
                   <div className={`text-xl font-bold ${
-                    summary.avgDaysToPaymentOverall === null ? "text-gray-400" :
+                    summary.avgDaysToPaymentOverall === null ? "text-gray-500" :
                     summary.avgDaysToPaymentOverall <= benchmarks.daysToPayment ? "text-green-700" : "text-amber-600"}`}>
                     {summary.avgDaysToPaymentOverall !== null ? `${summary.avgDaysToPaymentOverall}d` : "—"}
                   </div>
-                  <div className="text-xs text-gray-400 mt-1">Industry avg {benchmarks.daysToPayment}d</div>
+                  <div className="text-xs text-gray-500 mt-1">Industry avg {benchmarks.daysToPayment}d</div>
                 </div>
               </div>
             )}
 
             {/* Payer table */}
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-              {loading ? (
-                <div className="p-10 text-center text-sm text-gray-400">Loading payer data…</div>
+            <div className="bg-white rounded-xl border border-gray-200 overflow-x-auto">
+              {loadError ? (
+                <div className="p-10 text-center">
+                  <div className="text-sm text-gray-600 mb-3">{loadError}</div>
+                  <button onClick={() => load(period)} className="bg-gray-900 text-white text-sm rounded-lg px-4 py-2">Try again</button>
+                </div>
+              ) : loading ? (
+                <div className="p-10 text-center text-sm text-gray-500">Loading payer data…</div>
               ) : sorted.length === 0 ? (
-                <div className="p-10 text-center text-sm text-gray-400">No claim data found for this period.</div>
+                <div className="p-10 text-center text-sm text-gray-500">No claim data found for this period.</div>
               ) : (
                 <table className="w-full">
                   <thead className="border-b border-gray-100 bg-gray-50">
@@ -263,20 +279,24 @@ export default function PayerIntelligencePage() {
                       <tr
                         key={p.payerId || p.payerName}
                         onClick={() => setSelected(p)}
+                        role="button"
+                        tabIndex={0}
+                        aria-label={`View details for ${p.payerName}`}
+                        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelected(p) } }}
                         className={`hover:bg-blue-50/40 cursor-pointer transition-colors ${selected?.payerName === p.payerName ? "bg-blue-50 border-l-2 border-l-blue-500" : ""}`}
                       >
                         <td className="px-4 py-3">
                           <div className="text-sm font-medium text-gray-900">{p.payerName}</div>
-                          <div className="text-xs text-gray-400">{p.totalClaims} claims · {p.deniedClaims} denied</div>
+                          <div className="text-xs text-gray-500">{p.totalClaims} claims · {p.deniedClaims} denied</div>
                           <MiniBar value={p.billed} max={maxBilled} color="bg-blue-300" />
                         </td>
                         <td className="text-right px-3 py-3">
                           <div className="text-sm font-semibold text-gray-700">{p.payerMix}%</div>
-                          <div className="text-xs text-gray-400">of revenue</div>
+                          <div className="text-xs text-gray-500">of revenue</div>
                         </td>
                         <td className="text-right px-3 py-3">
                           <div className="text-sm font-semibold text-gray-900">{$(p.billed)}</div>
-                          <div className="text-xs text-gray-400">{$(p.paid)} paid</div>
+                          <div className="text-xs text-gray-500">{$(p.paid)} paid</div>
                         </td>
                         <td className="px-3 py-3 min-w-[120px]">
                           {benchmarks && <CollectionBar rate={p.collectionRate} benchmark={benchmarks.collectionRate} />}
@@ -290,20 +310,20 @@ export default function PayerIntelligencePage() {
                               <div className={`text-sm font-semibold ${p.avgDaysToPayment <= (benchmarks?.daysToPayment ?? 30) ? "text-green-600" : "text-amber-600"}`}>
                                 {p.avgDaysToPayment}d
                               </div>
-                              <div className="text-xs text-gray-400">avg</div>
+                              <div className="text-xs text-gray-500">avg</div>
                             </>
                           ) : (
-                            <span className="text-xs text-gray-300">—</span>
+                            <span className="text-xs text-gray-500">—</span>
                           )}
                         </td>
                         <td className="text-right px-3 py-3">
                           {p.openAR > 0 ? (
                             <>
                               <div className="text-sm font-semibold text-amber-700">{$(p.openAR)}</div>
-                              <div className="text-xs text-gray-400">outstanding</div>
+                              <div className="text-xs text-gray-500">outstanding</div>
                             </>
                           ) : (
-                            <span className="text-xs text-gray-300">—</span>
+                            <span className="text-xs text-gray-500">—</span>
                           )}
                         </td>
                       </tr>
@@ -316,9 +336,9 @@ export default function PayerIntelligencePage() {
         </div>
 
         {/* Right panel — payer drill-down */}
-        <div className="w-[400px] shrink-0 border-l border-gray-200 overflow-y-auto bg-white">
+        <div className="w-full lg:w-[400px] shrink-0 border-l border-gray-200 overflow-y-auto bg-white">
           {!selected ? (
-            <div className="flex flex-col items-center justify-center h-full text-gray-400 gap-3 p-8 text-center">
+            <div className="flex flex-col items-center justify-center h-full text-gray-500 gap-3 p-8 text-center">
               <div className="text-3xl">📊</div>
               <div className="text-sm">Click a payer to see denial trends, CARC codes, and monthly performance</div>
             </div>
@@ -327,35 +347,35 @@ export default function PayerIntelligencePage() {
               {/* Payer header */}
               <div>
                 <h2 className="text-base font-semibold text-gray-900">{selected.payerName}</h2>
-                <p className="text-xs text-gray-400 mt-0.5">{selected.totalClaims} claims · {selected.payerMix}% of revenue</p>
+                <p className="text-xs text-gray-500 mt-0.5">{selected.totalClaims} claims · {selected.payerMix}% of revenue</p>
               </div>
 
               {/* Key metrics */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="bg-gray-50 rounded-xl p-3">
-                  <div className="text-xs text-gray-400">Billed</div>
+                  <div className="text-xs text-gray-500">Billed</div>
                   <div className="text-base font-bold text-gray-900">{$(selected.billed)}</div>
                 </div>
                 <div className="bg-gray-50 rounded-xl p-3">
-                  <div className="text-xs text-gray-400">Collected</div>
+                  <div className="text-xs text-gray-500">Collected</div>
                   <div className="text-base font-bold text-gray-900">{$(selected.paid)}</div>
                 </div>
                 <div className={`rounded-xl p-3 ${selected.collectionRate >= (benchmarks?.collectionRate ?? 85) ? "bg-green-50" : "bg-red-50"}`}>
-                  <div className="text-xs text-gray-400">Collection Rate</div>
+                  <div className="text-xs text-gray-500">Collection Rate</div>
                   <div className={`text-base font-bold ${selected.collectionRate >= (benchmarks?.collectionRate ?? 85) ? "text-green-700" : "text-red-600"}`}>
                     {selected.collectionRate}%
                   </div>
                   <DeltaBadge delta={selected.benchmarks.collectionRateDelta} />
                 </div>
                 <div className={`rounded-xl p-3 ${selected.denialRate <= (benchmarks?.denialRate ?? 10) ? "bg-green-50" : "bg-red-50"}`}>
-                  <div className="text-xs text-gray-400">Denial Rate</div>
+                  <div className="text-xs text-gray-500">Denial Rate</div>
                   <div className={`text-base font-bold ${selected.denialRate <= (benchmarks?.denialRate ?? 10) ? "text-green-700" : "text-red-600"}`}>
                     {selected.denialRate}%
                   </div>
                   <DeltaBadge delta={selected.benchmarks.denialRateDelta} />
                 </div>
                 <div className="bg-gray-50 rounded-xl p-3">
-                  <div className="text-xs text-gray-400">Avg Days to Pay</div>
+                  <div className="text-xs text-gray-500">Avg Days to Pay</div>
                   <div className="text-base font-bold text-gray-900">
                     {selected.avgDaysToPayment !== null ? `${selected.avgDaysToPayment}d` : "—"}
                   </div>
@@ -364,12 +384,12 @@ export default function PayerIntelligencePage() {
                   )}
                 </div>
                 <div className="bg-amber-50 rounded-xl p-3">
-                  <div className="text-xs text-gray-400">Open AR</div>
+                  <div className="text-xs text-gray-500">Open AR</div>
                   <div className="text-base font-bold text-amber-700">
                     {selected.openAR > 0 ? $(selected.openAR) : "None"}
                   </div>
                   {selected.adjustmentRate !== null && (
-                    <div className="text-xs text-gray-400">{selected.adjustmentRate}% adj rate</div>
+                    <div className="text-xs text-gray-500">{selected.adjustmentRate}% adj rate</div>
                   )}
                 </div>
               </div>
@@ -386,7 +406,7 @@ export default function PayerIntelligencePage() {
                           <span className="text-xs text-red-600 font-semibold">{c.count}×</span>
                         </div>
                         <div className="text-xs text-gray-600 leading-snug">{c.reason}</div>
-                        {c.category && <div className="text-xs text-gray-400 mt-0.5">{c.category}</div>}
+                        {c.category && <div className="text-xs text-gray-500 mt-0.5">{c.category}</div>}
                       </div>
                     ))}
                   </div>
@@ -402,23 +422,23 @@ export default function PayerIntelligencePage() {
                       const colRate = m.billed > 0 ? Math.round((m.paid / m.billed) * 100) : 0
                       const denRate = m.claims > 0 ? Math.round((m.denied / m.claims) * 100) : 0
                       return (
-                        <div key={m.month} className="grid grid-cols-4 gap-2 text-xs items-center">
+                        <div key={m.month} className="grid grid-cols-2 lg:grid-cols-4 gap-2 text-xs items-center">
                           <div className="text-gray-500 font-medium">{m.month}</div>
                           <div className="text-right">
                             <div className="text-gray-700 font-medium">{$(m.billed)}</div>
-                            <div className="text-gray-400">{m.claims} claims</div>
+                            <div className="text-gray-500">{m.claims} claims</div>
                           </div>
                           <div className="text-right">
                             <div className={`font-semibold ${colRate >= (benchmarks?.collectionRate ?? 85) ? "text-green-600" : "text-red-500"}`}>
                               {colRate}%
                             </div>
-                            <div className="text-gray-400">collected</div>
+                            <div className="text-gray-500">collected</div>
                           </div>
                           <div className="text-right">
                             <div className={`font-semibold ${denRate <= (benchmarks?.denialRate ?? 10) ? "text-green-600" : "text-red-500"}`}>
                               {denRate}%
                             </div>
-                            <div className="text-gray-400">denied</div>
+                            <div className="text-gray-500">denied</div>
                           </div>
                         </div>
                       )

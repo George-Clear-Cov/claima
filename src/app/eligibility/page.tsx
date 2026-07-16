@@ -92,9 +92,14 @@ export default function EligibilityPage() {
   const [authLoading, setAuthLoading] = useState(false)
   const [authResult, setAuthResult] = useState<AuthResult | null>(null)
   const [authError, setAuthError] = useState<string | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
-  useEffect(() => {
-    fetch("/api/context").then(r => r.ok ? r.json() : null).then(d => {
+  async function load() {
+    setLoadError(null)
+    try {
+      const r = await fetch("/api/context")
+      if (!r.ok) throw new Error()
+      const d = await r.json()
       if (d?.patients) {
         setPatients(d.patients)
         if (d.patients.length > 0) setAuthPatientId(d.patients[0].id)
@@ -103,8 +108,12 @@ export default function EligibilityPage() {
         setProviders(d.providers)
         if (d.providers.length > 0) setForm(f => ({ ...f, npi: d.providers[0].npi }))
       }
-    }).catch(() => {})
-  }, [])
+    } catch {
+      setLoadError("Couldn't load patient and provider data. Please try again.")
+    }
+  }
+
+  useEffect(() => { load() }, [])
 
   const selectedPatient = patients.find(p => p.id === authPatientId)
 
@@ -163,7 +172,7 @@ export default function EligibilityPage() {
   const oopRemaining = cov ? Math.max(cov.outOfPocketMax - cov.outOfPocketMet, 0) : 0
   const visitsRemaining = cov?.visitLimit != null && cov?.visitsUsed != null ? cov.visitLimit - cov.visitsUsed : null
 
-  const inputClass = "w-full bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all placeholder-gray-300"
+  const inputClass = "w-full bg-white border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all placeholder-gray-400"
 
   return (
     <AppLayout>
@@ -172,6 +181,13 @@ export default function EligibilityPage() {
           <h1 className="text-2xl font-bold tracking-tight">Eligibility & Prior Auth</h1>
           <p className="text-gray-500 text-sm mt-1">Verify coverage and check authorization requirements before the appointment</p>
         </div>
+
+        {loadError && (
+          <div className="mb-6 rounded-xl px-4 py-3 text-sm flex items-center justify-between border bg-red-50 border-red-200 text-red-700">
+            <span>{loadError}</span>
+            <button onClick={load} className="bg-gray-900 hover:bg-gray-800 text-white text-xs rounded-lg px-3 py-1.5 ml-4 whitespace-nowrap">Try again</button>
+          </div>
+        )}
 
         <div className="flex gap-0.5 bg-white border border-gray-200 rounded-xl p-1 shadow-sm w-fit mb-6">
           {(["eligibility", "prior-auth"] as const).map(t => (
@@ -187,7 +203,7 @@ export default function EligibilityPage() {
           ))}
         </div>
 
-        {tab === "eligibility" && <div className="grid grid-cols-5 gap-6">
+        {tab === "eligibility" && <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
           <div className="col-span-2">
             <form onSubmit={handleCheck} className="bg-white border border-gray-200 rounded-xl p-5 space-y-4 shadow-sm">
               <h2 className="text-xs text-gray-500 uppercase tracking-widest font-medium">Patient & Insurance</h2>
@@ -206,7 +222,7 @@ export default function EligibilityPage() {
                   </select>
                 </div>
               )}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div><label className="block text-xs font-medium text-gray-500 mb-1.5">First Name</label><input value={form.firstName} onChange={(e) => setForm({ ...form, firstName: e.target.value })} required placeholder="Sarah" className={inputClass} /></div>
                 <div><label className="block text-xs font-medium text-gray-500 mb-1.5">Last Name</label><input value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} required placeholder="Johnson" className={inputClass} /></div>
               </div>
@@ -245,7 +261,7 @@ export default function EligibilityPage() {
                   <div className="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center mx-auto mb-3">
                     <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                   </div>
-                  <p className="text-gray-400 text-sm">Enter patient details and click Check Eligibility</p>
+                  <p className="text-gray-500 text-sm">Enter patient details and click Check Eligibility</p>
                 </div>
               </div>
             )}
@@ -301,27 +317,27 @@ export default function EligibilityPage() {
                 {cov && (
                   <>
                     <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
-                      <h3 className="text-xs text-gray-400 uppercase tracking-widest font-medium mb-4">Cost Sharing</h3>
-                      <div className="grid grid-cols-2 gap-5">
+                      <h3 className="text-xs text-gray-500 uppercase tracking-widest font-medium mb-4">Cost Sharing</h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                         <div>
-                          <div className="flex justify-between text-xs mb-1"><span className="text-gray-500">Deductible</span><span className="font-mono text-gray-400">${cov.deductibleMet} / ${cov.deductible}</span></div>
+                          <div className="flex justify-between text-xs mb-1"><span className="text-gray-500">Deductible</span><span className="font-mono text-gray-500">${cov.deductibleMet} / ${cov.deductible}</span></div>
                           <ProgressBar value={cov.deductibleMet} max={cov.deductible} color="bg-blue-500" />
                           <div className="text-xs mt-1.5"><span className={deductibleRemaining === 0 ? "text-green-600 font-medium" : "text-gray-900 font-medium"}>${deductibleRemaining} remaining</span></div>
                         </div>
                         <div>
-                          <div className="flex justify-between text-xs mb-1"><span className="text-gray-500">Out-of-Pocket Max</span><span className="font-mono text-gray-400">${cov.outOfPocketMet} / ${cov.outOfPocketMax}</span></div>
+                          <div className="flex justify-between text-xs mb-1"><span className="text-gray-500">Out-of-Pocket Max</span><span className="font-mono text-gray-500">${cov.outOfPocketMet} / ${cov.outOfPocketMax}</span></div>
                           <ProgressBar value={cov.outOfPocketMet} max={cov.outOfPocketMax} color="bg-purple-500" />
                           <div className="text-xs mt-1.5"><span className={oopRemaining === 0 ? "text-green-600 font-medium" : "text-gray-900 font-medium"}>${oopRemaining} remaining</span></div>
                         </div>
-                        <div className="bg-gray-50 border border-gray-100 rounded-lg p-3"><div className="text-xs text-gray-400 uppercase tracking-wider mb-1">Copay</div><div className="text-xl font-bold font-mono text-gray-900">${cov.copay}</div><div className="text-xs text-gray-400 mt-0.5">per visit</div></div>
-                        <div className="bg-gray-50 border border-gray-100 rounded-lg p-3"><div className="text-xs text-gray-400 uppercase tracking-wider mb-1">Coinsurance</div><div className="text-xl font-bold font-mono text-gray-900">{cov.coinsurance}%</div><div className="text-xs text-gray-400 mt-0.5">after deductible</div></div>
+                        <div className="bg-gray-50 border border-gray-100 rounded-lg p-3"><div className="text-xs text-gray-500 uppercase tracking-wider mb-1">Copay</div><div className="text-xl font-bold font-mono text-gray-900">${cov.copay}</div><div className="text-xs text-gray-500 mt-0.5">per visit</div></div>
+                        <div className="bg-gray-50 border border-gray-100 rounded-lg p-3"><div className="text-xs text-gray-500 uppercase tracking-wider mb-1">Coinsurance</div><div className="text-xl font-bold font-mono text-gray-900">{cov.coinsurance}%</div><div className="text-xs text-gray-500 mt-0.5">after deductible</div></div>
                       </div>
                     </div>
 
                     {cov.visitLimit != null && (
                       <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
-                        <h3 className="text-xs text-gray-400 uppercase tracking-widest font-medium mb-4">Annual Visit Limit</h3>
-                        <div className="flex justify-between text-xs mb-1"><span className="text-gray-500">Annual visits</span><span className="font-mono text-gray-400">{cov.visitsUsed} / {cov.visitLimit} used</span></div>
+                        <h3 className="text-xs text-gray-500 uppercase tracking-widest font-medium mb-4">Annual Visit Limit</h3>
+                        <div className="flex justify-between text-xs mb-1"><span className="text-gray-500">Annual visits</span><span className="font-mono text-gray-500">{cov.visitsUsed} / {cov.visitLimit} used</span></div>
                         <ProgressBar value={cov.visitsUsed ?? 0} max={cov.visitLimit} color={(visitsRemaining ?? 0) <= 5 ? "bg-red-500" : "bg-green-500"} />
                         <div className="text-xs mt-1.5">{visitsRemaining === 0 ? <span className="text-red-600 font-medium">⚠ Visit limit exhausted — patient may be liable for full cost</span> : <span className={`font-medium ${(visitsRemaining ?? 0) <= 5 ? "text-orange-600" : "text-green-600"}`}>{visitsRemaining} visits remaining</span>}</div>
                       </div>
@@ -335,16 +351,16 @@ export default function EligibilityPage() {
                     )}
 
                     <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
-                      <h3 className="text-xs text-gray-400 uppercase tracking-widest font-medium mb-3">Patient Responsibility Estimate</h3>
+                      <h3 className="text-xs text-gray-500 uppercase tracking-widest font-medium mb-3">Patient Responsibility Estimate</h3>
                       <div className="text-xs text-gray-500 space-y-1.5 leading-relaxed">
                         {deductibleRemaining > 0 ? <p>Patient owes <span className="text-gray-900 font-medium">${Math.min(deductibleRemaining, 200).toFixed(2)}</span> toward deductible on a typical $200 visit</p> : <p>Deductible met — patient owes <span className="text-gray-900 font-medium">{cov.copay > 0 ? `$${cov.copay} copay` : `${cov.coinsurance}% coinsurance`}</span></p>}
-                        <p className="text-gray-400">Effective {cov.effectiveDate}{cov.terminationDate ? ` · terminates ${cov.terminationDate}` : ""}</p>
+                        <p className="text-gray-500">Effective {cov.effectiveDate}{cov.terminationDate ? ` · terminates ${cov.terminationDate}` : ""}</p>
                       </div>
                     </div>
                   </>
                 )}
 
-                <div className="text-xs text-gray-400 text-right">Checked at {new Date(result.checkedAt).toLocaleTimeString()}</div>
+                <div className="text-xs text-gray-500 text-right">Checked at {new Date(result.checkedAt).toLocaleTimeString()}</div>
               </div>
             )}
           </div>
@@ -358,7 +374,7 @@ export default function EligibilityPage() {
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1.5">Patient</label>
                   {patients.length === 0 ? (
-                    <div className="text-sm text-gray-400 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5">No patients found — add patients in Settings first</div>
+                    <div className="text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5">No patients found — add patients in Settings first</div>
                   ) : (
                     <select value={authPatientId} onChange={e => { setAuthPatientId(e.target.value); setAuthResult(null) }} className={inputClass}>
                       {patients.map(p => (
@@ -367,11 +383,11 @@ export default function EligibilityPage() {
                     </select>
                   )}
                   {selectedPatient && (
-                    <div className="mt-2 text-xs text-gray-400 font-mono">Member ID: {selectedPatient.memberId}</div>
+                    <div className="mt-2 text-xs text-gray-500 font-mono">Member ID: {selectedPatient.memberId}</div>
                   )}
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-medium text-gray-500 mb-1.5">CPT Code</label>
                     <select value={authCptCode} onChange={e => { setAuthCptCode(e.target.value); setAuthResult(null) }} className={inputClass}>
@@ -450,28 +466,28 @@ export default function EligibilityPage() {
                   </div>
                 )}
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {authResult.deadline && (
                     <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-                      <div className="text-xs text-gray-400 mb-1">Submit Auth By</div>
+                      <div className="text-xs text-gray-500 mb-1">Submit Auth By</div>
                       <div className="text-sm text-gray-800 font-medium">{authResult.deadline}</div>
                     </div>
                   )}
                   {authResult.typicalTurnaround && (
                     <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-                      <div className="text-xs text-gray-400 mb-1">Typical Turnaround</div>
+                      <div className="text-xs text-gray-500 mb-1">Typical Turnaround</div>
                       <div className="text-sm text-gray-800 font-medium">{authResult.typicalTurnaround}</div>
                     </div>
                   )}
                   {authResult.payerPhone && (
                     <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-                      <div className="text-xs text-gray-400 mb-1">Payer Auth Phone</div>
+                      <div className="text-xs text-gray-500 mb-1">Payer Auth Phone</div>
                       <a href={`tel:${authResult.payerPhone.replace(/\D/g, "")}`} className="text-sm text-blue-600 font-mono font-medium hover:underline">{authResult.payerPhone}</a>
                     </div>
                   )}
                   {authResult.urgentOption && (
                     <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-                      <div className="text-xs text-gray-400 mb-1">Urgent / Same-Day</div>
+                      <div className="text-xs text-gray-500 mb-1">Urgent / Same-Day</div>
                       <div className="text-sm text-gray-700">{authResult.urgentOption}</div>
                     </div>
                   )}

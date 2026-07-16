@@ -98,11 +98,11 @@ function ExpiryCell({ label, dateStr }: { label: string; dateStr: string | null 
     warning: "text-amber-600",
     urgent:  "text-orange-600",
     expired: "text-red-600",
-    missing: "text-gray-400",
+    missing: "text-gray-500",
   }
   return (
     <div>
-      <div className="text-xs text-gray-400 mb-0.5">{label}</div>
+      <div className="text-xs text-gray-500 mb-0.5">{label}</div>
       <div className={`text-sm font-medium ${colorMap[health]}`}>
         {!dateStr ? "—" : health === "expired"
           ? `Expired ${Math.abs(days!)}d ago`
@@ -136,6 +136,9 @@ export default function CredentialingPage() {
   const [addingPayer, setAddingPayer] = useState(false)
   const [payerError, setPayerError] = useState<string | null>(null)
   const [healthFilter, setHealthFilter] = useState<"all" | "issues">("all")
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [statusError, setStatusError] = useState<string | null>(null)
+  const [statusSuccess, setStatusSuccess] = useState<string | null>(null)
 
   // License edit form
   const [licenseForm, setLicenseForm] = useState({
@@ -153,16 +156,22 @@ export default function CredentialingPage() {
   const [showPayerForm, setShowPayerForm] = useState(false)
 
   const load = useCallback(async () => {
-    const res = await fetch("/api/credentialing")
-    if (res.ok) {
+    setLoading(true)
+    setLoadError(null)
+    try {
+      const res = await fetch("/api/credentialing")
+      if (!res.ok) throw new Error()
       const data: Provider[] = await res.json()
       setProviders(data)
       if (selected) {
         const refreshed = data.find((p) => p.id === selected.id)
         if (refreshed) setSelected(refreshed)
       }
+    } catch {
+      setLoadError("Couldn't load this page. Please try again.")
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }, [selected])
 
   useEffect(() => { load() }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -240,12 +249,21 @@ export default function CredentialingPage() {
   }
 
   async function handleUpdatePayerStatus(credId: string, status: CredentialStatus) {
-    await fetch(`/api/credentialing/payers/${credId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
-    })
-    await load()
+    setStatusError(null)
+    setStatusSuccess(null)
+    try {
+      const res = await fetch(`/api/credentialing/payers/${credId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      })
+      if (!res.ok) throw new Error()
+      await load()
+      setStatusSuccess("Status updated ✓")
+      setTimeout(() => setStatusSuccess(null), 2500)
+    } catch {
+      setStatusError("Couldn't update status. Please try again.")
+    }
   }
 
   async function handleDeletePayer(credId: string, payerName: string) {
@@ -273,9 +291,9 @@ export default function CredentialingPage() {
 
   return (
     <AppLayout>
-      <div className="flex h-[calc(100vh-56px)]">
+      <div className="flex flex-col lg:flex-row h-[calc(100vh-56px)]">
         {/* Left panel */}
-        <div className="w-[380px] shrink-0 border-r border-gray-200 flex flex-col bg-white">
+        <div className="w-full lg:w-[380px] shrink-0 border-r border-gray-200 flex flex-col bg-white">
           <div className="px-5 pt-5 pb-4 border-b border-gray-100">
             <div className="mb-4">
               <h1 className="text-base font-semibold text-gray-900">Credentialing</h1>
@@ -283,7 +301,7 @@ export default function CredentialingPage() {
             </div>
 
             {/* Summary */}
-            <div className="grid grid-cols-3 gap-2 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mb-4">
               <div className="text-center p-2 bg-green-50 rounded-lg">
                 <div className="text-lg font-bold text-green-700">
                   {providers.filter((p) => providerHealth(p) === "ok").length}
@@ -321,10 +339,15 @@ export default function CredentialingPage() {
           </div>
 
           <div className="flex-1 overflow-y-auto">
-            {loading ? (
-              <div className="p-6 text-center text-xs text-gray-400">Loading…</div>
+            {loadError ? (
+              <div className="p-6 text-center">
+                <div className="text-xs text-gray-600 mb-3">{loadError}</div>
+                <button onClick={load} className="bg-gray-900 text-white text-sm rounded-lg px-4 py-2">Try again</button>
+              </div>
+            ) : loading ? (
+              <div className="p-6 text-center text-xs text-gray-500">Loading…</div>
             ) : filtered.length === 0 ? (
-              <div className="p-6 text-center text-xs text-gray-400">
+              <div className="p-6 text-center text-xs text-gray-500">
                 {healthFilter === "issues" ? "No credential issues detected." : "No providers found. Add providers in Settings."}
               </div>
             ) : (
@@ -348,7 +371,7 @@ export default function CredentialingPage() {
                         <div className="text-xs text-gray-500 mt-0.5">NPI {p.npi}</div>
                       </div>
                     </div>
-                    <div className="mt-2 ml-4 grid grid-cols-2 gap-x-3 gap-y-0.5">
+                    <div className="mt-2 ml-4 grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-0.5">
                       {[
                         { label: "State Lic", expiry: p.stateLicenseExpiry },
                         { label: "DEA", expiry: p.deaExpiry },
@@ -356,10 +379,10 @@ export default function CredentialingPage() {
                         { label: "Malpractice", expiry: p.malpracticeExpiry },
                       ].map(({ label, expiry }) => {
                         const h = getExpiryHealth(expiry)
-                        const color = h === "expired" ? "text-red-600" : h === "urgent" ? "text-orange-500" : h === "warning" ? "text-amber-600" : "text-gray-400"
+                        const color = h === "expired" ? "text-red-600" : h === "urgent" ? "text-orange-500" : h === "warning" ? "text-amber-600" : "text-gray-500"
                         return (
                           <div key={label} className="flex items-center gap-1">
-                            <span className="text-xs text-gray-400">{label}:</span>
+                            <span className="text-xs text-gray-500">{label}:</span>
                             <span className={`text-xs font-medium ${color}`}>
                               {!expiry ? "—" : h === "expired" ? "Expired" : h === "ok" ? new Date(expiry).toLocaleDateString() : `${daysUntil(expiry)}d`}
                             </span>
@@ -367,7 +390,7 @@ export default function CredentialingPage() {
                         )
                       })}
                     </div>
-                    <div className="mt-1.5 ml-4 text-xs text-gray-400">
+                    <div className="mt-1.5 ml-4 text-xs text-gray-500">
                       {payerApproved}/{p.payerCredentials.length} payers approved
                     </div>
                   </button>
@@ -378,9 +401,9 @@ export default function CredentialingPage() {
         </div>
 
         {/* Right detail panel */}
-        <div className="flex-1 overflow-y-auto bg-gray-50">
+        <div className="flex-1 min-w-0 overflow-y-auto bg-gray-50">
           {!selected ? (
-            <div className="flex items-center justify-center h-full text-gray-400 text-sm">
+            <div className="flex items-center justify-center h-full text-gray-500 text-sm">
               Select a provider to manage credentials
             </div>
           ) : (
@@ -410,7 +433,7 @@ export default function CredentialingPage() {
               {/* Expiry at-a-glance */}
               <div className="bg-white rounded-xl border border-gray-200 p-5">
                 <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Expiry Overview</h3>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <ExpiryCell label="State License" dateStr={selected.stateLicenseExpiry} />
                   <ExpiryCell label="DEA Certificate" dateStr={selected.deaExpiry} />
                   <ExpiryCell label="Board Certification" dateStr={selected.boardCertExpiry} />
@@ -422,7 +445,7 @@ export default function CredentialingPage() {
               <div className="bg-white rounded-xl border border-gray-200 p-5">
                 <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Update Credentials</h3>
                 <form onSubmit={handleSaveLicense} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="text-xs text-gray-500 mb-1 block">State License #</label>
                       <input value={licenseForm.stateLicense} onChange={(e) => setLicenseForm((f) => ({ ...f, stateLicense: e.target.value }))}
@@ -468,7 +491,7 @@ export default function CredentialingPage() {
                       <input value={licenseForm.caqhProviderId} onChange={(e) => setLicenseForm((f) => ({ ...f, caqhProviderId: e.target.value }))}
                         placeholder="e.g. 12345678" className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2" />
                       {selected.caqhLastUpdated && (
-                        <p className="text-xs text-gray-400 mt-1">Last updated {new Date(selected.caqhLastUpdated).toLocaleDateString()}</p>
+                        <p className="text-xs text-gray-500 mt-1">Last updated {new Date(selected.caqhLastUpdated).toLocaleDateString()}</p>
                       )}
                     </div>
                   </div>
@@ -495,9 +518,12 @@ export default function CredentialingPage() {
                   </button>
                 </div>
 
+                {statusError && <div className="mb-3 p-2.5 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700">{statusError}</div>}
+                {statusSuccess && <div className="mb-3 p-2.5 bg-green-50 border border-green-200 rounded-lg text-xs text-green-700">{statusSuccess}</div>}
+
                 {showPayerForm && (
                   <form onSubmit={handleAddPayer} className="mb-4 p-4 bg-blue-50 rounded-xl space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label className="text-xs text-gray-500 mb-1 block">Common payers</label>
                         <select
@@ -567,7 +593,7 @@ export default function CredentialingPage() {
                 )}
 
                 {selected.payerCredentials.length === 0 ? (
-                  <p className="text-xs text-gray-400 text-center py-4">No payer credentials added. Click + Add Payer to track credentialing status with each insurance company.</p>
+                  <p className="text-xs text-gray-500 text-center py-4">No payer credentials added. Click + Add Payer to track credentialing status with each insurance company.</p>
                 ) : (
                   <div className="divide-y divide-gray-100">
                     {selected.payerCredentials.map((cred) => (
@@ -575,9 +601,9 @@ export default function CredentialingPage() {
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-medium text-gray-900">{cred.payerName}</span>
-                            <span className="text-xs text-gray-400 font-mono">{cred.payerId}</span>
+                            <span className="text-xs text-gray-500 font-mono">{cred.payerId}</span>
                           </div>
-                          <div className="flex items-center gap-3 mt-0.5 text-xs text-gray-400">
+                          <div className="flex items-center gap-3 mt-0.5 text-xs text-gray-500">
                             {cred.applicationDate && <span>Applied {new Date(cred.applicationDate).toLocaleDateString()}</span>}
                             {cred.approvedDate && <span>Approved {new Date(cred.approvedDate).toLocaleDateString()}</span>}
                             {cred.expiryDate && (
@@ -586,10 +612,11 @@ export default function CredentialingPage() {
                               </span>
                             )}
                           </div>
-                          {cred.notes && <p className="text-xs text-gray-400 mt-0.5">{cred.notes}</p>}
+                          {cred.notes && <p className="text-xs text-gray-500 mt-0.5">{cred.notes}</p>}
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                           <select
+                            aria-label="Credentialing status"
                             value={cred.status}
                             onChange={(e) => handleUpdatePayerStatus(cred.id, e.target.value as CredentialStatus)}
                             className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white"

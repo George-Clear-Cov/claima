@@ -123,7 +123,7 @@ export default function PrivacyPage() {
         </div>
       </main>
 
-      <footer className="border-t border-gray-200 mt-16 py-8 text-center text-xs text-gray-400">
+      <footer className="border-t border-gray-200 mt-16 py-8 text-center text-xs text-gray-500">
         <div className="flex items-center justify-center gap-4">
           <Link href="/privacy" className="hover:text-gray-600 text-gray-600 font-medium">Privacy Policy</Link>
           <Link href="/terms" className="hover:text-gray-600">Terms of Service</Link>

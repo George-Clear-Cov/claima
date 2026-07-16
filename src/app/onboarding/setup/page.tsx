@@ -97,7 +97,7 @@ export default function PracticeSetupPage() {
     }
   }
 
-  const inputClass = "w-full bg-white border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all placeholder-gray-300"
+  const inputClass = "w-full bg-white border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all placeholder-gray-400"
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-8">
@@ -106,7 +106,7 @@ export default function PracticeSetupPage() {
           <LogoMark size={40} />
           <div>
             <div className="text-xl font-semibold tracking-tight text-gray-900">Claima</div>
-            <div className="text-xs text-gray-400 -mt-0.5">Practice setup</div>
+            <div className="text-xs text-gray-500 -mt-0.5">Practice setup</div>
           </div>
         </div>
 
@@ -122,11 +122,11 @@ export default function PracticeSetupPage() {
               <input type="text" value={practiceName} onChange={(e) => setPracticeName(e.target.value)} required placeholder="Riverside Medical Group" className={inputClass} />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1.5 uppercase tracking-wide">Group NPI</label>
                 <input type="text" value={npi} onChange={(e) => setNpi(e.target.value)} required placeholder="1234567890" maxLength={10} className={inputClass} />
-                <p className="text-xs text-gray-400 mt-1">10-digit NPI from NPPES</p>
+                <p className="text-xs text-gray-500 mt-1">10-digit NPI from NPPES</p>
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1.5 uppercase tracking-wide">Tax ID (EIN)</label>
@@ -148,7 +148,7 @@ export default function PracticeSetupPage() {
               <input type="text" value={addressLine1} onChange={(e) => setAddressLine1(e.target.value)} required placeholder="123 Main St, Suite 100" className={inputClass} />
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <div className="col-span-1">
                 <label className="block text-xs font-medium text-gray-600 mb-1.5 uppercase tracking-wide">City</label>
                 <input type="text" value={city} onChange={(e) => setCity(e.target.value)} required placeholder="Los Angeles" className={inputClass} />
@@ -187,7 +187,7 @@ export default function PracticeSetupPage() {
           </form>
         </div>
 
-        <p className="text-center text-xs text-gray-400 mt-4">
+        <p className="text-center text-xs text-gray-500 mt-4">
           <Link href="/" className="text-gray-500 hover:text-gray-700 underline">Skip for now</Link>
           {" "}— you can complete this in Settings
         </p>

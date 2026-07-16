@@ -86,6 +86,14 @@ function SignOutIcon() {
   )
 }
 
+function MenuIcon() {
+  return (
+    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3.75 6.75h16.5M3.75 12h16.5M3.75 17.25h16.5" />
+    </svg>
+  )
+}
+
 interface NavItem {
   href: string
   label: string
@@ -125,7 +133,7 @@ interface Session {
   role: string
 }
 
-function Sidebar() {
+function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => void }) {
   const pathname = usePathname()
   const router = useRouter()
   const [session, setSession] = useState<Session | null>(null)
@@ -144,10 +152,14 @@ function Sidebar() {
   }
 
   return (
-    <aside className="w-56 h-screen bg-white border-r border-gray-100 flex flex-col shrink-0 sticky top-0">
+    <aside
+      className={`w-56 h-screen bg-white border-r border-gray-100 flex flex-col shrink-0 z-40 fixed lg:sticky top-0 left-0 transition-transform duration-200 lg:translate-x-0 ${
+        mobileOpen ? "translate-x-0 shadow-xl" : "-translate-x-full"
+      }`}
+    >
       {/* Logo */}
       <div className="px-5 h-14 flex items-center border-b border-gray-100 shrink-0">
-        <Link href="/" className="flex items-center gap-2.5">
+        <Link href="/" onClick={onClose} className="flex items-center gap-2.5">
           <LogoMark size={26} />
           <span className="font-semibold text-[15px] tracking-tight text-gray-900">Claima</span>
         </Link>
@@ -158,7 +170,7 @@ function Sidebar() {
         {NAV_SECTIONS.map((section, si) => (
           <div key={si}>
             {section.label && (
-              <div className="px-2 pb-1.5 text-[10px] font-semibold text-gray-400 uppercase tracking-widest">
+              <div className="px-2 pb-1.5 text-[10px] font-semibold text-gray-500 uppercase tracking-widest">
                 {section.label}
               </div>
             )}
@@ -169,10 +181,12 @@ function Sidebar() {
                   <Link
                     key={href}
                     href={href}
+                    onClick={onClose}
+                    aria-current={active ? "page" : undefined}
                     className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition-all ${
                       active
                         ? "bg-blue-50 text-blue-700 font-medium"
-                        : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
+                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                     }`}
                   >
                     <Icon />
@@ -189,10 +203,12 @@ function Sidebar() {
       <div className="shrink-0 border-t border-gray-100 px-3 py-3 space-y-0.5">
         <Link
           href="/settings"
+          onClick={onClose}
+          aria-current={pathname.startsWith("/settings") ? "page" : undefined}
           className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition-all ${
             pathname.startsWith("/settings")
               ? "bg-blue-50 text-blue-700 font-medium"
-              : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
+              : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
           }`}
         >
           <CogIcon />
@@ -203,12 +219,12 @@ function Sidebar() {
             <div className="w-[18px] h-[18px] rounded-full bg-blue-100 flex items-center justify-center text-[10px] font-bold text-blue-700 shrink-0">
               {session.name.charAt(0).toUpperCase()}
             </div>
-            <span className="text-xs text-gray-500 truncate min-w-0">{session.name}</span>
+            <span className="text-xs text-gray-600 truncate min-w-0">{session.name}</span>
           </div>
         )}
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm text-gray-400 hover:text-gray-700 hover:bg-gray-50 transition-all"
+          className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-all"
         >
           <SignOutIcon />
           <span>Sign out</span>
@@ -219,10 +235,47 @@ function Sidebar() {
 }
 
 export default function AppLayout({ children }: { children: ReactNode }) {
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const close = () => setMobileOpen(false)
+
+  // Close the mobile drawer on Escape
+  useEffect(() => {
+    if (!mobileOpen) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setMobileOpen(false) }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [mobileOpen])
+
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
-      <Sidebar />
-      <div className="flex-1 min-w-0 overflow-y-auto">
+      {/* Mobile top bar (hidden on lg where the sidebar is always visible) */}
+      <div className="lg:hidden fixed top-0 inset-x-0 z-20 h-14 bg-white border-b border-gray-100 flex items-center gap-3 px-4">
+        <button
+          onClick={() => setMobileOpen(true)}
+          aria-label="Open navigation menu"
+          aria-expanded={mobileOpen}
+          className="p-2 -ml-2 rounded-md text-gray-600 hover:bg-gray-50"
+        >
+          <MenuIcon />
+        </button>
+        <Link href="/" className="flex items-center gap-2">
+          <LogoMark size={22} />
+          <span className="font-semibold text-sm tracking-tight text-gray-900">Claima</span>
+        </Link>
+      </div>
+
+      {/* Backdrop when the drawer is open (mobile only) */}
+      {mobileOpen && (
+        <div
+          className="lg:hidden fixed inset-0 z-30 bg-gray-900/40"
+          onClick={close}
+          aria-hidden="true"
+        />
+      )}
+
+      <Sidebar mobileOpen={mobileOpen} onClose={close} />
+
+      <div className="flex-1 min-w-0 overflow-y-auto pt-14 lg:pt-0">
         {children}
       </div>
     </div>

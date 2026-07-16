@@ -115,7 +115,7 @@ export default function StorePage() {
                       <span className="text-2xl font-bold text-gray-900">
                         {amount !== null ? `$${amount.toFixed(2)}` : "—"}
                       </span>
-                      <span className="text-sm text-gray-400 mb-0.5">{currency}</span>
+                      <span className="text-sm text-gray-500 mb-0.5">{currency}</span>
                     </div>
 
                     <button

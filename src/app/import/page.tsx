@@ -100,12 +100,13 @@ export default function ImportPage() {
             value={text}
             onChange={(e) => setText(e.target.value)}
             rows={10}
+            aria-label="Paste EOB or denial report text"
             placeholder="Paste the EOB / denial report text here…"
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono mb-4"
           />
         ) : (
           <div className="mb-4">
-            <input type="file" multiple onChange={(e) => onFiles(e.target.files)} accept=".835,.837,.era,.edi,.txt,.csv" className="text-sm" />
+            <input type="file" multiple aria-label="Upload backlog files to import" onChange={(e) => onFiles(e.target.files)} accept=".835,.837,.era,.edi,.txt,.csv" className="text-sm" />
             {contents.length > 0 && <p className="text-xs text-gray-500 mt-1.5">{contents.length} file(s) loaded</p>}
           </div>
         )}
@@ -137,7 +138,7 @@ export default function ImportPage() {
               <h2 className="font-semibold text-gray-900">{s.dryRun ? "Preview" : "✓ Committed"}</h2>
               <span className="text-xs text-gray-500">{result.recordCount} record(s) parsed</span>
             </div>
-            <div className="grid grid-cols-4 gap-3 text-center mb-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 text-center mb-4">
               {([["Patients", s.patientsCreated], ["Claims", s.claimsCreated], ["Denials", s.denialsCreated], ["Skipped", s.skipped]] as const).map(([k, v]) => (
                 <div key={k} className="bg-gray-50 rounded-lg py-3">
                   <div className="text-xl font-semibold text-gray-900">{v}</div>
@@ -154,7 +155,7 @@ export default function ImportPage() {
               <div className="overflow-x-auto">
                 <table className="w-full text-xs">
                   <thead>
-                    <tr className="text-left text-gray-400 border-b">
+                    <tr className="text-left text-gray-500 border-b">
                       <th className="py-1.5 pr-3">Patient</th><th className="pr-3">Payer</th><th className="pr-3">DOS</th>
                       <th className="pr-3">CPT</th><th className="pr-3">Charge</th><th className="pr-3">Status</th><th>CARC</th>
                     </tr>

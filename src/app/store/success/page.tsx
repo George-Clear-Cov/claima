@@ -21,7 +21,7 @@ function SuccessContent() {
           Your payment was processed securely through Stripe. You&apos;ll receive a confirmation email shortly.
         </p>
         {sessionId && (
-          <p className="text-xs text-gray-400 mt-3 font-mono">
+          <p className="text-xs text-gray-500 mt-3 font-mono">
             Ref: {sessionId.slice(0, 24)}…
           </p>
         )}
