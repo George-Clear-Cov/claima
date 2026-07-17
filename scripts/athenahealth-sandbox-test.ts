@@ -14,8 +14,8 @@
  * Run:  ~/.bun/bin/bun scripts/athenahealth-sandbox-test.ts
  */
 
-const CLIENT_ID = process.env.ATHENA_CLIENT_ID || ""
-const CLIENT_SECRET = process.env.ATHENA_CLIENT_SECRET || ""
+const CLIENT_ID = process.env.ATHENA_CLIENT_ID || process.env.ATHENACLIENT_ID || ""
+const CLIENT_SECRET = process.env.ATHENA_CLIENT_SECRET || process.env.ATHENACLIENT_SECRET || ""
 const PRACTICE_ID = process.env.ATHENA_PRACTICE_ID || "195900" // athenahealth preview practice (override if needed)
 const ENVNAME = (process.env.ATHENA_ENV || "preview").toLowerCase()
 const HOST =
@@ -95,19 +95,53 @@ async function main() {
   summarize("providers", await get(token, "/providers"))
   const deptId = dept?.departmentid ? String(dept.departmentid) : undefined
 
-  console.log("\n── ⭐ wedge: claims + payment/denial detail (the make-or-break) ──")
-  const patients = await get(token, "/patients", deptId ? { departmentid: deptId, limit: "5" } : { limit: "5" })
-  const patient = summarize("patients", patients)
-  const patientId = patient?.patientid ? String(patient.patientid) : undefined
+  console.log("\n── ⭐ wedge: claims + transactions (denial/payment detail) ──")
+  const pad = (n: number) => String(n).padStart(2, "0")
+  const fmtDT = (d: Date) => `${pad(d.getMonth() + 1)}/${pad(d.getDate())}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+  const fmtD = (d: Date) => `${pad(d.getMonth() + 1)}/${pad(d.getDate())}/${d.getFullYear()}`
+  const now = new Date()
+  const past = new Date(now.getTime() - 730 * 86400000)
 
-  // Try the claims list a couple of ways (it usually needs departmentid or patientid).
-  let claimsRes = await get(token, "/claims", deptId ? { departmentid: deptId, showunpostedcharges: "true" } : {})
-  if (!claimsRes.ok && patientId) claimsRes = await get(token, "/claims", { patientid: patientId })
-  const claim = summarize("claims", claimsRes)
-  if (claim) {
-    console.log("     first claim keys:", Object.keys(claim).join(", "))
-    const claimId = claim.claimid ? String(claim.claimid) : undefined
-    if (claimId) summarize(`claim ${claimId} detail`, await get(token, `/claims/${claimId}`))
+  // (A) Bulk sync endpoint an RCM tool would actually use — claims changed in a window, WITH the
+  // charge/payment/adjustment transactions that carry denial (CARC) + remittance detail.
+  const changed = await get(token, "/claims/changed", {
+    showprocessedstartdatetime: fmtDT(past),
+    showprocessedenddatetime: fmtDT(now),
+    showtransactioninformation: "true",
+    limit: "10",
+  })
+  const changedClaim = summarize("claims/changed (+transactions)", changed)
+  if (changedClaim) {
+    console.log("     claim keys:", Object.keys(changedClaim).join(", "))
+    const tx = (changedClaim.transactions ?? changedClaim.claimtransactions) as Record<string, unknown>[] | undefined
+    if (Array.isArray(tx) && tx[0]) console.log("     transaction keys:", Object.keys(tx[0]).join(", "))
+  }
+
+  // (B) Cross-check: pull a patient from a booked appointment, then that patient's claims.
+  let patientId: string | undefined
+  if (deptId) {
+    const appts = await get(token, "/appointments/booked", { departmentid: deptId, startdate: fmtD(past), enddate: fmtD(now), limit: "5" })
+    patientId = pickArray(appts.body)?.[0]?.patientid ? String(pickArray(appts.body)![0].patientid) : undefined
+  }
+  if (patientId) {
+    const byPatient = await get(token, "/claims", { patientid: patientId, showtransactioninformation: "true" })
+    // Scan the patient's claims for one that actually has payment/adjustment transactions.
+    const allClaims = pickArray(byPatient.body) ?? []
+    summarize(`claims for patient ${patientId}`, byPatient)
+    const hasTxn = (cl: Record<string, unknown>) => Array.isArray(cl.transactiondetails) && (cl.transactiondetails as unknown[]).length > 0
+    // Find an ADJUDICATED claim (more than one transaction = charge + payment/adjustment).
+    const txnCount = (cl: Record<string, unknown>) =>
+      cl.transactiondetails && typeof cl.transactiondetails === "object" ? Object.keys(cl.transactiondetails as object).length : 0
+    const adjudicated = allClaims.filter((cl) => txnCount(cl) > 1)
+    console.log(`     claims with >1 transaction (charge + payment/adjustment): ${adjudicated.length} of ${allClaims.length}`)
+    const c = adjudicated[0] ?? allClaims.find(hasTxn) ?? allClaims[0]
+    if (c) {
+      console.log(`     sample claim ${c.claimid} full detail (status + adjustment/reason fields):`)
+      const detail = await get(token, `/claims/${c.claimid}`, { showtransactioninformation: "true" })
+      console.log("     " + JSON.stringify(detail.body).slice(0, 1100))
+    }
+  } else {
+    console.log("  (no booked appointment found to derive a patientid — /claims/changed above is the key signal)")
   }
 
   console.log("\n── verdict ──")
