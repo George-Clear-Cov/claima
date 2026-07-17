@@ -29,7 +29,9 @@ that manage billing in-house or want to lift collections beyond their current pr
 We're HIPAA-compliant (BAAs executed with AWS, Microsoft Azure, and our clearinghouse Claim.MD;
 verified TLS, MFA, full audit logging), and our AI runs on Claude via Amazon Bedrock under a signed
 BAA. We integrate read-mostly via your API (claims, remittances, eligibility) with optional
-write-back of appeal status/notes.
+write-back of appeal status/notes. **We've already built and validated a working integration against
+your preview sandbox** — OAuth client-credentials plus the claims API returning per-payer
+adjudication status, balances, procedures, and diagnoses — so we're ready to move quickly to MDP.
 
 Could you point me to the partner application and Developer Portal onboarding? Happy to share a demo
 and our security overview.
@@ -67,11 +69,17 @@ third-party biller who want to lift collections. Sweet spot: [FILL IN — e.g., 
 - **Reads (primary):** claims, charges, remittances/ERAs, patient + insurance, appointments — to
   detect denials/underpayments and drive the recovery workflow.
 - **Writes (optional):** appeal status, notes/tasks back to the chart so staff have one source of truth.
-- **Mechanism:** athenahealth API (developer portal), OAuth-scoped, least-privilege, sandbox-tested,
-  read-mostly. No PHI stored beyond what's needed for the recovery workflow; deletion on offboarding.
+- **Mechanism:** athenahealth API (developer portal), OAuth-scoped, least-privilege, read-mostly.
+  No PHI stored beyond what's needed for the recovery workflow; deletion on offboarding.
+- **Validated 2026-07-17 (preview sandbox):** built a working integration — OAuth client-credentials
+  (`Athenanet.MDP.*`) + `GET /claims` confirmed the API exposes per-payer **adjudication status +
+  balance**, **procedures** (CPT + charge), **diagnoses** (ICD), payers, and transaction detail —
+  exactly the inputs the denial-recovery workflow needs. Production bulk sync via a `/claims/changed`
+  subscription.
 
 **Existing athenahealth customers using it:** None yet — [FILL IN once a pilot practice is on athenaOne].
-First pilot secured (denial-recovery engagement).
+First pilot secured (denial-recovery engagement). Integration prototyped + validated against the
+athenaOne preview sandbox.
 
 **Differentiation:** outcome-aligned (% of collections, not per-seat); AI-native appeals; works across
 all specialties; complements rather than replaces the practice's billing.
