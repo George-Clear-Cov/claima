@@ -48,6 +48,22 @@ sales conversation gated on "is your exact EHR one we've built."
 - [ ] Which EHR is our first pilot practice actually on? (That may set the native-first choice.)
 - [ ] Eng capacity: one native (athenahealth) + one aggregator onboarding in parallel — realistic this quarter?
 
+## ✅ DECISION (2026-07-17) — athenahealth: GO NATIVE
+
+Validated live against the athenaOne preview sandbox (practice 195900) via
+`scripts/athenahealth-sandbox-test.ts`:
+- OAuth `client_credentials` ✅ · 32 departments / 216 providers ✅
+- **`GET /claims?patientid=…` returns the full wedge data:** per-payer adjudication
+  **status + balance** (`primaryinsurancepayer.status`/`balance`, e.g. "ATHENAHOLD" / "CLOSED"),
+  **procedures** (CPT + chargeamount), **diagnoses** (ICD), payers, service dates, and the
+  transaction breakdown. Claim detail drill-down works.
+- `/claims/changed` (bulk sync) returns 403 until a **one-time subscription** is set up
+  (POST) — do that for production polling.
+
+**Verdict:** athenahealth native covers denial recovery — build the native integration for the
+MDP listing. **Redox/Health Gorilla is reserved for reaching OTHER EHRs** (Elation, DrChrono,
+eCW, …) with one build, not for athenahealth.
+
 ## Next actions
 - Get **Redox** + **Health Gorilla** to confirm claims/ERA data access for athenahealth, Elation, DrChrono, eCW + send pricing.
 - Proceed with **athenahealth native** for the marketplace listing (task #11).
