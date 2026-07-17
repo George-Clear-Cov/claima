@@ -17,9 +17,10 @@
 
 Hello athenahealth Marketplace team,
 
-I'm George Nagib, founder of **Claima** (claima.io) — an AI-native platform that helps outpatient
-practices **recover denied and underpaid claims**. We'd like to join the athenahealth Marketplace as
-an integrated partner.
+I'm George Nagib, founder of **Claima** (claima.io) — an **AI-native revenue cycle management (RCM)
+platform** for outpatient practices. We'd like to join the athenahealth Marketplace as an integrated
+partner. On athenaOne we'd lead with the pieces that most **augment** a practice's collections —
+**AI denial recovery and billing intelligence** — complementing (not replacing) athenaOne RCM.
 
 Claima reads a practice's claims and remittances, automatically classifies denials (CARC/RARC),
 drafts appeal letters, and surfaces underpayments — turning "found money" back into collections

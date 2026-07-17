@@ -62,7 +62,7 @@ Code is already built (`src/lib/aws-marketplace.ts` + landing/activate/webhook).
 ## C — Listing copy (paste-ready, plain text)
 
 **Short (≤100 chars):**
-AI-native medical billing that recovers denied claims and automates the full revenue cycle.
+AI-native RCM that automates the full revenue cycle — eligibility, claims, denials, and billing.
 
 **Long description:**
 Claima is an AI-native revenue cycle management (RCM) platform that helps outpatient practices get

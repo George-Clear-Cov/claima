@@ -9,6 +9,7 @@ const PUBLIC_PATHS = [
   "/privacy",
   "/terms",
   "/security",
+  "/support",             // public help/support page (marketplace + external support links)
   "/store",               // public storefront — customers don't need an account
   "/api/store",          // public product listing for the storefront
   "/api/checkout",       // customers initiate checkout without being logged in
