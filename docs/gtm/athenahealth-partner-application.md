@@ -90,6 +90,29 @@ the billing.
 
 ---
 
+## 2.5 Onboarding sequence + which portal (learned 2026-07-17)
+
+**Sequence:** create app (self-serve) → get **sandbox** credentials (synthetic data) → validate the data
+→ apply to the **Marketplace Development Program (MDP)** for **production access + listing**. Creating
+the app does NOT require partnership; MDP is the "become a partner" step (security/performance/
+reliability review).
+
+**⚠️ Portal distinction — important:** `mydata.athenahealth.com` (© VVC Holding) is the
+**athenaPractice & athenaFlow** developer portal — the *legacy Centricity-lineage* line, primarily
+**FHIR** APIs. The flagship **athenaOne** (the big Marketplace, 160k+ providers) is a **different
+developer track** (athenahealth.com/developer-portal). Confirm which product the target practices run
+— for SMB outpatient reach, prioritize **athenaOne**. (An app was created on the athenaPractice/Flow
+portal 2026-07-17 — GClaima, Development status; fine for that segment, but verify product fit before
+deep integration.)
+
+**API products / FHIR resources to request (denial-recovery wedge):**
+- ⭐ **ClaimResponse** (denials/adjudication) + **ExplanationOfBenefit** / **PaymentReconciliation** (remittance/835) — the heart of the wedge
+- **Claim** (the claim), **CoverageEligibilityRequest/Response** (270/271), **Coverage** (insurance)
+- **Patient**, **Encounter**, **Account** (context)
+- If the sandbox does NOT expose ClaimResponse/EOB/PaymentReconciliation, that's the signal to use the native billing API or Redox instead of FHIR (see [[ehr-integration-redox-vs-native]] / task #12).
+
+**Credential hygiene:** Client ID + Secret → Key Vault / secret store, never commit; rotate if exposed.
+
 ## 3. Before sending — fill these in
 - [ ] HQ, team size, founding specifics
 - [ ] Target practice-size band
