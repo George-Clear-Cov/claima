@@ -35,6 +35,30 @@ Bedrock, **live on AppSource**, and landing our first pilot on denial recovery."
 6. **Marketplace/MACC path.** When should we stand up a **transactable** offer so enterprise health
    systems can procure via marketplace and spend their Azure commitment (MACC)?
 
+## ⚠️ Raise this: the two-tenant setup (get the EM to fix it)
+**Explain it plainly:** "My **Partner Center account, the AppSource offer, ISV Success, and SSO app live
+in one tenant** (gnagib99 — admin@gnagib99gmail.onmicrosoft.com). My **Azure subscription, my credits,
+and the actual product run in a *separate* tenant** (george@claima.io). How do I connect these correctly?"
+
+**What you want to achieve (state these as goals):**
+1. **ISV Success + Startups Azure credits land in the subscription where I actually run** (the claima.io
+   Azure subscription) — not stranded in the wrong tenant.
+2. **My Azure consumption is attributed to my partner org** (for co-sell / IP-co-sell / Startups
+   milestones) even though it runs in the claima.io tenant.
+3. Ideally **one login to manage everything** (add george@claima.io as a Partner Center user / guest, or
+   whatever they recommend).
+
+**Ask the EM directly:**
+- Which subscription should I redeem the **ISV Success Azure credits** into, given the split — and how?
+- How do I **link/attribute my Azure consumption** (claima.io tenant) to my Partner Center org (gnagib99)?
+- Do you recommend **adding george@claima.io as a Partner Center user**, associating the subscription to
+  the partner account, or something else? What's the clean pattern for a split like mine?
+- Any **risk to co-sell or milestone attribution** from the two tenants I should fix now?
+
+**Do NOT** try to move the Partner Center / offer to the claima.io tenant — Partner Center is tenant-bound
+and the gnagib99 tenant owns your published offer + SSO app. The fix is **linking/attribution**, not migration.
+This is a common ISV setup; the EM resolves it routinely — come with the framing above and let them prescribe.
+
 ## Questions to ask the EM
 - Who's my path to the **Health & Life Sciences** vertical team / a PDM, and can you make the intro?
 - Beyond "In Market," what do I need to get **field sellers** actively co-selling Claima?
