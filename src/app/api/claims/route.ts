@@ -5,6 +5,7 @@ import { submitClaim } from "@/lib/claimmd"
 import { getSessionFromRequest } from "@/lib/auth"
 import { logAudit } from "@/lib/audit"
 import { logError } from "@/lib/log"
+import { checkNpis } from "@/lib/npi"
 
 const lineItemSchema = z.object({
   cptCode: z.string().min(5).max(5),
@@ -39,6 +40,21 @@ export async function POST(req: NextRequest) {
       prisma.provider.findUniqueOrThrow({ where: { id: input.providerId, practiceId: session.practiceId } }),
       prisma.patient.findUniqueOrThrow({ where: { id: input.patientId, practiceId: session.practiceId } }),
     ])
+
+    // Reject check-digit-invalid NPIs before building the 837P. The clearinghouse
+    // rejects these outright ("Rendering NPI Fails LUHN check"), so catching it here
+    // saves a full submit/reject cycle and days of A/R on a real claim.
+    const npiProblems = checkNpis([
+      { label: "Billing NPI", npi: practice.npi },
+      { label: "Rendering NPI", npi: provider.npi },
+      { label: "Referring provider NPI", npi: input.referringProviderNpi },
+    ])
+    if (npiProblems.length > 0) {
+      return NextResponse.json(
+        { error: "Claim not submitted — invalid NPI", issues: npiProblems },
+        { status: 400 }
+      )
+    }
 
     // Look up prior auth number if provided
     let authNumber: string | undefined

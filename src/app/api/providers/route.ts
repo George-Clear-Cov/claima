@@ -3,11 +3,12 @@ import { z } from "zod"
 import { getSessionFromRequest } from "@/lib/auth"
 import { logAudit } from "@/lib/audit"
 import { logError } from "@/lib/log"
+import { npiSchema } from "@/lib/validation"
 
 const createSchema = z.object({
   firstName: z.string().min(1),
   lastName: z.string().min(1),
-  npi: z.string().length(10),
+  npi: npiSchema,
   taxonomy: z.string().min(1),
 })
 

@@ -23,11 +23,11 @@ function daysAgo(n: number) {
 async function main() {
   // ── Practice ─────────────────────────────────────────────────────────────
   const practice = await prisma.practice.upsert({
-    where: { npi: "9876543210" },
+    where: { npi: "9999999995" },
     update: { name: "Riverside Medical Group" },
     create: {
       name: "Riverside Medical Group",
-      npi: "9876543210",
+      npi: "9999999995",
       taxId: "12-3456789",
       taxonomy: "193400000X",
       addressLine1: "123 Main St",
@@ -41,14 +41,14 @@ async function main() {
 
   // ── Providers ────────────────────────────────────────────────────────────
   const prov1 = await prisma.provider.upsert({
-    where: { npi: "1234567890" },
+    where: { npi: "1111111112" },
     update: { taxonomy: "207Q00000X" },
-    create: { practiceId: practice.id, firstName: "Emily", lastName: "Chen", npi: "1234567890", taxonomy: "207Q00000X" },
+    create: { practiceId: practice.id, firstName: "Emily", lastName: "Chen", npi: "1111111112", taxonomy: "207Q00000X" },
   })
   const prov2 = await prisma.provider.upsert({
-    where: { npi: "0987654321" },
+    where: { npi: "2222222228" },
     update: { taxonomy: "225100000X" },
-    create: { practiceId: practice.id, firstName: "Marcus", lastName: "Rivera", npi: "0987654321", taxonomy: "225100000X" },
+    create: { practiceId: practice.id, firstName: "Marcus", lastName: "Rivera", npi: "2222222228", taxonomy: "225100000X" },
   })
   console.log("Providers:", prov1.firstName, prov1.lastName, "(Family Med) /", prov2.firstName, prov2.lastName, "(Physical Therapy)")
 

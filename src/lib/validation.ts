@@ -1,5 +1,6 @@
 import { z } from "zod"
 import { NextResponse } from "next/server"
+import { isValidNpi, NPI_INVALID_MESSAGE } from "@/lib/npi"
 
 // Reusable request-body schemas + a safe JSON parser. Every mutating route validates its body
 // through parseJson(req, schema) so malformed / oversized / hostile payloads are rejected with a
@@ -7,7 +8,13 @@ import { NextResponse } from "next/server"
 
 const email = z.string().trim().toLowerCase().email().max(320)
 const password = z.string().min(8).max(200)
-const npi = z.string().regex(/^\d{10}$/, "NPI must be 10 digits")
+const npi = z
+  .string()
+  .regex(/^\d{10}$/, "NPI must be 10 digits")
+  .refine(isValidNpi, NPI_INVALID_MESSAGE)
+
+/** Exported so every NPI entry point validates identically — see lib/npi.ts. */
+export const npiSchema = npi
 const optionalStr = (max: number) => z.string().trim().max(max).optional().or(z.literal(""))
 
 export const registerSchema = z.object({
