@@ -106,6 +106,23 @@ export interface ClaimMdERAEntry {
   claim_count: number
 }
 
+/** One service line (CPT) within an ERA claim, with its cost waterfall split out. */
+export interface ClaimMdERAServiceLine {
+  cpt: string
+  modifiers: string[]
+  units: number
+  billed_amount: number
+  paid_amount: number
+  allowed_amount: number | null
+  contractual_adjustment: number // CAS group CO
+  patient_responsibility: number // total PR
+  deductible: number             // PR-1
+  coinsurance: number            // PR-2
+  copay: number                  // PR-3
+  other_patient_resp: number     // other PR (non-covered, benefit-max, etc.)
+  carc_codes: string[]
+}
+
 export interface ClaimMdERAClaimLine {
   claim_id: string
   patient_first: string
@@ -115,7 +132,14 @@ export interface ClaimMdERAClaimLine {
   paid_amount: number
   adjustment_amount: number
   patient_responsibility: number
+  // Patient-responsibility split (claim-level, aggregated across lines) for the transparency EOB.
+  contractual_adjustment: number
+  deductible: number
+  coinsurance: number
+  copay: number
+  other_patient_resp: number
   carc_codes: string[]
+  lines: ClaimMdERAServiceLine[]
 }
 
 export interface ClaimMdERADetail extends ClaimMdERAEntry {
@@ -343,13 +367,66 @@ export async function initiateEnrollment(params: {
   }
 }
 
+const r2 = (n: number) => Math.round(n * 100) / 100
+const adjCode = (a: Record<string, unknown>) => str(a.code ?? a.carc ?? a.reason)
+
+/**
+ * Split a set of CAS adjustments into the cost-transparency buckets: contractual
+ * write-off (group CO) and patient responsibility (group PR) broken out by CARC
+ * reason — deductible (PR-1), coinsurance (PR-2), copay (PR-3), everything else PR
+ * into `other`. Never collapse PR back to one number; the patient sees each part.
+ */
+function splitAdjustments(adjustments: Record<string, unknown>[]) {
+  let contractual = 0, deductible = 0, coinsurance = 0, copay = 0, other = 0
+  for (const a of adjustments) {
+    const amt = num(a.amount)
+    const group = str(a.group).toUpperCase()
+    if (group === "CO") contractual += amt
+    else if (group === "PR") {
+      const code = adjCode(a)
+      if (code === "1") deductible += amt
+      else if (code === "2") coinsurance += amt
+      else if (code === "3") copay += amt
+      else other += amt
+    }
+  }
+  return {
+    contractual: r2(contractual),
+    deductible: r2(deductible),
+    coinsurance: r2(coinsurance),
+    copay: r2(copay),
+    other: r2(other),
+    patientResp: r2(deductible + coinsurance + copay + other),
+  }
+}
+
+// One eradata charge[] entry = one service line. VERIFY charge field names vs the sandbox.
+function mapERAServiceLine(charge: Record<string, unknown>): ClaimMdERAServiceLine {
+  const adjustments = asArray(charge.adjustment)
+  const s = splitAdjustments(adjustments)
+  return {
+    cpt: str(charge.proc_code ?? charge.cpt ?? charge.procedure),
+    modifiers: [charge.mod1, charge.mod2, charge.mod3, charge.mod4].map((m) => str(m)).filter(Boolean),
+    units: Math.round(num(charge.units ?? charge.unit)) || 1,
+    billed_amount: num(charge.charge ?? charge.billed ?? charge.total_charge),
+    paid_amount: num(charge.paid ?? charge.total_paid),
+    allowed_amount: charge.allowed != null ? num(charge.allowed) : null,
+    contractual_adjustment: s.contractual,
+    patient_responsibility: s.patientResp,
+    deductible: s.deductible,
+    coinsurance: s.coinsurance,
+    copay: s.copay,
+    other_patient_resp: s.other,
+    carc_codes: adjustments.map(adjCode).filter(Boolean),
+  }
+}
+
 function mapERAClaimLine(c: Record<string, unknown>): ClaimMdERAClaimLine {
   const adjustments = collectAdjustments(c)
-  const carc = adjustments.map((a) => str(a.code ?? a.carc ?? a.reason)).filter(Boolean)
+  const carc = adjustments.map(adjCode).filter(Boolean)
   const adjustmentAmount = adjustments.reduce((s, a) => s + num(a.amount), 0)
-  const patientResponsibility = adjustments
-    .filter((a) => str(a.group).toUpperCase() === "PR")
-    .reduce((s, a) => s + num(a.amount), 0)
+  const split = splitAdjustments(adjustments)
+  const lines = asArray(c.charge).map(mapERAServiceLine)
 
   return {
     claim_id: str(c.claimid ?? c.remote_claimid ?? c.pcn ?? c.claim_id),
@@ -358,8 +435,14 @@ function mapERAClaimLine(c: Record<string, unknown>): ClaimMdERAClaimLine {
     service_date: str(c.from_dos ?? c.fdos ?? c.service_date),
     billed_amount: num(c.total_charge ?? c.charge),
     paid_amount: num(c.total_paid ?? c.paid),
-    adjustment_amount: adjustmentAmount,
-    patient_responsibility: patientResponsibility,
+    adjustment_amount: r2(adjustmentAmount),
+    patient_responsibility: split.patientResp,
+    contractual_adjustment: split.contractual,
+    deductible: split.deductible,
+    coinsurance: split.coinsurance,
+    copay: split.copay,
+    other_patient_resp: split.other,
     carc_codes: carc,
+    lines,
   }
 }

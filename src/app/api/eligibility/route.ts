@@ -61,6 +61,8 @@ export async function POST(req: NextRequest) {
               deductibleMet: result.coverage?.deductibleMet,
               outOfPocketMax: result.coverage?.outOfPocketMax,
               outOfPocketMet: result.coverage?.outOfPocketMet,
+              deductibleRemaining: result.coverage?.deductibleRemaining,
+              outOfPocketRemaining: result.coverage?.outOfPocketRemaining,
               copay: result.coverage?.copay,
               coinsurance: result.coverage?.coinsurance,
               visitLimit: result.coverage?.visitLimit,

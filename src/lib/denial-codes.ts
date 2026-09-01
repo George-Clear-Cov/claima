@@ -25,6 +25,13 @@ export const CARC_CODES: Record<string, { description: string } & DenialCategory
     action: "Bill patient for coinsurance",
     appealable: false,
   },
+  "3": {
+    description: "Co-payment amount",
+    category: "PATIENT_RESPONSIBILITY",
+    priority: "LOW",
+    action: "Bill patient for copay",
+    appealable: false,
+  },
   "4": {
     description: "The service is not covered by this payer/contractor",
     category: "WRITE_OFF",

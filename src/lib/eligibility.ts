@@ -20,8 +20,10 @@ export interface CoverageDetail {
   inNetwork: boolean
   deductible: number
   deductibleMet: number
+  deductibleRemaining: number
   outOfPocketMax: number
   outOfPocketMet: number
+  outOfPocketRemaining: number
   copay: number
   coinsurance: number // percentage e.g. 20
   visitLimit: number | null
@@ -53,8 +55,10 @@ const MOCK_RESPONSES: Record<string, EligibilityResult> = {
       inNetwork: true,
       deductible: 1500,
       deductibleMet: 800,
+      deductibleRemaining: 700,
       outOfPocketMax: 4000,
       outOfPocketMet: 1200,
+      outOfPocketRemaining: 2800,
       copay: 30,
       coinsurance: 20,
       visitLimit: 52,
@@ -75,8 +79,10 @@ const MOCK_RESPONSES: Record<string, EligibilityResult> = {
       inNetwork: true,
       deductible: 2000,
       deductibleMet: 2000,
+      deductibleRemaining: 0,
       outOfPocketMax: 6000,
       outOfPocketMet: 2200,
+      outOfPocketRemaining: 3800,
       copay: 0,
       coinsurance: 20,
       visitLimit: null,
@@ -97,8 +103,10 @@ const MOCK_RESPONSES: Record<string, EligibilityResult> = {
       inNetwork: false,
       deductible: 3000,
       deductibleMet: 0,
+      deductibleRemaining: 3000,
       outOfPocketMax: 8000,
       outOfPocketMet: 0,
+      outOfPocketRemaining: 8000,
       copay: 60,
       coinsurance: 40,
       visitLimit: 30,
@@ -221,10 +229,12 @@ export function parseClearinghouseResponse(data: Record<string, unknown>): Eligi
   const find = (kw: string, periods?: string[]) =>
     benefits.find((b) => cov(b).includes(kw) && (!periods || periods.includes(per(b))))
 
-  const deductible = find("deductible", ["23"])   // Calendar-Year total
+  const deductible = find("deductible", ["23"])    // Calendar-Year total
   const deductibleMet = find("deductible", ["24"]) // Year-to-Date met
+  const deductibleRem = find("deductible", ["29"]) // Remaining (preferred when the payer sends it)
   const oopMax = find("out of pocket", ["23"])
   const oopMet = find("out of pocket", ["24"])
+  const oopRem = find("out of pocket", ["29"])
   const copay = find("co-payment") ?? find("copay")
   const coins = benefits.find((b) => cov(b).includes("insurance"))
 
@@ -248,8 +258,12 @@ export function parseClearinghouseResponse(data: Record<string, unknown>): Eligi
           inNetwork: true,
           deductible: deductible ? amt(deductible) : 0,
           deductibleMet: deductibleMet ? amt(deductibleMet) : 0,
+          deductibleRemaining: deductibleRem ? amt(deductibleRem)
+            : Math.max((deductible ? amt(deductible) : 0) - (deductibleMet ? amt(deductibleMet) : 0), 0),
           outOfPocketMax: oopMax ? amt(oopMax) : 0,
           outOfPocketMet: oopMet ? amt(oopMet) : 0,
+          outOfPocketRemaining: oopRem ? amt(oopRem)
+            : Math.max((oopMax ? amt(oopMax) : 0) - (oopMet ? amt(oopMet) : 0), 0),
           copay: copay ? amt(copay) : 0,
           coinsurance,
           visitLimit: null,

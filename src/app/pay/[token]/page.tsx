@@ -7,6 +7,20 @@ import { LogoMark } from "@/components/Logo"
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? "")
 
+interface EobLine {
+  cptCode: string
+  units: number
+  billed: number
+  allowed: number | null
+  insurancePaid: number
+  planDiscount: number
+  patientResp: number
+  deductible: number
+  coinsurance: number
+  copay: number
+  other: number
+}
+
 interface StatementData {
   statementId: string
   practiceName: string
@@ -15,9 +29,13 @@ interface StatementData {
   totalCharge: number
   insurancePaid: number
   adjustments: number
+  deductible: number
+  coinsurance: number
+  copay: number
   serviceDate: string
   dueDate: string | null
   alreadyPaid: boolean
+  lines: EobLine[]
 }
 
 function PaymentForm({ token, amount }: { token: string; amount: number }) {
@@ -132,13 +150,12 @@ export default function PayPage({ params }: { params: Promise<{ token: string }>
   const { token } = use(params)
   const [statement, setStatement] = useState<StatementData | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [paid, setPaid] = useState(false)
+  // Seed "paid" from the ?success=1 Stripe redirect at init (avoids setState-in-effect).
+  const [paid, setPaid] = useState(
+    () => typeof window !== "undefined" && new URLSearchParams(window.location.search).get("success") === "1",
+  )
 
   useEffect(() => {
-    // Check for ?success=1 redirect from Stripe
-    if (new URLSearchParams(window.location.search).get("success") === "1") {
-      setPaid(true)
-    }
     fetch(`/api/pay/${token}`)
       .then((r) => r.json())
       .then((data) => {
@@ -197,7 +214,7 @@ export default function PayPage({ params }: { params: Promise<{ token: string }>
               </div>
             </div>
 
-            <div className="bg-gray-50 rounded-xl px-4 py-3 mb-6 space-y-1.5 text-xs text-gray-500">
+            <div className="bg-gray-50 rounded-xl px-4 py-3 mb-4 space-y-1.5 text-xs text-gray-500">
               <div className="flex justify-between">
                 <span>Billed</span>
                 <span className="font-medium text-gray-700">${statement.totalCharge.toFixed(2)}</span>
@@ -208,7 +225,7 @@ export default function PayPage({ params }: { params: Promise<{ token: string }>
               </div>
               {statement.adjustments > 0 && (
                 <div className="flex justify-between">
-                  <span>Adjustments</span>
+                  <span>Plan discount</span>
                   <span className="font-medium text-gray-700">−${statement.adjustments.toFixed(2)}</span>
                 </div>
               )}
@@ -216,7 +233,40 @@ export default function PayPage({ params }: { params: Promise<{ token: string }>
                 <span>Your balance</span>
                 <span>${statement.balanceDue.toFixed(2)}</span>
               </div>
+              {(statement.deductible > 0 || statement.coinsurance > 0 || statement.copay > 0) && (
+                <div className="pt-1.5 space-y-1 text-[11px] text-gray-400">
+                  {statement.deductible > 0 && <div className="flex justify-between"><span>· Applied to your deductible</span><span>${statement.deductible.toFixed(2)}</span></div>}
+                  {statement.coinsurance > 0 && <div className="flex justify-between"><span>· Coinsurance</span><span>${statement.coinsurance.toFixed(2)}</span></div>}
+                  {statement.copay > 0 && <div className="flex justify-between"><span>· Copay</span><span>${statement.copay.toFixed(2)}</span></div>}
+                </div>
+              )}
             </div>
+
+            {statement.lines?.length > 0 && (
+              <details className="mb-6">
+                <summary className="cursor-pointer text-xs font-medium text-blue-600 hover:text-blue-700 select-none mb-1">
+                  See how each service was billed
+                </summary>
+                <div className="mt-3 space-y-3">
+                  {statement.lines.map((l, i) => (
+                    <div key={i} className="border border-gray-100 rounded-lg px-3 py-2.5 text-[11px] text-gray-500 space-y-0.5">
+                      <div className="flex justify-between font-semibold text-gray-800 text-xs mb-1">
+                        <span>{l.cptCode}{l.units > 1 ? ` ×${l.units}` : ""}</span>
+                        <span>${l.patientResp.toFixed(2)} you owe</span>
+                      </div>
+                      <div className="flex justify-between"><span>Billed</span><span>${l.billed.toFixed(2)}</span></div>
+                      {l.allowed != null && <div className="flex justify-between"><span>Plan rate (allowed)</span><span>${l.allowed.toFixed(2)}</span></div>}
+                      {l.planDiscount > 0 && <div className="flex justify-between"><span>Plan discount</span><span>−${l.planDiscount.toFixed(2)}</span></div>}
+                      <div className="flex justify-between"><span>Insurance paid</span><span>−${l.insurancePaid.toFixed(2)}</span></div>
+                      {l.deductible > 0 && <div className="flex justify-between text-gray-600"><span>· Toward deductible</span><span>${l.deductible.toFixed(2)}</span></div>}
+                      {l.coinsurance > 0 && <div className="flex justify-between text-gray-600"><span>· Coinsurance</span><span>${l.coinsurance.toFixed(2)}</span></div>}
+                      {l.copay > 0 && <div className="flex justify-between text-gray-600"><span>· Copay</span><span>${l.copay.toFixed(2)}</span></div>}
+                      {l.other > 0 && <div className="flex justify-between text-gray-600"><span>· Not covered</span><span>${l.other.toFixed(2)}</span></div>}
+                    </div>
+                  ))}
+                </div>
+              </details>
+            )}
 
             <PaymentWrapper token={token} statement={statement} />
           </div>

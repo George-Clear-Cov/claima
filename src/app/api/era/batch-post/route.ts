@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getSessionFromRequest } from "@/lib/auth"
 import { logAudit } from "@/lib/audit"
 import { sendEmail } from "@/lib/email"
-import { isClaimMdConfigured, fetchAvailableERAs, fetchERAById } from "@/lib/claimmd"
+import { isClaimMdConfigured, fetchAvailableERAs, fetchERAById, type ClaimMdERAClaimLine } from "@/lib/claimmd"
 import { classifyDenial, normalizeCarc } from "@/lib/denial-codes"
 
 const PAYER_RATES: Record<string, { insRate: number; adjRate: number }> = {
@@ -13,6 +13,30 @@ const PAYER_RATES: Record<string, { insRate: number; adjRate: number }> = {
   "Humana":               { insRate: 0.65, adjRate: 0.13 },
 }
 const DEFAULT_RATES = { insRate: 0.70, adjRate: 0.10 }
+
+// Build per-service-line remittance rows (the billed → allowed → paid → patient-split
+// waterfall) that power the patient cost-transparency EOB.
+function buildRemittanceLines(practiceId: string, eraId: string, claimId: string | null, line: ClaimMdERAClaimLine) {
+  return line.lines.map((sl) => ({
+    practiceId,
+    eraId,
+    claimId,
+    cptCode: sl.cpt,
+    modifiers: sl.modifiers,
+    units: sl.units,
+    serviceDate: line.service_date ? new Date(line.service_date) : null,
+    chargeAmount: sl.billed_amount,
+    allowedAmount: sl.allowed_amount,
+    insurancePaid: sl.paid_amount,
+    contractualAdjustment: sl.contractual_adjustment,
+    patientResponsibility: sl.patient_responsibility,
+    deductible: sl.deductible,
+    coinsurance: sl.coinsurance,
+    copay: sl.copay,
+    otherPatientResp: sl.other_patient_resp,
+    carcCodes: sl.carc_codes,
+  }))
+}
 
 export async function POST(req: NextRequest) {
   const session = await getSessionFromRequest(req)
@@ -105,6 +129,10 @@ async function postRealERAs(_req: NextRequest, practiceId: string, adminEmail: s
         insurancePaid: line.paid_amount,
         adjustments: line.adjustment_amount,
         patientResponsibility: line.patient_responsibility,
+        deductible: line.deductible,
+        coinsurance: line.coinsurance,
+        copay: line.copay,
+        otherPatientResp: line.other_patient_resp,
         carcCodes: line.carc_codes ?? [],
         rawData: line as object,
         matchedAt: matched ? new Date() : null,
@@ -123,6 +151,7 @@ async function postRealERAs(_req: NextRequest, practiceId: string, adminEmail: s
             const cls = classifyDenial(primaryCarc!)
             await prisma.$transaction([
               prisma.eRA.create({ data: eraRecord }),
+              prisma.remittanceLine.createMany({ data: buildRemittanceLines(practiceId, eraRecord.id, matched.id, line) }),
               prisma.claim.update({
                 where: { id: matched.id },
                 data: { claimStatus: "DENIED", denialCode: primaryCarc, denialReason: cls.description },
@@ -141,6 +170,7 @@ async function postRealERAs(_req: NextRequest, practiceId: string, adminEmail: s
             )
             await prisma.$transaction([
               prisma.eRA.create({ data: eraRecord }),
+              prisma.remittanceLine.createMany({ data: buildRemittanceLines(practiceId, eraRecord.id, matched.id, line) }),
               prisma.claim.update({
                 where: { id: matched.id },
                 data: { claimStatus: "PAID", paidAmount: line.paid_amount, paidAt: new Date() },
@@ -152,6 +182,9 @@ async function postRealERAs(_req: NextRequest, practiceId: string, adminEmail: s
                   totalCharge: line.billed_amount,
                   insurancePaid: line.paid_amount,
                   adjustments: line.adjustment_amount,
+                  deductible: line.deductible,
+                  coinsurance: line.coinsurance,
+                  copay: line.copay,
                   patientOwes,
                   balanceDue: patientOwes,
                   statementStatus: patientOwes === 0 ? "PAID" : "PENDING",
