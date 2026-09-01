@@ -32,7 +32,7 @@ with your practice as part of the pilot agreement.
 ### Technical
 - **Encryption:** TLS 1.2+ in transit; AES-256 at rest.
 - **Tenant isolation:** every record is scoped to a single practice; users can never access another practice's data. Verified by recurring automated security audits.
-- **Access control:** unique per-user credentials, JWT sessions, role-based access, and Microsoft Entra (Azure AD) single sign-on. *(MFA for password logins and idle-session timeout: in progress.)*
+- **Access control:** unique per-user credentials, JWT sessions, role-based access, Microsoft Entra (Azure AD) single sign-on, TOTP multi-factor authentication with single-use backup codes, and enforced idle-session timeout.
 - **Audit logging:** every PHI access (who, what, when, IP) is recorded in an audit log, retained per our retention policy.
 - **Monitoring:** application error monitoring with PHI automatically stripped before capture.
 - **Input validation** on all data-entry points; rate limiting on public endpoints.
