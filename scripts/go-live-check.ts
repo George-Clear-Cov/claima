@@ -24,25 +24,63 @@ function walk(dir: string, out: string[] = []): string[] {
 const srcFiles = existsSync("src") ? walk("src") : []
 
 // ── required env for go-live
-const REQUIRED: { name: string; why: string }[] = [
-  { name: "DATABASE_URL", why: "Postgres connection" },
+// `alt` = an accepted alternative name (prisma.ts prefers POSTGRES_PRISMA_URL, falls back
+// to DATABASE_URL — requiring only one of them fails a correctly-configured Azure deploy).
+type Req = { name: string; why: string; alt?: string }
+const REQUIRED: Req[] = [
+  { name: "POSTGRES_PRISMA_URL", why: "Postgres connection", alt: "DATABASE_URL" },
   { name: "CLAIMMD_ACCOUNT_KEY", why: "live claim submission + eligibility (else MOCK)" },
-  { name: "CLAIMMD_API_KEY", why: "live claim submission + eligibility (else MOCK)" },
   { name: "STRIPE_SECRET_KEY", why: "payments — must be sk_live for real charges" },
   { name: "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY", why: "client-side payments" },
   { name: "STRIPE_WEBHOOK_SECRET", why: "Stripe webhook verification" },
-  { name: "RESEND_API_KEY", why: "patient statement + outreach emails" },
-  { name: "ANTHROPIC_API_KEY", why: "AI features (scrub, appeals, briefing)" },
+  { name: "ACS_CONNECTION_STRING", why: "patient statement + outreach emails (Azure Communication Services)" },
   { name: "CRON_SECRET", why: "secures the daily agent cron" },
 ]
 for (const r of REQUIRED) {
-  const v = process.env[r.name]
+  const v = process.env[r.name] || (r.alt ? process.env[r.alt] : undefined)
+  const label = r.alt ? `${r.name} (or ${r.alt})` : r.name
   if (v && v.trim()) {
     if (r.name === "STRIPE_SECRET_KEY")
       rows.push({ status: v.startsWith("sk_live") ? "PASS" : "WARN", item: r.name, detail: v.startsWith("sk_live") ? "live key set" : "TEST key (sk_test) — no real charges" })
-    else rows.push({ status: "PASS", item: r.name, detail: "set" })
+    else rows.push({ status: "PASS", item: label, detail: "set" })
   } else {
-    rows.push({ status: inCI ? "INFO" : "FAIL", item: r.name, detail: inCI ? `verify in Vercel — ${r.why}` : `NOT SET — ${r.why}` })
+    rows.push({ status: inCI ? "INFO" : "FAIL", item: label, detail: inCI ? `verify in the deploy env — ${r.why}` : `NOT SET — ${r.why}` })
+  }
+}
+
+// ── AI provider must be one Claima holds a BAA with.
+// Direct Anthropic has no BAA (lib/ai.ts is fail-closed against it), so requiring
+// ANTHROPIC_API_KEY for go-live would point at the one path PHI must not take.
+{
+  const provider = (process.env.AI_PROVIDER || "").trim().toLowerCase()
+  const split = (process.env.AI_PROVIDER_SPLIT || "").trim()
+  const hasBedrock = Boolean(process.env.AWS_BEARER_TOKEN_BEDROCK || process.env.BEDROCK_API_KEY || (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY))
+  const hasAzureAI = Boolean(process.env.AZURE_OPENAI_ENDPOINT && process.env.AZURE_OPENAI_KEY)
+  if (!provider && !split) {
+    rows.push({ status: "FAIL", item: "AI_PROVIDER", detail: "NOT SET — set bedrock or azure; both are BAA-covered" })
+  } else if (provider === "anthropic") {
+    rows.push({ status: "FAIL", item: "AI_PROVIDER", detail: "anthropic (direct) has NO BAA — PHI is blocked. Use bedrock or azure." })
+  } else if (provider === "bedrock" && !hasBedrock) {
+    rows.push({ status: "FAIL", item: "AI_PROVIDER=bedrock", detail: "no AWS credentials set — AI features will fail" })
+  } else if (provider === "azure" && !hasAzureAI) {
+    rows.push({ status: "FAIL", item: "AI_PROVIDER=azure", detail: "AZURE_OPENAI_ENDPOINT/KEY not set — AI features will fail" })
+  } else {
+    rows.push({ status: "PASS", item: "AI_PROVIDER", detail: `${provider || `split: ${split}`} — BAA-covered` })
+  }
+}
+
+// ── Claim.MD: the base URL is identical for test and production accounts, so the
+// AccountKey is the ONLY thing distinguishing them and nothing else would catch a
+// test key in production. Declare which account the key belongs to.
+{
+  const KNOWN_TEST_ACCOUNTS = ["31641"]
+  const acct = (process.env.CLAIMMD_ACCOUNT_ID || "").trim()
+  if (!acct) {
+    rows.push({ status: "WARN", item: "CLAIMMD_ACCOUNT_ID", detail: "not declared — cannot verify CLAIMMD_ACCOUNT_KEY is the production account's key" })
+  } else if (KNOWN_TEST_ACCOUNTS.includes(acct)) {
+    rows.push({ status: "FAIL", item: "CLAIMMD_ACCOUNT_ID", detail: `${acct} is a TEST account — claims would not reach payers` })
+  } else {
+    rows.push({ status: "PASS", item: "CLAIMMD_ACCOUNT_ID", detail: `${acct} (production)` })
   }
 }
 
