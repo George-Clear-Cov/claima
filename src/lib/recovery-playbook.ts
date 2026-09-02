@@ -28,6 +28,10 @@ export interface PayerRule {
   /** Medicare only: days from initial determination in which a reopening may be requested. */
   reopeningDays?: number
   portal?: string
+  /** Clearinghouse payer ID, where a single stable one exists. */
+  payerId?: string
+  /** Default prior-auth posture. Plan-level rules always override — verify via 270/271. */
+  priorAuth?: string
   notes?: string
 }
 
@@ -41,9 +45,11 @@ export const PAYER_RULES: PayerRule[] = [
     payer: "Medicare",
     aliases: ["medicare", "medicare part b", "ngs", "national government services"],
     appealDays: 120, // redetermination from initial determination
-    timelyFilingDays: 365,
+    timelyFilingDays: 365, // 12 months from DOS
     reopeningDays: 365, // 42 CFR 405.980
     portal: "NGS Connex (NY MAC)",
+    payerId: "00010-00099 range (state-specific MAC)",
+    priorAuth: "No PA for outpatient psychotherapy or most E&M",
     notes:
       "Past 120 days, a reopening is still available within 1 year for clerical error. " +
       "Timely filing for the original claim is 1 calendar year from DOS — a claim the " +
@@ -58,20 +64,113 @@ export const PAYER_RULES: PayerRule[] = [
       "united healthcare / community plan",
       "emblem/united",
       "oxford",
+      "optum",
     ],
     appealDays: 180,
-    timelyFilingDays: 90,
+    timelyFilingDays: 365, // plan dependent, 90-365; use the outer bound and verify
     portal: "UHC Provider Portal / Optum",
-    notes: "Frequently appears under several names in one aging report; consolidate first.",
+    payerId: "87726",
+    priorAuth: "No PA for outpatient psychotherapy on most plans",
+    notes:
+      "Timely filing varies 90–365 days by plan — verify per member. Frequently appears " +
+      "under several names in one aging report; consolidate before ranking by balance.",
   },
-  { payer: "Aetna", aliases: ["aetna", "aetna us healthcare"], appealDays: 180, timelyFilingDays: 120, portal: "Availity" },
-  { payer: "Cigna", aliases: ["cigna", "cigna healthcare"], appealDays: 180, timelyFilingDays: 90, portal: "Availity" },
-  { payer: "Healthfirst", aliases: ["healthfirst"], appealDays: 60, timelyFilingDays: 180, notes: "Shorter appeal window than most commercial plans — prioritize." },
-  { payer: "Empire BCBS", aliases: ["empire plan", "blue cross and blue shield of ny", "bcbs"], appealDays: 180, timelyFilingDays: 120, portal: "Availity" },
-  { payer: "Healthcare Partners", aliases: ["healthcare partners"], appealDays: null, timelyFilingDays: 90 },
-  { payer: "NYCE PPO", aliases: ["nyce ppo plan", "nyce"], appealDays: null, timelyFilingDays: 90 },
-  { payer: "Humana", aliases: ["humana"], appealDays: 180, timelyFilingDays: 90, portal: "Availity" },
-  { payer: "Surest", aliases: ["surest"], appealDays: 180, timelyFilingDays: 90, notes: "UnitedHealth company." },
+  {
+    payer: "Aetna",
+    aliases: ["aetna", "aetna us healthcare"],
+    appealDays: 180,
+    timelyFilingDays: 180,
+    portal: "Availity",
+    payerId: "60054 (behavioral) / 00431 (medical)",
+    priorAuth: "No PA for first 8 outpatient MH sessions/year; required beyond",
+  },
+  {
+    payer: "Cigna",
+    aliases: ["cigna", "cigna healthcare", "cigna behavioral"],
+    appealDays: 180,
+    timelyFilingDays: 180,
+    portal: "Availity",
+    payerId: "62308 (medical) / 73288 (behavioral)",
+    priorAuth: "No PA for standard outpatient MH visits",
+  },
+  {
+    payer: "Healthfirst",
+    aliases: ["healthfirst"],
+    appealDays: 60,
+    timelyFilingDays: 180,
+    notes: "Shorter appeal window than most commercial plans — prioritize these.",
+  },
+  {
+    payer: "Empire BCBS",
+    aliases: ["empire plan", "blue cross and blue shield of ny", "bcbs", "anthem"],
+    appealDays: 180,
+    timelyFilingDays: 180,
+    portal: "Availity",
+    payerId: "00310 / 00550 (state-specific — verify)",
+  },
+  {
+    payer: "Humana",
+    aliases: ["humana"],
+    appealDays: 180,
+    timelyFilingDays: 365,
+    portal: "Availity",
+    payerId: "61101",
+    priorAuth: "May be required — check the plan",
+  },
+  {
+    payer: "Healthcare Partners",
+    aliases: ["healthcare partners"],
+    appealDays: null,
+    timelyFilingDays: 90,
+  },
+  {
+    payer: "NYCE PPO",
+    aliases: ["nyce ppo plan", "nyce"],
+    appealDays: null,
+    timelyFilingDays: 90,
+  },
+  {
+    payer: "Surest",
+    aliases: ["surest"],
+    appealDays: 180,
+    timelyFilingDays: 365,
+    payerId: "87726 (UnitedHealth company)",
+    notes: "UnitedHealth company; follows UHC timely-filing variability.",
+  },
+  {
+    payer: "Magellan Health",
+    aliases: ["magellan"],
+    appealDays: null,
+    timelyFilingDays: 180,
+    payerId: "65101",
+    priorAuth: "Often requires PA for ongoing treatment",
+    notes: "Behavioral health carve-out.",
+  },
+  {
+    payer: "Carelon (Beacon Health)",
+    aliases: ["beacon health", "beacon", "carelon"],
+    appealDays: null,
+    timelyFilingDays: 180,
+    payerId: "84146",
+    priorAuth: "Often requires PA for ongoing treatment",
+  },
+  {
+    payer: "Tricare",
+    aliases: ["tricare"],
+    appealDays: 90,
+    timelyFilingDays: 365,
+    payerId: "98392",
+  },
+  {
+    payer: "Medicaid",
+    aliases: ["medicaid", "healthplus amerigroup", "amerigroup", "partner health plan"],
+    appealDays: null,
+    timelyFilingDays: 90, // 90 days - 12 months, state dependent; assume the tightest
+    priorAuth: "Varies heavily by state",
+    notes:
+      "State-dependent in every dimension. 90 days is the tightest common limit — verify " +
+      "against the specific state plan before relying on it.",
+  },
 ]
 
 const ALIAS_INDEX: Map<string, PayerRule> = new Map(
@@ -222,6 +321,8 @@ export function playbookForPrompt(payer: string | null): string {
     `Timely filing: ${r.timelyFilingDays} days from DOS`,
     r.reopeningDays ? `Reopening: within ${r.reopeningDays} days of initial determination` : null,
     r.portal ? `Portal: ${r.portal}` : null,
+    r.payerId ? `Payer ID: ${r.payerId}` : null,
+    r.priorAuth ? `Prior auth: ${r.priorAuth}` : null,
     r.notes ?? null,
   ]
     .filter(Boolean)

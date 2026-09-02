@@ -2,6 +2,8 @@ import { aiComplete, isAIConfigured } from "./ai"
 import { classifyDenial } from "./denial-codes"
 import { detectSpecialty, SPECIALTY_APPEAL_CONTEXT } from "./specialty"
 import { playbookForPrompt } from "@/lib/recovery-playbook"
+import { modifierGuidanceForPrompt } from "@/lib/modifiers"
+import { classifyRarc } from "@/lib/denial-codes"
 
 interface AppealContext {
   patientName: string
@@ -14,6 +16,8 @@ interface AppealContext {
   icd10Codes: string[]
   totalCharge: number
   carcCode: string
+  /** LQ*HE remark code from the 835, when present. Says *what* is wrong, not just that it failed. */
+  rarcCode?: string | null
   denialReason: string
   providerName: string
   providerNpi: string
@@ -53,6 +57,8 @@ Recommended Action: ${denial.action}
 
 Payer-specific rules (authoritative — follow these over general knowledge):
 ${playbookForPrompt(ctx.payerName)}
+${ctx.rarcCode ? `Remark code (RARC ${ctx.rarcCode}): ${classifyRarc(ctx.rarcCode)?.description ?? "unknown"} — ${classifyRarc(ctx.rarcCode)?.action ?? "read the remittance"}` : ""}
+${modifierGuidanceForPrompt(ctx.cptCodes, ctx.icd10Codes)}
 
 Requirements:
 - Professional business letter format

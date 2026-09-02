@@ -47,9 +47,17 @@ export interface ServiceLine {
   contractualAdjustment: number
   /** CAS group PR, split by reason so the patient sees deductible vs copay vs coinsurance. */
   patientResp: PatientRespBreakdown
+  /**
+   * LQ*HE — RARC remark codes. The CARC says a claim was denied; the RARC says exactly what
+   * is wrong (which document is missing, which identifier is invalid). Appeals that ignore
+   * the RARC tend to get denied a second time for the same reason.
+   */
+  remarkCodes: string[]
 }
 
 export interface ClaimPayment {
+  /** LQ*HE remark codes reported at claim level (before any SVC). */
+  remarkCodes: string[]
   /** CLP01 — the practice's own claim/patient control number */
   claimId: string
   /** CLP02 — 1/2/3 = paid as primary/secondary/tertiary, 4 = DENIED, 22 = reversal */
@@ -220,6 +228,7 @@ function parseSVC(seg: Segment, comp: string): ServiceLine {
     units: num(at(seg, 5)) || 1,
     adjustments: [],
     contractualAdjustment: 0,
+    remarkCodes: [],
     patientResp: emptyBreakdown(),
   }
 }
@@ -306,6 +315,7 @@ export function parse835(raw: string): Remittance835 {
           patientResponsibility: num(at(seg, 5)),
           payerClaimControlNumber: at(seg, 7) || undefined,
           adjustments: [],
+          remarkCodes: [],
           patientResp: emptyBreakdown(),
           lines: [],
         }
@@ -329,6 +339,18 @@ export function parse835(raw: string): Remittance835 {
         // A CAS after an SVC belongs to that line; before any SVC it is claim-level.
         if (line) line.adjustments.push(...adj)
         else if (claim) claim.adjustments.push(...adj)
+        break
+      }
+
+      case "LQ": {
+        // LQ*HE*<RARC>. Line-level when it follows an SVC, otherwise claim-level.
+        if (at(seg, 1) === "HE") {
+          const code = at(seg, 2)
+          if (code) {
+            if (line) line.remarkCodes.push(code)
+            else if (claim) claim.remarkCodes.push(code)
+          }
+        }
         break
       }
 
