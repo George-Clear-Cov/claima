@@ -20,34 +20,50 @@ Keep these written down — they are the **rollback** values.
 
 ---
 
-## Azure facts (captured 2026-07-15)
+## Azure facts (re-verified 2026-09-01)
 
 - App default host: `claima-web-d89893.azurewebsites.net`
 - Custom-domain verification ID (asuid): `46BFB581E7DE2869B8E99996E7ABA4EA725C7D4D82A42F0A6036EB55CDF53D5A`
-- Inbound IP: not yet allocated (null) — allocated on the first hostname/SSL binding.
-  → Prefer pointing apex at the **hostname** (Namecheap ALIAS), not a raw IP.
+- Inbound IP: still null (no custom hostname bound yet). The default host resolves to
+  `20.118.138.147`, but that is **not** a stable apex target.
+  → Point the apex at the **hostname** via Namecheap ALIAS, not a raw IP.
+- App Service Plan: `claima-plan` **B1 / Basic** — custom domains + free managed certs OK.
+- All 27 app settings present; 16 are Key Vault references and they **resolve at runtime**
+  (proved by the webhook returning 400, not 503).
 - Bound hostnames: only the default `*.azurewebsites.net` (no custom domain yet).
 
 ---
 
-## ⛔ Prerequisites — must ALL be true before cutover
+## ⛔ Prerequisites — status as of 2026-09-01
 
-1. **AI / Bedrock config is MISSING on Azure.** The app settings have Stripe,
-   Claim.MD, ACS (email), Sentry, marketplace, JWT, and DB — but **no Anthropic or AWS
-   Bedrock credentials**. After cutover, AI appeal letters / morning briefing /
-   billing assistant would be dark (ai.ts fail-closes). Add the Bedrock creds (or
-   `ANTHROPIC_*` + `ANTHROPIC_BAA_ACCEPTED=1`) to Azure Key Vault / app settings
-   FIRST, and confirm an AI route returns 200 on the azurewebsites.net host.
-2. **Claim.MD key decision.** Azure currently holds the **TEST** AccountKey. Decide
-   test vs live (`31008-104894`) before real traffic — see the go-live note.
-3. **Stripe live webhooks** repoint to `https://claima.io/api/webhooks/...` (and the
-   `STRIPE_WEBHOOK_SECRET` / `STRIPE_V1_WEBHOOK_SECRET` on Azure match those endpoints).
-4. **Azure AD SSO** redirect URIs include `https://claima.io/...` if SSO is used.
-5. **Full smoke on the azurewebsites.net host** (login, a DB read/write, a Stripe
-   test, an AI call, an eligibility check) — all green — BEFORE moving DNS.
-6. `NEXT_PUBLIC_APP_URL` is already baked as `https://claima.io` in the image ✅.
-
----
+1. ~~AI / Bedrock config MISSING~~ — **superseded.** Config is present and correct
+   (`AI_PROVIDER=bedrock`, `AWS_BEDROCK_REGION=us-east-1`, `BEDROCK_API_KEY` in KV).
+   ❌ **But AI is still dark, for a different reason:** every Bedrock call 404s with
+   *"Model use case details have not been submitted for this account. Fill out the
+   Anthropic use case details form before using the model."*
+   Verified by calling `bedrock-runtime.us-east-1.amazonaws.com` directly with the
+   stored key — **both** `us.anthropic.claude-sonnet-4-6` and the haiku profile fail
+   identically, so it is an **account entitlement gap, not a model-ID or key problem.**
+   → Fix in AWS Console → Bedrock → Model access → submit the Anthropic use-case form.
+   → Symptom in-app: `/api/briefing` returns 200 with `"narrative": null` (fail-closed).
+   → **Not a cutover blocker:** AI is equally dark on Vercel today, so flipping DNS
+     does not regress it. It IS a client-readiness blocker for "AI-native RCM".
+2. ~~Claim.MD key decision~~ — ✅ **PRODUCTION key installed** (account `31008`);
+   `CLAIMMD_ACCOUNT_ID=31008` agrees with the deployed key's prefix.
+   ⚠️ Rotate it: the value was accidentally echoed into a session transcript 2026-09-01.
+3. **Stripe live webhooks** — ⏳ **still open, user action.** Confirm the endpoint in the
+   Stripe dashboard reads `https://claima.io/api/webhooks/stripe`. Azure's
+   `STRIPE_V1_WEBHOOK_SECRET` resolves and the handler is now **fail-closed** (see #6).
+4. ~~Azure AD SSO redirect URIs~~ — ✅ already includes `https://claima.io/api/auth/azure/callback`.
+5. **Smoke on the azurewebsites.net host** — ✅ login, `/api/context`, `/api/claims`,
+   `/api/providers`, `/api/denials`, `/api/statements` all 200; NPI guard rejects a bad
+   check digit with 400. ❌ AI call fails per #1.
+6. ✅ `NEXT_PUBLIC_APP_URL` is baked as `https://claima.io` in the image. The *server-side*
+   app setting still reads `https://claima-web-d89893.azurewebsites.net` —
+   **change it to `https://claima.io` at cutover** (app-setting edit only, no rebuild).
+7. ✅ **Stripe webhook signature bypass fixed** (`62419d4`) and live on Azure — an unsigned
+   POST now returns `400 Missing signature`. ⚠️ Vercel still returns `200 {"received":true}`;
+   the cutover is what closes that hole in production.
 
 ## TLS strategy (avoid an HTTPS gap)
 
