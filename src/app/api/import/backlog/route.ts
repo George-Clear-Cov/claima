@@ -20,6 +20,28 @@ export async function POST(req: NextRequest) {
   const session = await getSessionFromRequest(req)
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
+  // A backlog import is the single largest PHI ingress in the product — a practice's entire
+  // claim history in one request. HIPAA requires the BAA to be in force BEFORE we receive PHI,
+  // so this is enforced server-side. BaaGate on the dashboard is a UI affordance and can be
+  // bypassed by navigating straight to /import or calling this endpoint directly.
+  const { prisma } = await import("@/lib/prisma")
+  const practice = await prisma.practice.findUnique({
+    where: { id: session.practiceId },
+    select: { baaAcceptedAt: true },
+  })
+  if (!practice?.baaAcceptedAt) {
+    return NextResponse.json(
+      {
+        error: "Business Associate Agreement required",
+        detail:
+          "A signed BAA must be in force before Claima can receive protected health information. " +
+          "Review and accept the BAA, then retry the import.",
+        baaUrl: "/baa",
+      },
+      { status: 403 },
+    )
+  }
+
   try {
     const input = await parseJson(req, importBacklogSchema)
     if (!input.ok) return input.response
