@@ -106,7 +106,7 @@ Incident Lead.
   detect unauthorized or anomalous access (e.g., cross-practice access attempts, off-hours bulk
   reads).
 - **Subprocessor notifications** — breach/security notices from Azure, AWS Bedrock, Claim.MD,
-  Stripe, the email provider (Resend / Azure Communication Services), Sentry, or Microsoft
+  Stripe, the email provider (Azure Communication Services), Sentry, or Microsoft
   Entra ID. Each subprocessor BAA obligates the subprocessor to notify Claima; Claima monitors
   the security contact/inbox and status pages for these.
 - **User / practice reports** — a Covered Entity, its workforce, or a Claima user reporting a

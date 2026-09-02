@@ -157,7 +157,7 @@ Each PHI-processing subprocessor below must be under a signed BAA before product
 | AWS (Bedrock) | AI (Claude) processing | (in progress) — self-serve BAA via AWS Artifact |
 | Claim.MD | Clearinghouse (837/835/270-271) | (in progress) — BAA requested |
 | Stripe | Patient payments (HIPAA conduit) | (in progress) — BAA requested |
-| Resend **or** Azure Communication Services | Transactional email | (in progress) — BAA / conduit terms |
+| Azure Communication Services (ACS) Email | Transactional email (patient statements) | ✅ In scope for the Microsoft BAA. **Resend removed 2026-09-01** — no BAA, and HIPAA §1179 does not cover email vendors. |
 | Sentry (PHI-stripped) **or** Azure App Insights | Error monitoring | (in progress) — configured to exclude PHI |
 | Microsoft Entra ID | Identity / SSO (identifiers only) | Covered by Microsoft terms |
 

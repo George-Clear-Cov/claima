@@ -100,7 +100,7 @@ az keyvault secret set --vault-name $KV -n JWT-SECRET --value "$(openssl rand -b
 az keyvault secret set --vault-name $KV -n STRIPE-SECRET-KEY --value "<rotated sk_live_...>"
 az keyvault secret set --vault-name $KV -n STRIPE-WEBHOOK-SECRET --value "<whsec_...>"
 az keyvault secret set --vault-name $KV -n CLAIMMD-ACCOUNT-KEY --value "<rotated>"
-az keyvault secret set --vault-name $KV -n RESEND-API-KEY --value "<key>"
+az keyvault secret set --vault-name $KV -n ACS-CONNECTION-STRING --value "<endpoint=...;accesskey=...>"
 az keyvault secret set --vault-name $KV -n CRON-SECRET --value "$(openssl rand -hex 32)"
 # AI on Bedrock:
 az keyvault secret set --vault-name $KV -n AWS-ACCESS-KEY-ID --value "<bedrock IAM key>"

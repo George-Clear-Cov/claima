@@ -33,7 +33,7 @@ Keep these written down — they are the **rollback** values.
 ## ⛔ Prerequisites — must ALL be true before cutover
 
 1. **AI / Bedrock config is MISSING on Azure.** The app settings have Stripe,
-   Claim.MD, Resend, Sentry, marketplace, JWT, and DB — but **no Anthropic or AWS
+   Claim.MD, ACS (email), Sentry, marketplace, JWT, and DB — but **no Anthropic or AWS
    Bedrock credentials**. After cutover, AI appeal letters / morning briefing /
    billing assistant would be dark (ai.ts fail-closes). Add the Bedrock creds (or
    `ANTHROPIC_*` + `ANTHROPIC_BAA_ACCEPTED=1`) to Azure Key Vault / app settings
