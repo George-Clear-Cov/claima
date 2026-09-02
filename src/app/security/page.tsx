@@ -160,7 +160,7 @@ export default function SecurityPage() {
               <li>Hosted on Vercel (edge network) and AWS (database), both with 99.9%+ uptime SLAs</li>
               <li>Automated daily database backups with 30-day retention</li>
               <li>Point-in-time recovery available on database tier</li>
-              <li>Zero-downtime deployments via Vercel's edge infrastructure</li>
+              <li>Zero-downtime deployments via Vercel’s edge infrastructure</li>
               <li>US-East data residency (AWS us-east-1)</li>
             </ul>
           </section>

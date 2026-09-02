@@ -205,7 +205,7 @@ export default function AgentPage() {
             <div className="flex gap-3 pt-2">
               <Link href="/denials" className="text-sm text-blue-600 hover:text-blue-700 hover:underline">Review drafted appeals →</Link>
               <Link href="/billing" className="text-sm text-blue-600 hover:text-blue-700 hover:underline">View new statements →</Link>
-              <Link href="/" className="text-sm text-blue-600 hover:text-blue-700 hover:underline">Today's briefing →</Link>
+              <Link href="/" className="text-sm text-blue-600 hover:text-blue-700 hover:underline">Today’s briefing →</Link>
             </div>
           </div>
         )}

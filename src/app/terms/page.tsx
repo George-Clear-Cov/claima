@@ -26,7 +26,7 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-lg font-semibold text-gray-900 mb-3">1. Acceptance of Terms</h2>
-            <p>By accessing or using Claima (the "Service"), operated by Claima, Inc. ("Company," "we," "us"), you agree to be bound by these Terms of Service ("Terms"). If you are using the Service on behalf of an organization, you represent that you have authority to bind that organization to these Terms.</p>
+            <p>By accessing or using Claima (the “Service”), operated by Claima, Inc. (“Company,” “we,” “us”), you agree to be bound by these Terms of Service (“Terms”). If you are using the Service on behalf of an organization, you represent that you have authority to bind that organization to these Terms.</p>
           </section>
 
           <section>

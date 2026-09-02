@@ -26,7 +26,7 @@ export default function PrivacyPage() {
 
           <section>
             <h2 className="text-lg font-semibold text-gray-900 mb-3">Overview</h2>
-            <p>Claima ("we," "us," or "our") is a HIPAA-compliant medical billing platform operated by Claima, Inc. This Privacy Policy describes how we collect, use, disclose, and safeguard information when you use our service. We are committed to protecting both personal information and protected health information (PHI) in accordance with applicable law, including the Health Insurance Portability and Accountability Act (HIPAA).</p>
+            <p>Claima (“we,” “us,” or “our”) is a HIPAA-compliant medical billing platform operated by Claima, Inc. This Privacy Policy describes how we collect, use, disclose, and safeguard information when you use our service. We are committed to protecting both personal information and protected health information (PHI) in accordance with applicable law, including the Health Insurance Portability and Accountability Act (HIPAA).</p>
           </section>
 
           <section>
