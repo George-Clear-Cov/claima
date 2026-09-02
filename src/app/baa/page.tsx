@@ -74,7 +74,7 @@ export default function BaaPage() {
           <section>
             <h2 className="text-lg font-semibold text-gray-900 mt-8 mb-3">5. Subcontractors</h2>
             <p>
-              Business Associate shall ensure that any subcontractor or agent that creates, receives, maintains, or transmits PHI on behalf of Business Associate agrees to the same restrictions and conditions that apply to Business Associate through a written agreement that complies with the HIPAA Rules. Current subprocessors that may handle PHI include: Microsoft Azure (database), Vercel (hosting), and Stripe (payment processing). Claima will maintain and make available a current list of subprocessors upon request.
+              Business Associate shall ensure that any subcontractor or agent that creates, receives, maintains, or transmits PHI on behalf of Business Associate agrees to the same restrictions and conditions that apply to Business Associate through a written agreement that complies with the HIPAA Rules. Current subprocessors that may handle PHI are: Microsoft Corporation (Azure — application hosting, database, secrets management, and transactional email), Amazon Web Services, Inc. (Amazon Bedrock — AI inference), Microsoft Corporation (Azure OpenAI Service — AI inference, standby), and Claim.MD, Inc. (clearinghouse — claim submission, remittance, and eligibility). Stripe, Inc. processes payments and, consistent with 45 C.F.R. § 164.502(a) and HIPAA § 1179, receives no diagnosis, procedure, date of service, date of birth, or member identifier, and is therefore not a subprocessor of PHI. Claima will maintain and make available a current list of subprocessors upon request.
             </p>
           </section>
 

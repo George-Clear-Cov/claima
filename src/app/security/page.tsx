@@ -157,11 +157,11 @@ export default function SecurityPage() {
           <section>
             <h2 className="text-lg font-semibold text-gray-900 mb-3">Infrastructure & Availability</h2>
             <ul className="list-disc pl-5 space-y-1.5 text-sm">
-              <li>Hosted on Vercel (edge network) and AWS (database), both with 99.9%+ uptime SLAs</li>
-              <li>Automated daily database backups with 30-day retention</li>
-              <li>Point-in-time recovery available on database tier</li>
-              <li>Zero-downtime deployments via Vercel’s edge infrastructure</li>
-              <li>US-East data residency (AWS us-east-1)</li>
+              <li>Hosted on Microsoft Azure App Service, with the PHI database on Azure Database for PostgreSQL Flexible Server</li>
+              <li>Automated daily database backups with 7-day retention and point-in-time restore</li>
+              <li>HTTPS enforced on all traffic; TLS 1.2 or higher in transit</li>
+              <li>Container-based deployments with health-checked restarts</li>
+              <li>United States data residency (Azure West US 3); no PHI is processed outside the United States</li>
             </ul>
           </section>
 

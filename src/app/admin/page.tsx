@@ -173,7 +173,7 @@ export default function AdminPage() {
 
         <p className="mt-6 text-xs text-gray-500 text-center">
           Platform fee = {practices[0]?.platformFeePercent ?? 5}% of total collected per practice.
-          Add your email to <code>PLATFORM_ADMIN_EMAILS</code> in Vercel to grant access.
+          Add your email to <code>PLATFORM_ADMIN_EMAILS</code> in the App Service configuration to grant access.
         </p>
       </div>
     </div>

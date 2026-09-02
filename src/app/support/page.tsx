@@ -24,7 +24,7 @@ const FAQS = [
   },
   {
     q: "How do I sign a Business Associate Agreement (BAA)?",
-    a: "Visit the BAA page to review and accept the Claima BAA. This is required before any PHI touches the system. For Stripe, Vercel, Supabase, and Anthropic BAAs, contact us and we'll send you the documents.",
+    a: "Visit the BAA page to review and accept the Claima BAA. This is required before any PHI touches the system. For our subprocessor BAAs, contact us and we’ll send you the current list and documentation.",
     link: { label: "Review BAA →", href: "/baa" },
   },
   {

@@ -656,7 +656,7 @@ function IntegrationsTab() {
       note: "Required for the AI appeal letter feature in Denials.",
     },
     {
-      name: "Database (Supabase)",
+      name: "Database (Azure PostgreSQL)",
       description: "PostgreSQL for claims, patients, statements, and billing data.",
       configured: status?.dbConfigured ?? false,
       envVars: ["DATABASE_URL"],
