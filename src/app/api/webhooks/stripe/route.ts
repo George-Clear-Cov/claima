@@ -124,7 +124,11 @@ export async function POST(req: NextRequest) {
 
   if (v1WebhookSecret && sig) {
     try {
-      event = stripeClient.webhooks.constructEvent(body, sig, v1WebhookSecret)
+      // constructEventAsync, not constructEvent: the sync variant throws
+      // ("SubtleCryptoProvider cannot be used in a synchronous context") wherever the
+      // Stripe SDK selects the Web Crypto provider rather than Node's — edge runtimes
+      // and some test runners. The async form works under both.
+      event = await stripeClient.webhooks.constructEventAsync(body, sig, v1WebhookSecret)
     } catch (err) {
       console.error("V1 webhook signature verification failed:", err)
       return NextResponse.json({ error: "Invalid signature" }, { status: 400 })
