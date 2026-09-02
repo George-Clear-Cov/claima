@@ -177,9 +177,12 @@ entire record set**, so each of the three writes re-submitted all records and pa
 ### Still open
 - **Bedrock entitlement** — AI is dark on both old and new hosts until the Anthropic use-case form
   is submitted in the AWS console. Not caused by the cutover.
-- **Stripe signing secret is unproven.** Stripe won't return an endpoint's secret after creation,
-  so it could not be compared against Key Vault. The handler verifies correctly (valid→200,
-  forged→400, missing→400); if live deliveries start returning 400, roll the endpoint secret in
-  Stripe and update `STRIPE-V1-WEBHOOK-SECRET`. **Watch the Stripe dashboard.**
+- ~~Stripe signing secret is unproven~~ — ✅ **CLOSED 2026-09-02.** The API won't return the
+  secret, so it was revealed in the Workbench UI and hashed **in-page** (never in plaintext
+  anywhere outside the browser). Stripe endpoint secret and Key Vault
+  `STRIPE-V1-WEBHOOK-SECRET` are identical: length 38, SHA-256 prefix `8d85c369c457`.
+  Destination `claima-production` is Active on `https://claima.io/api/webhooks/stripe`
+  (API 2026-05-27.dahlia, 4 events) with **0 deliveries / 0 failures** to date — nothing was
+  lost during the cutover. Handler verified: valid sig→200, forged→400, missing→400.
 - **Rotate the Claim.MD key and the Namecheap API key** — both were exposed in session transcripts.
 - Retire the Vercel project and its Supabase database once you're satisfied with Azure.
