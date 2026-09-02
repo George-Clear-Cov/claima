@@ -1,4 +1,21 @@
-# Batch claim-status inquiry (276/277) — do this BEFORE appealing
+# Establishing claim status before appealing
+
+> ⚠️ **Revised 2026-09-02.** The original version of this template assumed a batch 276/277
+> through Claim.MD. **Claim.MD's API does not expose 276/277.** Verified against a live
+> account: no service endpoint exists under `claimstatus`, `status`, `276`, or
+> `statusinquiry` (all return `Unknown service type`), and the per-payer capability flags
+> cover eligibility, ERA, attachments, secondary, UB, dental and workers-comp — there is no
+> claim-status flag. A control call to `payerlist` returns normally, so this is a capability
+> gap, not an auth problem.
+>
+> **Use the practice's 835 remittance history instead — it is strictly better.** A 277
+> returns status; an 835 returns status *and* the CARC/RARC codes that tell you how to
+> appeal. Import via `src/lib/import/from835.ts`, which sets `status` from CLP02 and
+> populates both `carcCodes` and `rarcCodes`.
+>
+> Remaining use for a true 276: claims with **no remittance at all** (payer never
+> adjudicated). Those need a payer portal or a phone call until a clearinghouse that
+> supports 276 is added.
 
 **Why first:** aged A/R with no worklog is *status unknown*, not *denied*. Appealing a
 claim the payer never received wastes the appeal and misses the real fix

@@ -21,6 +21,12 @@ function statusOf(clp02: string): ImportedRecord["status"] {
 
 function recordFromClaim(remit: Remittance835, c: ClaimPayment): ImportedRecord {
   // CARC codes: claim-level adjustments first, then each service line's.
+  // RARC remark codes, claim-level then line-level, mirroring the CARC collection below.
+  const rarcCodes = [
+    ...(c.remarkCodes ?? []),
+    ...c.lines.flatMap((l) => l.remarkCodes ?? []),
+  ].filter(Boolean)
+
   const carcCodes = [
     ...c.adjustments.map((a) => a.reason),
     ...c.lines.flatMap((l) => l.adjustments.map((a) => a.reason)),
@@ -55,6 +61,7 @@ function recordFromClaim(remit: Remittance835, c: ClaimPayment): ImportedRecord 
     totalPaid: c.totalPaid,
     status: statusOf(c.status),
     carcCodes: carcCodes.length ? carcCodes : undefined,
+    rarcCodes: rarcCodes.length ? rarcCodes : undefined,
     patientResponsibility: c.patientResponsibility || undefined,
     warnings,
   }

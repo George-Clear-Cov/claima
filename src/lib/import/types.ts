@@ -39,6 +39,12 @@ export interface ImportedRecord {
   /** Outcome for the denial-recovery workflow. */
   status: "denied" | "paid" | "open"
   carcCodes?: string[]
+  /**
+   * LQ*HE remark codes from the 835. The CARC says a claim failed; the RARC says exactly
+   * what is wrong — which document is missing, which identifier is invalid. Appeals written
+   * without it tend to be denied a second time for the same reason.
+   */
+  rarcCodes?: string[]
   denialReason?: string
   patientResponsibility?: number
 
