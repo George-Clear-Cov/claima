@@ -18,6 +18,13 @@ BEFORE YOU SEND, FILL IN / CONFIRM:
      anything that regresses.
   4. §13.7 Governing law — defaults to the MSA; New York fallback.
   5. Notice addresses in Exhibit C.
+  6. Exhibit A [DATE] on the two Microsoft rows — the Microsoft BAA is automatic with the Azure
+     agreement, so the effective date is the date that agreement was accepted, NOT the date any
+     resource was created. Find it in the Azure portal under Cost Management + Billing → your
+     billing account → Agreements, and use the same date on both Microsoft rows. Do not guess.
+  7. Azure OpenAI is a STANDBY (AI_PROVIDER=bedrock). If it is not the active provider on the day
+     you send this, either strike its row or keep it and disclose it as standby — but never send
+     an Exhibit A that omits a provider PHI can actually reach.
 
   NOT IN THIS DOCUMENT ON PURPOSE (do not re-add until true):
   - Insurance covenant — cyber/E&O is not bound. Add a §12 Insurance clause only once a policy
@@ -598,6 +605,12 @@ signed, and delete any row you cannot evidence.*
 | Amazon Web Services, Inc. (Amazon Bedrock) | AI inference for denial classification, appeal drafting, coding review | Claim, denial, and clinical-documentation excerpts contained in prompts | United States | **August 31, 2026** (AWS BAA, Artifact, acct 008482603773) |
 | Microsoft Corporation (Azure OpenAI Service) | AI inference — same functions as above; configured as a standby to Amazon Bedrock | Claim, denial, and clinical-documentation excerpts contained in prompts | United States (West US 3; deployed on a US-data-zone SKU, not global routing) | [DATE] — covered by the same Microsoft BAA as the Azure row above |
 | Claim.MD, Inc. | Clearinghouse — claim submission (837), remittance (835), eligibility (270/271) | Claim, patient demographic, and coverage data | United States | **July 1, 2026** (BAA on file, Claim.MD acct 31008) |
+
+*Microsoft BAA basis.* Microsoft's HIPAA Business Associate Agreement is incorporated into the
+Microsoft Product Terms / Data Protection Addendum and takes effect automatically with the Azure
+agreement — there is no separate instrument to sign. Azure OpenAI Service is a HIPAA-eligible
+service thereunder **for production, text-based inference only**; preview features and non-text
+models (image, speech) are outside that scope and must not receive PHI.
 
 *AI inference providers — retention disclosure (Section 3.4).* Amazon Bedrock does not retain
 prompts or completions. Azure OpenAI Service applies standard abuse monitoring, under which
