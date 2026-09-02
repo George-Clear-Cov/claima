@@ -65,7 +65,7 @@ policy pack and attesting below. Each row maps to a topic the rule requires.
 ### Training log
 | Name | Role | Training module / provider | Date completed | Next due | Acknowledged |
 |---|---|---|---|---|---|
-| George Nagib | Founder / Security & Privacy Officer | Claima internal curriculum v1.0 (10 topics above) | ____________ | ____________ | ☐ |
+| George Nagib | Founder / Security & Privacy Officer | Claima internal curriculum v1.0 (10 topics above) | 2026-09-02 | 2027-09-02 | ☐ |
 | | | | | | |
 
 > Complete the row above by working through all ten topics, then date it and sign §4. **Do not
@@ -81,9 +81,9 @@ policy pack and attesting below. Each row maps to a topic the rule requires.
 > Officer without delay. I understand that violations may result in sanctions up to and including
 > termination and, where applicable, legal referral.
 >
-> Signature: ______________________  Printed name: ______________________  Date: __________
+> Signature: ______________________  Printed name: **George Nagib**  Date: **2026-09-02**
 
 ---
 
 **Version:** 1.0 · **Effective:** 2026-08-31 · **Next review:** 2027-08-31 (at least annually)
-**Approved by:** George Nagib, Security & Privacy Officer, Pathfinder Projects LLC — signature: ____________  date: ________
+**Approved by:** George Nagib, Security & Privacy Officer, Pathfinder Projects LLC — signature: ____________  date: **2026-09-02**
