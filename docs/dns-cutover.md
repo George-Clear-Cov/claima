@@ -175,8 +175,11 @@ entire record set**, so each of the three writes re-submitted all records and pa
   off the primary domain.
 
 ### Still open
-- **Bedrock entitlement** — AI is dark on both old and new hosts until the Anthropic use-case form
-  is submitted in the AWS console. Not caused by the cutover.
+- **Bedrock** — use-case form submitted 2026-09-02 (acct 008482603773); the 404 entitlement error
+  is gone, replaced by **429 "Too many tokens per day"**. AI stays dark until the daily token
+  quota is raised (Bedrock → Labs → Quotas). Note the Model access page is retired — the form now
+  lives on the **Model catalog** page. Model ID `us.anthropic.claude-sonnet-4-6` is confirmed
+  correct (the `-v1:0` variant is rejected as invalid).
 - ~~Stripe signing secret is unproven~~ — ✅ **CLOSED 2026-09-02.** The API won't return the
   secret, so it was revealed in the Workbench UI and hashed **in-page** (never in plaintext
   anywhere outside the browser). Stripe endpoint secret and Key Vault
