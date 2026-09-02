@@ -1,5 +1,8 @@
 # DNS cutover — claima.io: Vercel → Azure App Service
 
+> ✅ **COMPLETED 2026-09-02.** Both hosts serve from Azure over TLS; Vercel is bypassed.
+> Executed via the Namecheap API, not the UI. See "Execution log" at the end.
+
 Move production traffic for **claima.io** from Vercel to the Azure App Service
 `claima-web-d89893` (`claima-web-d89893.azurewebsites.net`). Registrar/DNS host is
 **Namecheap** (BasicDNS: `dns1/dns2.registrar-servers.com`).
@@ -141,3 +144,42 @@ DNS TTL governs how fast rollback takes effect — **lower the TTL to 5 min a da
 before cutover** so both the cutover and any rollback propagate quickly. The Azure
 hostname bindings and certs can stay bound; they're harmless while DNS points back
 to Vercel.
+
+---
+
+## Execution log (2026-09-02)
+
+Done through the **Namecheap API** (`namecheap.domains.dns.setHosts`). That call **replaces the
+entire record set**, so each of the three writes re-submitted all records and passed
+`EmailType=MX`; the set was read back and diffed after every write (16/16, zero dropped).
+
+1. Added `asuid` + `asuid.www` TXT; dropped TTL to 60s on the apex A and `www` CNAME.
+2. Bound `www.claima.io` and `claima.io` to the App Service — no traffic moved (asuid TXT alone
+   proves ownership).
+3. Flipped `www` CNAME → `claima-web-d89893.azurewebsites.net`; issued + SNI-bound managed cert
+   `6AE002A7…08AA`. TLS gap ≈ 4 min.
+4. Flipped the apex to **ALIAS → the App Service hostname** (not a raw IP — the inbound IP can
+   change); issued + SNI-bound cert `874A7B37…0F7A`. TLS gap ≈ 4 min.
+5. Set `NEXT_PUBLIC_APP_URL=https://claima.io`.
+
+**Verified after:** both hosts 200 over TLS; login + 5 API routes 200; unsigned Stripe webhook
+`400 Missing signature`; MX/SPF/DKIM/DMARC and all `mail.claima.io` records intact.
+
+### Gotchas worth remembering
+- `az webapp config ssl create` throws a JSONDecodeError on az-cli 2.88.0 **but still creates the
+  certificate.** Fetch the thumbprint via the ARM GET, then `az webapp config ssl bind`.
+- `az rest --method PUT` against `Microsoft.Web/certificates` returned exit 0, empty body, and
+  created nothing. Use the CLI command instead.
+- A managed cert cannot be issued until the hostname already resolves to the app, so a short TLS
+  gap is unavoidable without pre-staging an external cert. Doing `www` first keeps the rehearsal
+  off the primary domain.
+
+### Still open
+- **Bedrock entitlement** — AI is dark on both old and new hosts until the Anthropic use-case form
+  is submitted in the AWS console. Not caused by the cutover.
+- **Stripe signing secret is unproven.** Stripe won't return an endpoint's secret after creation,
+  so it could not be compared against Key Vault. The handler verifies correctly (valid→200,
+  forged→400, missing→400); if live deliveries start returning 400, roll the endpoint secret in
+  Stripe and update `STRIPE-V1-WEBHOOK-SECRET`. **Watch the Stripe dashboard.**
+- **Rotate the Claim.MD key and the Namecheap API key** — both were exposed in session transcripts.
+- Retire the Vercel project and its Supabase database once you're satisfied with Azure.
