@@ -596,7 +596,17 @@ signed, and delete any row you cannot evidence.*
 |---|---|---|---|---|
 | Microsoft Corporation (Azure) | Application hosting, database, secrets management, transactional email (Azure Communication Services) | All PHI processed by the platform | United States | [DATE] |
 | Amazon Web Services, Inc. (Amazon Bedrock) | AI inference for denial classification, appeal drafting, coding review | Claim, denial, and clinical-documentation excerpts contained in prompts | United States | **August 31, 2026** (AWS BAA, Artifact, acct 008482603773) |
+| Microsoft Corporation (Azure OpenAI Service) | AI inference — same functions as above; configured as a standby to Amazon Bedrock | Claim, denial, and clinical-documentation excerpts contained in prompts | United States (West US 3; deployed on a US-data-zone SKU, not global routing) | [DATE] — covered by the same Microsoft BAA as the Azure row above |
 | Claim.MD, Inc. | Clearinghouse — claim submission (837), remittance (835), eligibility (270/271) | Claim, patient demographic, and coverage data | United States | **July 1, 2026** (BAA on file, Claim.MD acct 31008) |
+
+*AI inference providers — retention disclosure (Section 3.4).* Amazon Bedrock does not retain
+prompts or completions. Azure OpenAI Service applies standard abuse monitoring, under which
+prompts and completions are retained for up to thirty (30) days **within Business Associate's own
+Azure region and subscription**, are not accessible to OpenAI or to Microsoft product teams, and
+are used solely to detect misuse. Business Associate treats this as retention "required for abuse
+monitoring under terms covered by the applicable business associate agreement" within the meaning
+of Section 3.4. Only one AI provider processes PHI at a time; the active provider is disclosed on
+request.
 
 ## A-2. Not a Subprocessor — payment processing (HIPAA § 1179)
 
