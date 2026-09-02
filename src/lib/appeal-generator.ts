@@ -1,6 +1,7 @@
 import { aiComplete, isAIConfigured } from "./ai"
 import { classifyDenial } from "./denial-codes"
 import { detectSpecialty, SPECIALTY_APPEAL_CONTEXT } from "./specialty"
+import { playbookForPrompt } from "@/lib/recovery-playbook"
 
 interface AppealContext {
   patientName: string
@@ -49,6 +50,9 @@ ICD-10 Codes: ${ctx.icd10Codes.join(", ")}
 Total Charge: $${ctx.totalCharge.toFixed(2)}
 Denial Reason (CARC ${ctx.carcCode}): ${ctx.denialReason}
 Recommended Action: ${denial.action}
+
+Payer-specific rules (authoritative — follow these over general knowledge):
+${playbookForPrompt(ctx.payerName)}
 
 Requirements:
 - Professional business letter format
