@@ -40,26 +40,26 @@ function normHeader(h: string): string {
 
 // Header aliases per field. Keys are already normalized (no spaces/underscores/punct).
 const ALIASES: Record<CsvField, string[]> = {
-  externalClaimId: ["claim", "claimid", "claimnumber", "claim#", "controlnumber", "pcn", "patientcontrolnumber"],
+  externalClaimId: ["claim", "claimid", "claimnumber", "claim#", "controlnumber", "pcn", "patientcontrolnumber", "account", "accountnumber", "acct", "acctnumber", "patientaccount", "patientaccountnumber", "chartnumber", "chart"],
   patientFirstName: ["patientfirst", "patientfirstname", "firstname", "first"],
   patientLastName: ["patientlast", "patientlastname", "lastname", "last"],
   patientMemberId: ["memberid", "subscriberid", "policy", "policynumber", "insuranceid", "member"],
   patientDob: ["dob", "dateofbirth", "birthdate", "patientdob"],
-  payerName: ["payer", "payername", "insurance", "insurancename", "carrier", "plan", "planname"],
+  payerName: ["payer", "payername", "insurance", "insurancename", "carrier", "plan", "planname", "payor", "payorname", "insurancecarrier", "primaryinsurance", "primarypayer"],
   payerId: ["payerid"],
   providerNpi: ["npi", "providernpi", "renderingnpi"],
   providerName: ["provider", "providername", "renderingprovider"],
-  serviceDate: ["dos", "servicedate", "dateofservice", "fromdos", "servicedatefrom"],
-  cptCode: ["cpt", "cptcode", "procedure", "procedurecode", "hcpcs", "code"],
+  serviceDate: ["dos", "servicedate", "dateofservice", "fromdos", "servicedatefrom", "svcdate", "datefrom", "fromdate", "startdate", "servicedates"],
+  cptCode: ["cpt", "cptcode", "procedure", "procedurecode", "hcpcs", "code", "proc", "proccode", "servicecode", "svccode", "cptcodes"],
   modifier: ["modifier", "mod", "modifiers"],
   icd10Codes: ["icd", "icd10", "icd10codes", "diagnosis", "dx", "diagnosiscode"],
   units: ["units", "qty", "quantity"],
-  charge: ["charge", "billed", "billedamount", "amount", "totalcharge", "chargeamount"],
+  charge: ["charge", "billed", "billedamount", "amount", "totalcharge", "chargeamount", "chargeamt", "totalbilled", "fee", "arbalance", "balance"],
   paid: ["paid", "payment", "paidamount", "paymentamount"],
   carcCodes: ["carc", "denialcode", "reasoncode", "adjustmentcode", "carccode"],
-  denialReason: ["denialreason", "reason", "description", "remark", "remarks"],
+  denialReason: ["denialreason", "reason", "description", "remark", "remarks", "note", "notes", "comment", "comments", "worklog", "followup"],
   status: ["status", "claimstatus"],
-  patientResponsibility: ["patientresponsibility", "patientresp", "pramount", "patientbalance"],
+  patientResponsibility: ["patientresponsibility", "patientresp", "pramount", "patientbalance", "patientdue", "responsibility"],
 }
 
 /**
