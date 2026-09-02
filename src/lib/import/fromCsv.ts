@@ -52,7 +52,7 @@ const ALIASES: Record<CsvField, string[]> = {
   serviceDate: ["dos", "servicedate", "dateofservice", "fromdos", "servicedatefrom", "svcdate", "datefrom", "fromdate", "startdate", "servicedates"],
   cptCode: ["cpt", "cptcode", "procedure", "procedurecode", "hcpcs", "code", "proc", "proccode", "servicecode", "svccode", "cptcodes"],
   modifier: ["modifier", "mod", "modifiers"],
-  icd10Codes: ["icd", "icd10", "icd10codes", "diagnosis", "dx", "diagnosiscode"],
+  icd10Codes: ["icd", "icd10", "icd10codes", "diagnosis", "dx", "diagnosiscode", "diagcode", "diag", "dxcode", "diagnosiscodes", "primarydiagnosis"],
   units: ["units", "qty", "quantity"],
   charge: ["charge", "billed", "billedamount", "amount", "totalcharge", "chargeamount", "chargeamt", "totalbilled", "fee", "arbalance", "balance"],
   paid: ["paid", "payment", "paidamount", "paymentamount"],

@@ -1,5 +1,5 @@
 import { test, expect, describe } from "bun:test"
-import { detectSpecialty, SPECIALTY_LABELS, getServiceTypeForCPT } from "./specialty"
+import { detectSpecialty, SPECIALTY_LABELS, getServiceTypeForCPT, normalizeProcCode } from "./specialty"
 import { CPT_SPECIALTY_FIXTURE } from "./__fixtures__/cpt-specialty"
 
 describe("detectSpecialty", () => {
@@ -87,5 +87,28 @@ describe("specialty metadata completeness", () => {
     expect(detectSpecialty(["31622"])).toBe("pulmonology")
     expect(SPECIALTY_LABELS.nephrology).toBe("Nephrology")
     expect(SPECIALTY_LABELS.pulmonology).toBe("Pulmonology")
+  })
+})
+
+describe("normalizeProcCode", () => {
+  // Real PM exports append internal indicators to CPTs. Before this, "45380O" matched
+  // nothing: no specialty, no description, and the preventive-modifier check could not fire.
+  test("strips a single trailing letter after five digits", () => {
+    expect(normalizeProcCode("45380O")).toBe("45380")
+    expect(normalizeProcCode("43239O")).toBe("43239")
+    expect(normalizeProcCode("45384o")).toBe("45384")
+  })
+  test("leaves HCPCS Level II codes alone", () => {
+    expect(normalizeProcCode("A4550")).toBe("A4550")
+    expect(normalizeProcCode("G0105")).toBe("G0105")
+  })
+  test("leaves plain CPTs and junk unchanged", () => {
+    expect(normalizeProcCode("99213")).toBe("99213")
+    expect(normalizeProcCode("")).toBe("")
+    expect(normalizeProcCode("45380OO")).toBe("45380OO") // two letters is not a known shape
+  })
+  test("suffixed codes route to the right specialty", () => {
+    expect(detectSpecialty(["45380O"])).toBe("gastroenterology")
+    expect(detectSpecialty(["43239O"])).toBe("gastroenterology")
   })
 })

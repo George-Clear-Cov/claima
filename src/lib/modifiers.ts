@@ -1,3 +1,5 @@
+import { normalizeProcCode } from "./specialty"
+
 /**
  * CPT/HCPCS modifier reference — product knowledge for the AI layer.
  *
@@ -77,7 +79,7 @@ const SCREENING_CONVERSION_CPT = new Set(["45378", "45380", "45381", "45384", "4
  */
 export function needsPreventiveModifier(cptCodes: string[], icd10Codes: string[], modifiers: string[] = []): boolean {
   const hasScreeningDx = icd10Codes.some((d) => d.toUpperCase().startsWith("Z12"))
-  const hasTherapeutic = cptCodes.some((c) => SCREENING_CONVERSION_CPT.has(c.toUpperCase()))
+  const hasTherapeutic = cptCodes.some((c) => SCREENING_CONVERSION_CPT.has(normalizeProcCode(c)))
   const hasPreventive = modifiers.some((m) => ["PT", "33"].includes(m.toUpperCase()))
   return hasScreeningDx && hasTherapeutic && !hasPreventive
 }

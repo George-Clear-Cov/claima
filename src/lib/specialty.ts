@@ -24,9 +24,21 @@ export type Specialty =
   | "pulmonology"
   | "general_medicine"
 
+/**
+ * Strip a practice-management suffix from a procedure code.
+ *
+ * Real PM exports append internal indicators to CPTs — "45380O", "43239O" — which break
+ * exact-match lookups against code tables. Only a single trailing letter after exactly five
+ * digits is removed, so HCPCS Level II codes (A4550, G0105) and modifiers are left alone.
+ */
+export function normalizeProcCode(code: string): string {
+  const c = String(code ?? "").trim().toUpperCase()
+  return /^\d{5}[A-Z]$/.test(c) ? c.slice(0, 5) : c
+}
+
 export function detectSpecialty(cptCodes: string[]): Specialty {
   for (const raw of cptCodes) {
-    const code = String(raw ?? "").trim().toUpperCase()
+    const code = normalizeProcCode(raw)
 
     // HCPCS Level II (letter-prefixed) never parse as ints — handle them before the numeric ranges.
     if (code === "G0105" || code === "G0121") return "gastroenterology" // screening colonoscopy

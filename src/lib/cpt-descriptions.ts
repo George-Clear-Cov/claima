@@ -1,3 +1,5 @@
+import { normalizeProcCode } from "./specialty"
+
 /**
  * CPT/HCPCS code descriptions — 406 outpatient codes across 24 specialties.
  *
@@ -432,7 +434,7 @@ export const CPT_DESCRIPTIONS: Record<string, string> = {
 
 /** Human-readable description for a CPT/HCPCS code, or null if unknown. */
 export function describeCpt(code: string): string | null {
-  return CPT_DESCRIPTIONS[String(code ?? "").trim().toUpperCase()] ?? null
+  return CPT_DESCRIPTIONS[normalizeProcCode(code)] ?? null
 }
 
 /** "45380 (colonoscopy with biopsy), 88305 (…)" — for prompt injection. */

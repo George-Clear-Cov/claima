@@ -46,3 +46,11 @@ describe("modifierGuidanceForPrompt", () => {
     expect(modifierGuidanceForPrompt(["99213"], ["R10.84"])).toBe("")
   })
 })
+
+describe("real-world procedure code shapes", () => {
+  test("a suffixed CPT still triggers the screening-modifier check", () => {
+    // Found in a live practice export: 45380O + Z12.11 with no PT/33, $2,500 at stake.
+    expect(needsPreventiveModifier(["45380O"], ["Z12.11"], [])).toBe(true)
+    expect(needsPreventiveModifier(["45380O"], ["Z12.11"], ["PT"])).toBe(false)
+  })
+})
