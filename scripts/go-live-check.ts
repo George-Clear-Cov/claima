@@ -70,17 +70,27 @@ for (const r of REQUIRED) {
 }
 
 // ── Claim.MD: the base URL is identical for test and production accounts, so the
-// AccountKey is the ONLY thing distinguishing them and nothing else would catch a
-// test key in production. Declare which account the key belongs to.
+// AccountKey is the ONLY thing telling them apart. The key is PREFIXED with its own
+// account number (verified: the test account's key begins "31641"), so derive the
+// account from the key itself rather than trusting a separate declaration — a
+// declared CLAIMMD_ACCOUNT_ID can disagree with the key that is actually deployed,
+// which is precisely the silent failure this check exists to catch.
 {
   const KNOWN_TEST_ACCOUNTS = ["31641"]
-  const acct = (process.env.CLAIMMD_ACCOUNT_ID || "").trim()
-  if (!acct) {
-    rows.push({ status: "WARN", item: "CLAIMMD_ACCOUNT_ID", detail: "not declared — cannot verify CLAIMMD_ACCOUNT_KEY is the production account's key" })
-  } else if (KNOWN_TEST_ACCOUNTS.includes(acct)) {
-    rows.push({ status: "FAIL", item: "CLAIMMD_ACCOUNT_ID", detail: `${acct} is a TEST account — claims would not reach payers` })
+  const key = (process.env.CLAIMMD_ACCOUNT_KEY || "").trim()
+  const declared = (process.env.CLAIMMD_ACCOUNT_ID || "").trim()
+  const derived = key.slice(0, 5)
+
+  if (!key) {
+    rows.push({ status: "FAIL", item: "CLAIMMD_ACCOUNT_KEY", detail: "NOT SET — claim submission runs in MOCK" })
+  } else if (KNOWN_TEST_ACCOUNTS.includes(derived)) {
+    rows.push({ status: "FAIL", item: "Claim.MD account", detail: `key belongs to TEST account ${derived} — claims would never reach payers` })
+  } else if (declared && derived !== declared) {
+    rows.push({ status: "FAIL", item: "Claim.MD account", detail: `key is for account ${derived} but CLAIMMD_ACCOUNT_ID declares ${declared} — one of them is wrong` })
+  } else if (!declared) {
+    rows.push({ status: "WARN", item: "CLAIMMD_ACCOUNT_ID", detail: `not declared; key appears to be account ${derived}` })
   } else {
-    rows.push({ status: "PASS", item: "CLAIMMD_ACCOUNT_ID", detail: `${acct} (production)` })
+    rows.push({ status: "PASS", item: "Claim.MD account", detail: `${derived} (key and declaration agree)` })
   }
 }
 
