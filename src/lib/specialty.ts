@@ -20,33 +20,108 @@ export type Specialty =
   | "rheumatology"
   | "urology"
   | "pediatrics"
+  | "nephrology"
+  | "pulmonology"
   | "general_medicine"
 
 export function detectSpecialty(cptCodes: string[]): Specialty {
-  for (const code of cptCodes) {
+  for (const raw of cptCodes) {
+    const code = String(raw ?? "").trim().toUpperCase()
+
+    // HCPCS Level II (letter-prefixed) never parse as ints — handle them before the numeric ranges.
+    if (code === "G0105" || code === "G0121") return "gastroenterology" // screening colonoscopy
+    if (code === "G0127") return "podiatry" // trimming of dystrophic nails
+
     const n = parseInt(code, 10)
     if (isNaN(n)) continue
+
     if (n >= 90785 && n <= 90899) return "behavioral_health"
-    if (n >= 96130 && n <= 96139) return "behavioral_health"       // psych testing
-    if (n >= 97165 && n <= 97168) return "occupational_therapy"    // OT evals — checked BEFORE PT range
-    if (n >= 97161 && n <= 97164) return "physical_therapy"        // PT evals
-    if (n >= 97110 && n <= 97799) return "physical_therapy"        // shared PT/OT modalities → PT
+    if (n >= 96130 && n <= 96139) return "behavioral_health" // psych testing
+    if (n >= 90935 && n <= 90999) return "nephrology" // dialysis
+
+    // Podiatry must precede dermatology, PT and orthopedics: its codes sit inside all three
+    // ranges (nail/callus care within the 11xxx integumentary block, wound debridement within
+    // the 97xxx block, toe strapping within the 29xxx block).
+    if (
+      (n >= 11055 && n <= 11057) || // paring of corns/calluses
+      (n >= 11040 && n <= 11044) || // debridement (legacy)
+      (n >= 11719 && n <= 11765) || // nail trimming, avulsion, excision
+      (n >= 28000 && n <= 28899) || // foot and toe surgery
+      (n >= 29540 && n <= 29550) || // foot/toe strapping
+      (n >= 97597 && n <= 97598) || // wound debridement
+      n === 64455 // plantar nerve injection
+    ) {
+      return "podiatry"
+    }
+
+    if (
+      (n >= 10060 && n <= 10061) || // I&D abscess
+      (n >= 11100 && n <= 11107) || // skin biopsy
+      (n >= 11200 && n <= 11201) || // skin tag removal
+      (n >= 11300 && n <= 11313) || // shave removal
+      (n >= 11400 && n <= 11446) || // benign lesion excision
+      (n >= 17000 && n <= 17999) || // destruction of lesions
+      n === 96567 || // photodynamic therapy
+      (n >= 96910 && n <= 96922) // phototherapy
+    ) {
+      return "dermatology"
+    }
+
+    // OT before PT — they share the 97xxx block and PT's range would otherwise swallow these.
+    if (n >= 97129 && n <= 97130) return "occupational_therapy" // cognitive intervention
+    if (n >= 97165 && n <= 97168) return "occupational_therapy" // OT evals
+    if (n >= 97161 && n <= 97164) return "physical_therapy" // PT evals
+    if (n >= 97010 && n <= 97799) return "physical_therapy" // modalities + shared PT/OT treatment
+
     if (n >= 98940 && n <= 98943) return "chiropractic"
-    if (n >= 92521 && n <= 92700) return "speech_language"         // SLP evals and treatment
-    if (n >= 92002 && n <= 92499) return "optometry"               // eye exams, refraction, fields
-    if (n >= 93000 && n <= 93799) return "cardiology"
+
+    // Pediatric screening codes sit inside the audiology/speech block — check them first.
+    if (n === 96110 || n === 96127 || n === 99173 || n === 92551 || n === 92552) return "pediatrics"
+    if ((n >= 99381 && n <= 99384) || (n >= 99391 && n <= 99394) || n === 99460 || n === 99461 || n === 99463) {
+      return "pediatrics"
+    }
+
+    if (n >= 92507 && n <= 92508) return "speech_language" // speech treatment
+    if (n >= 92521 && n <= 92700) return "speech_language" // SLP evals and treatment
+    if (n >= 92002 && n <= 92499) return "optometry"
+
+    if (n >= 93000 && n <= 93998) return "cardiology" // includes vascular duplex studies 93880-93971
+    if (n >= 94010 && n <= 94799) return "pulmonology" // PFTs, spirometry, oximetry
+    if (n === 31622) return "pulmonology" // diagnostic bronchoscopy
+
     if (n >= 95004 && n <= 95199) return "allergy"
-    if (n >= 95812 && n <= 95999) return "neurology"
-    if ((n >= 11055 && n <= 11765) || n === 64455 || (n >= 28000 && n <= 28899)) return "podiatry"
-    if ((n >= 11100 && n <= 11107) || (n >= 17000 && n <= 17999) || (n >= 96910 && n <= 96922)) return "dermatology"
+    if (n >= 95805 && n <= 95999) return "neurology" // includes sleep studies 95805-95811
+
     if (n >= 43200 && n <= 45999) return "gastroenterology"
-    if (n >= 57000 && n <= 59999) return "obgyn"
-    if (n >= 20600 && n <= 29999) return "orthopedics"
+
+    // OB/GYN spans several blocks: procedures, OB ultrasound, cytology and HPV testing.
+    if (
+      (n >= 56405 && n <= 59999) ||
+      (n >= 76801 && n <= 76817) || // OB ultrasound
+      (n >= 87624 && n <= 87625) || // HPV
+      (n >= 88141 && n <= 88175) || // pap cytology
+      (n >= 11981 && n <= 11983) // contraceptive implant
+    ) {
+      return "obgyn"
+    }
+
+    // Endocrine-specific imaging/monitoring, checked before the broad ortho range.
     if (n === 95250 || n === 95251 || n === 77080 || n === 77081 || n === 76536) return "endocrinology"
-    if (n >= 96365 && n <= 96417) return "rheumatology"
-    if ((n >= 51700 && n <= 51703) || (n >= 52000 && n <= 52356) || (n >= 55700 && n <= 55706)) return "urology"
-    if ((n >= 99381 && n <= 99384) || (n >= 99391 && n <= 99394) || n === 99460 || n === 99461 || n === 99463 || n === 96110) return "pediatrics"
+
+    if (
+      (n >= 51700 && n <= 51703) ||
+      (n >= 52000 && n <= 52356) ||
+      (n >= 54000 && n <= 54999) ||
+      (n >= 55700 && n <= 55706) ||
+      (n >= 76870 && n <= 76873)
+    ) {
+      return "urology"
+    }
+
+    if (n >= 96365 && n <= 96417) return "rheumatology" // infusion therapy
+    if (n >= 20550 && n <= 29999) return "orthopedics" // includes injections 20550-20561
   }
+
   if (cptCodes.some((c) => c.startsWith("H0") || c.startsWith("T10"))) return "behavioral_health"
   return "general_medicine"
 }
@@ -72,6 +147,8 @@ export function getServiceTypeForCPT(cptCodes: string[]): string {
     rheumatology:         "1",
     urology:              "1",
     pediatrics:           "98",
+    nephrology:           "76",
+    pulmonology:          "1",
     general_medicine:     "98",
   }
   return map[detectSpecialty(cptCodes)] ?? "1"
@@ -96,6 +173,8 @@ export const SPECIALTY_LABELS: Record<Specialty, string> = {
   rheumatology:         "Rheumatology",
   urology:              "Urology",
   pediatrics:           "Pediatrics",
+  nephrology:           "Nephrology",
+  pulmonology:          "Pulmonology",
   general_medicine:     "General Medicine",
 }
 
@@ -247,5 +326,7 @@ export const SPECIALTY_APPEAL_CONTEXT: Record<Specialty, string> = {
   rheumatology:         "- Reference ACR clinical guidelines, applicable disease activity scores (e.g., DAS28, CDAI), and the documented necessity of infusion or injection therapy",
   urology:              "- Reference AUA clinical guidelines and the documented urologic findings supporting the necessity of the diagnostic or therapeutic procedure",
   pediatrics:           "- Reference AAP Bright Futures guidelines and the documented developmental or clinical findings supporting the preventive or therapeutic services provided",
+  nephrology:           "- Reference KDIGO/KDOQI clinical practice guidelines and documented renal function (eGFR, dialysis adequacy) supporting the medical necessity of the dialysis services provided",
+  pulmonology:          "- Reference ATS/GOLD clinical guidelines and objective pulmonary function findings (spirometry, oximetry) documenting the severity supporting medical necessity",
   general_medicine:     "",
 }

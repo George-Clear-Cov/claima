@@ -3,6 +3,7 @@ import { classifyDenial } from "./denial-codes"
 import { detectSpecialty, SPECIALTY_APPEAL_CONTEXT } from "./specialty"
 import { playbookForPrompt } from "@/lib/recovery-playbook"
 import { modifierGuidanceForPrompt } from "@/lib/modifiers"
+import { describeCptList } from "@/lib/cpt-descriptions"
 import { classifyRarc } from "@/lib/denial-codes"
 
 interface AppealContext {
@@ -49,7 +50,7 @@ Service Date: ${ctx.serviceDate}
 Provider: ${ctx.providerName}, NPI ${ctx.providerNpi}
 Practice: ${ctx.practiceName}
 Specialty: ${specialty.replace(/_/g, " ")}
-CPT Codes: ${ctx.cptCodes.join(", ")}
+CPT Codes: ${describeCptList(ctx.cptCodes)}
 ICD-10 Codes: ${ctx.icd10Codes.join(", ")}
 Total Charge: $${ctx.totalCharge.toFixed(2)}
 Denial Reason (CARC ${ctx.carcCode}): ${ctx.denialReason}
