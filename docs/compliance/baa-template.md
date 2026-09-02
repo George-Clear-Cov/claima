@@ -18,10 +18,10 @@ BEFORE YOU SEND, FILL IN / CONFIRM:
      anything that regresses.
   4. §13.7 Governing law — defaults to the MSA; New York fallback.
   5. Notice addresses in Exhibit C.
-  6. Exhibit A [DATE] on the two Microsoft rows — the Microsoft BAA is automatic with the Azure
-     agreement, so the effective date is the date that agreement was accepted, NOT the date any
-     resource was created. Find it in the Azure portal under Cost Management + Billing → your
-     billing account → Agreements, and use the same date on both Microsoft rows. Do not guess.
+  6. ~~Exhibit A [DATE] on the two Microsoft rows~~ — ✅ RESOLVED 2026-09-02. Microsoft Customer
+     Agreement **B1810932D4F5, effective 2026-07-10** (from `az billing agreement list`). The
+     HIPAA BAA attaches to that agreement automatically, so this is the date for both Microsoft
+     rows — not any resource creation date.
   7. Azure OpenAI is a STANDBY (AI_PROVIDER=bedrock). If it is not the active provider on the day
      you send this, either strike its row or keep it and disclose it as standby — but never send
      an Exhibit A that omits a provider PHI can actually reach.
@@ -601,9 +601,9 @@ signed, and delete any row you cannot evidence.*
 
 | Subprocessor | Role in the Services | PHI handled | Location | BAA in force |
 |---|---|---|---|---|
-| Microsoft Corporation (Azure) | Application hosting, database, secrets management, transactional email (Azure Communication Services) | All PHI processed by the platform | United States | [DATE] |
+| Microsoft Corporation (Azure) | Application hosting, database, secrets management, transactional email (Azure Communication Services) | All PHI processed by the platform | United States | **July 10, 2026** (Microsoft Customer Agreement B1810932D4F5; HIPAA BAA incorporated via the Product Terms/DPA) |
 | Amazon Web Services, Inc. (Amazon Bedrock) | AI inference for denial classification, appeal drafting, coding review | Claim, denial, and clinical-documentation excerpts contained in prompts | United States | **August 31, 2026** (AWS BAA, Artifact, acct 008482603773) |
-| Microsoft Corporation (Azure OpenAI Service) | AI inference — same functions as above; configured as a standby to Amazon Bedrock | Claim, denial, and clinical-documentation excerpts contained in prompts | United States (West US 3; deployed on a US-data-zone SKU, not global routing) | [DATE] — covered by the same Microsoft BAA as the Azure row above |
+| Microsoft Corporation (Azure OpenAI Service) | AI inference — same functions as above; configured as a standby to Amazon Bedrock | Claim, denial, and clinical-documentation excerpts contained in prompts | United States (West US 3; deployed on a US-data-zone SKU, not global routing) | **July 10, 2026** — same Microsoft Customer Agreement B1810932D4F5 as the Azure row above |
 | Claim.MD, Inc. | Clearinghouse — claim submission (837), remittance (835), eligibility (270/271) | Claim, patient demographic, and coverage data | United States | **July 1, 2026** (BAA on file, Claim.MD acct 31008) |
 
 *Microsoft BAA basis.* Microsoft's HIPAA Business Associate Agreement is incorporated into the
