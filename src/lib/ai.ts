@@ -375,6 +375,16 @@ function toAzureMessages(params: AIMessageParams): Array<{ role: string; content
   return msgs
 }
 
+/**
+ * Azure token-limit parameter name.
+ *
+ * GPT-5-family deployments reject `max_tokens` outright ("Unsupported parameter:
+ * 'max_tokens' is not supported with this model. Use 'max_completion_tokens'"), while older
+ * deployments (gpt-4o and earlier) accept only `max_tokens`. Overridable so swapping the
+ * deployment to an older model is an app-setting change rather than a code change.
+ */
+const AZURE_TOKEN_PARAM = process.env.AZURE_OPENAI_TOKEN_PARAM ?? "max_completion_tokens"
+
 function azureUrl(deployment: string, path: string): string {
   const endpoint = (process.env.AZURE_OPENAI_ENDPOINT ?? "").replace(/\/$/, "")
   const apiVersion = process.env.AZURE_OPENAI_API_VERSION ?? "2024-12-01-preview"
@@ -391,7 +401,7 @@ async function azureComplete(params: AIMessageParams): Promise<string> {
     },
     body: JSON.stringify({
       messages: toAzureMessages(params),
-      max_tokens: params.max_tokens,
+      [AZURE_TOKEN_PARAM]: params.max_tokens,
       ...(params.temperature !== undefined ? { temperature: params.temperature } : {}),
     }),
   })
@@ -419,7 +429,7 @@ async function* azureStream(params: AIMessageParams): AsyncGenerator<string> {
     },
     body: JSON.stringify({
       messages: toAzureMessages(params),
-      max_tokens: params.max_tokens,
+      [AZURE_TOKEN_PARAM]: params.max_tokens,
       stream: true,
       ...(params.temperature !== undefined ? { temperature: params.temperature } : {}),
     }),
