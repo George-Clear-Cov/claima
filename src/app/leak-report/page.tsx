@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { LogoMark } from "@/components/Logo"
 import LeakReportTool from "@/components/marketing/LeakReportTool"
+import { activationEnabled } from "@/lib/flags"
 
 // Public, no-auth, no-signup. The page shell is server-rendered so it is crawlable and
 // unfurls properly; the tool itself is the only client component, and it never transmits
@@ -19,7 +20,13 @@ export const metadata = {
   },
 }
 
+// The activation flag is read per request so it can be flipped with an app setting rather
+// than a rebuild. The diagnostic itself is public either way.
+export const dynamic = "force-dynamic"
+
 export default function LeakReportPage() {
+  const activation = activationEnabled()
+
   return (
     <div className="min-h-screen bg-white text-gray-900 antialiased">
       <header className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm border-b border-gray-100 print:hidden">
@@ -63,7 +70,7 @@ export default function LeakReportPage() {
           </p>
         </div>
 
-        <LeakReportTool />
+        <LeakReportTool activationEnabled={activation} />
 
         <section className="mt-16 pt-10 border-t border-gray-100 print:hidden">
           <h2 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500 mb-6">
@@ -76,22 +83,26 @@ export default function LeakReportPage() {
               displayed. There is no upload, no server call, and no analytics event carrying your
               data. You can confirm it: open your browser network tab before dropping the file and
               you will see no request. Because the file never reaches us, running the diagnostic
-              needs no business associate agreement. There is exactly one exception, and it is
-              yours to choose: if you decide at the end to have us work the A/R, the file is sent
-              only after you have signed the BAA. Until you click that button, nothing moves.
+              needs no business associate agreement.{" "}
+              {activation
+                ? "There is exactly one exception, and it is yours to choose: if you decide at the end to have us work the A/R, the file is sent only after you have signed the BAA. Until you click that button, nothing moves."
+                : "There is no way for this page to send it — the only thing that leaves is an email you write yourself, carrying totals and no patient detail."}
             </Faq>
 
-            <Faq q="What happens when I click &ldquo;start recovery&rdquo;?">
-              Four things, in this order, and the order is the point. You identify the practice
-              with its NPI and Tax ID, which are what name the covered entity on the agreements
-              and appear on every claim. You accept the Business Associate Agreement, which
-              governs the data, and the Recovery Services Agreement, which sets the 30%
-              contingency; both are recorded with a timestamp and IP address. You verify your
-              email with a six-digit code. Only then is the file you already analyzed loaded into
-              your account, so you never upload it twice. Every one of those conditions is also
-              enforced on the server, so the import is refused if any of them is missing no matter
-              what the page does.
-            </Faq>
+            {activation && (
+              <Faq q="What happens when I click &ldquo;start recovery&rdquo;?">
+                Four things, in this order, and the order is the point. You identify the practice
+                with its NPI and Tax ID, which are what name the covered entity on the agreements
+                and appear on every claim. You accept the Business Associate Agreement, which
+                governs the data, and the Recovery Services Agreement, which sets the 30%
+                contingency; both are recorded with a timestamp and IP address. You verify your
+                email with a six-digit code. Only then is the file you already analyzed loaded
+                into your account, so you never upload it twice. Every one of those conditions is
+                also enforced on the server, so the import is refused if any of them is missing no
+                matter what the page does.
+              </Faq>
+            )}
+
             <Faq q="What file do I need?">
               An A/R aging or open-balance report exported to CSV from whatever system you bill in.
               One row per service line. It needs a payer column and a balance column at minimum;

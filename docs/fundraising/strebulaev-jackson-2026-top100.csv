@@ -1,0 +1,101 @@
+rank,firm,hq,founded,score,top_deal
+1,Sequoia,"Menlo Park, CA",1972,10158,DoorDash
+2,Andreessen Horowitz,"Menlo Park, CA",2009,8292,Databricks
+3,Accel,"Palo Alto, CA",1983,4576,Scale AI
+4,DST Global,"Menlo Park, CA",2009,4431,Kuaishou
+5,Tiger Global,"New York, NY",2001,4348,Coinbase Global
+6,Index Ventures,"London, UK",1996,4266,Figma
+7,Lightspeed Venture Partners,"Menlo Park, CA",2000,3877,Mistral AI
+8,Thrive,"New York, NY",2009,3698,OpenAI
+9,Founders Fund,"San Francisco, CA",2005,3616,Ramp
+10,ICONIQ Growth,"San Francisco, CA",2013,3011,Snowflake
+11,Kleiner Perkins,"Menlo Park, CA",1972,2987,Figma
+12,New Enterprise Associates,"Menlo Park, CA",1977,2834,Robinhood
+13,Greylock,"San Francisco, CA",1965,2823,Figma
+14,Benchmark,"Woodside, CA",1995,2693,Sierra
+15,Bessemer Venture Partners,"Redwood City, CA",1911,2534,Perplexity
+16,Khosla Ventures,"Menlo Park, CA",2004,2348,OpenAI
+17,General Catalyst,"San Francisco, CA",2000,1978,Athelas
+18,Ribbit,"Palo Alto, CA",2012,1636,Robinhood
+19,Parkway Venture,"New York, NY",2019,1619,Figure AI
+20,Notable,"Menlo Park, CA",2000,1517,HashiCorp
+21,General Atlantic,"New York, NY",1980,1457,ByteDance
+22,IVP,"Menlo Park, CA",1980,1439,Perplexity
+23,Dragoneer,"San Francisco, CA",2012,1302,Klarna Group
+24,Altimeter,"Menlo Park, CA",2008,1251,Snowflake
+25,Mayfield Fund,"Menlo Park, CA",1969,1247,HashiCorp
+26,Sutter Hill Ventures,"Palo Alto, CA",1962,1224,Snowflake
+27,OrbiMed,"New York, NY",1989,1153,AbCellera Biologics
+28,Insight,"New York, NY",1995,1140,Checkout.com
+29,Coatue,"New York, NY",1999,1076,OpenAI
+30,Spark,"San Francisco, CA",2005,1039,Perch
+31,SV Angel,"San Francisco, CA",1992,985,Sierra
+32,Battery Ventures,"Boston, MA",1983,963,Braze
+33,Bedrock,"Los Angeles, CA",2018,935,OpenAI
+34,Paradigm,"San Francisco, CA",2018,897,Fireblocks
+35,Oak HC/FT,"Stamford, CT",2014,891,CareBridge
+36,Atlas Venture,"Cambridge, MA",1980,852,Akero Therapeutics
+37,Venrock,"Palo Alto, CA",1969,843,Devoted
+38,Meritech,"Palo Alto, CA",1999,842,Flock Safety
+39,Norwest,"Menlo Park, CA",1961,835,VAST Data
+40,CRV,"Palo Alto, CA",1970,821,Reflection AI
+41,Bain Capital Ventures,"Boston, MA",2001,817,Crusoe
+42,Inflection Ventures,"New York, NY",2022,816,xAI
+43,Menlo Ventures,"San Francisco, CA",1976,798,Anthropic
+44,Greenoaks,"San Francisco, CA",2012,794,Coupang
+45,First Round,"San Francisco, CA",2004,723,Verkada
+46,8VC,"Austin, TX",2012,687,CHAOS
+47,TCV,"Menlo Park, CA",1995,680,Toast
+48,Lux,"New York, NY",2000,670,Ramp
+49,ARCH Venture Partners,"Chicago, IL",1986,654,Sana Biotechnology
+50,Union Square Ventures,"New York, NY",2003,609,Coinbase Global
+51,Matrix,"San Francisco, CA",1977,551,Fivetran
+52,Factorial Funds,"Menlo Park, CA",2021,541,xAI
+53,Sapphire Ventures,"Austin, TX",2011,536,Auth0
+54,Valor Equity,"Chicago, IL",1995,528,Anduril Industries
+55,U.S. Venture Partners,"Menlo Park, CA",1981,514,Inari Medical
+56,Disruptive,"Dallas, TX",2012,494,Groq
+57,Future Ventures,"Los Altos, CA",2018,476,xAI
+58,Madrona Venture,"Seattle, WA",1995,467,Snowflake
+59,Amplify,"Menlo Park, CA",2012,457,Runway AI
+60,2468 Ventures,"San Diego, CA",2021,453,Anthropic
+61,Versant Ventures,"San Francisco, CA",1999,449,RayzeBio
+62,Revolution,"Washington, DC",2005,434,Sportradar Group
+63,True Ventures,"Palo Alto, CA",2005,419,Peloton
+64,Addition,"New York, NY",2020,414,Alchemy Insights
+65,TeleSoft,"Aspen, CO",1996,408,SHEIN
+66,Caffeinated,"San Francisco, CA",2009,400,Saronic
+67,DCVC,"Palo Alto, CA",2011,397,CoreWeave
+68,Space,"New York, NY",2012,395,World View
+69,FirstMark,"New York, NY",2008,389,Ro
+70,Flybridge,"New York, NY",2002,384,FalconX
+71,Playground Global,"Palo Alto, CA",2015,383,Relativity Space
+72,Bolt,"Boston, MA",2013,367,Bobbie
+73,venBio,"San Francisco, CA",2011,362,Akero Therapeutics
+74,Felicis,"Menlo Park, CA",2006,361,Canva
+75,Sofinnova,"Menlo Park, CA",1976,353,Spark Therapeutics
+76,Pantera,"San Francisco, CA",2003,350,Alchemy Insights
+77,Initialized,"San Francisco, CA",2011,346,Coinbase Global
+78,F-Prime,"Cambridge, MA",1969,340,Sana Biotechnology
+79,Houston Ventures,"Houston, TX",2004,329,Oseberg
+80,Wing Venture,"Palo Alto, CA",2013,311,Snowflake
+81,Tidemark,"Menlo Park, CA",2021,311,ServiceTitan
+82,Scale Venture Partners,"Foster City, CA",2000,311,JFrog
+83,Canaan,"San Francisco, CA",1987,305,World View
+84,Multicoin,"Austin, TX",2017,303,Fuse Energy
+85,Primary Venture Partners,"New York, NY",2015,287,Etched
+86,Maverick Ventures,"San Francisco, CA",2015,284,Coupang
+87,Neotribe Ventures,"Menlo Park, CA",2017,281,BillionToOne
+88,HOF,"New York, NY",2016,276,Revolut
+89,Two Sigma Ventures,"New York, NY",2012,274,Remote Technology
+90,Gradient Ventures,"San Francisco, CA",2017,274,Openly
+91,Third Rock Ventures,"Boston, MA",2007,274,MyoKardia
+92,Greycroft,"New York, NY",2006,266,Pie Insurance
+93,Craft Ventures,"San Francisco, CA",2017,261,Clickup
+94,Goodwater,"Burlingame, CA",2014,259,Coupang
+95,Polychain,"San Francisco, CA",2016,256,Move Ind
+96,Curative Ventures,"Dallas, TX",2010,256,Instil Bio
+97,Haun Ventures,"Menlo Park, CA",2021,254,Bridge
+98,Innovation Endeavors,"Palo Alto, CA",2010,253,AlphaSense
+99,CAVU Consumer,"Santa Monica, CA",2015,250,Poppi
+100,Zigg,"New York, NY",2018,245,Metropolis Technologies

@@ -45,7 +45,7 @@ function detectFormat(name: string, text: string): "835" | "csv" {
   return "csv"
 }
 
-export default function LeakReportTool() {
+export default function LeakReportTool({ activationEnabled = false }: { activationEnabled?: boolean }) {
   const [report, setReport] = useState<LeakReport | null>(null)
   const [sources, setSources] = useState<AnalyzedSource[]>([])
   const [audience, setAudience] = useState<Audience>("practice")
@@ -109,6 +109,7 @@ export default function LeakReportTool() {
       <Report
         report={report}
         sources={sources}
+        activationEnabled={activationEnabled}
         audience={audience}
         onAudienceChange={setAudience}
         onReset={() => {
@@ -203,18 +204,31 @@ function Step({ n, title, children }: { n: string; title: string; children: Reac
 function Report({
   report: r,
   sources,
+  activationEnabled,
   audience,
   onAudienceChange,
   onReset,
 }: {
   report: LeakReport
   sources: AnalyzedSource[]
+  activationEnabled: boolean
   audience: Audience
   onAudienceChange: (a: Audience) => void
   onReset: () => void
 }) {
   const portfolio = audience === "portfolio"
   const [activating, setActivating] = useState(false)
+
+  const emailBody = encodeURIComponent(
+    [
+      `A/R analyzed: ${money(r.totals.balance)} across ${r.totals.accounts} accounts`,
+      `Never worked: ${money(r.unworked.balance)} (${pct(r.unworked.pctBalance)} of the balance)`,
+      `Estimated recoverable: ${money(r.recovery.low)} to ${money(r.recovery.high)}`,
+      `Closing within 60 days: ${money(r.deadlines.within60.balance)}`,
+      "",
+      "I would like to talk about recovering this.",
+    ].join("\n"),
+  )
 
   return (
     <div className="space-y-10">
@@ -445,12 +459,21 @@ function Report({
           {money(r.recovery.low - r.recovery.feeLow)} you were not going to see.
         </p>
         <div className="flex flex-wrap items-center gap-3">
-          <button
-            onClick={() => setActivating(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2.5 rounded-lg transition-colors text-sm shadow-sm"
-          >
-            Start recovery &rarr;
-          </button>
+          {activationEnabled ? (
+            <button
+              onClick={() => setActivating(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2.5 rounded-lg transition-colors text-sm shadow-sm"
+            >
+              Start recovery &rarr;
+            </button>
+          ) : (
+            <a
+              href={`mailto:george@claima.io?subject=${encodeURIComponent("Leak Report — recovering our A/R")}&body=${emailBody}`}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2.5 rounded-lg transition-colors text-sm shadow-sm"
+            >
+              Send us this summary
+            </a>
+          )}
           <button
             onClick={() => window.print()}
             className="text-sm font-medium text-gray-700 hover:text-gray-900 px-4 py-2.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 transition-colors"
@@ -462,13 +485,13 @@ function Report({
           </button>
         </div>
         <p className="text-[12px] text-gray-500 mt-4">
-          Takes about a minute. You confirm who the practice is, accept the BAA and the services
-          agreement, and verify your email. Only then does this same file load into your account
-          as a worklist. Nothing is sent before that.
+          {activationEnabled
+            ? "Takes about a minute. You confirm who the practice is, accept the BAA and the services agreement, and verify your email. Only then does this same file load into your account as a worklist. Nothing is sent before that."
+            : "The summary email carries totals only — no patient, account, or claim detail leaves your machine."}
         </p>
       </section>
 
-      {activating && (
+      {activationEnabled && activating && (
         <ActivateModal
           sources={sources}
           report={r}

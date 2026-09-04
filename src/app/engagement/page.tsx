@@ -1,5 +1,7 @@
 import Link from "next/link"
+import { notFound } from "next/navigation"
 import { LogoMark } from "@/components/Logo"
+import { activationEnabled } from "@/lib/flags"
 
 /**
  * ⚠️ COUNSEL REVIEW REQUIRED BEFORE THIS IS RELIED ON COMMERCIALLY.
@@ -38,7 +40,15 @@ function Section({ n, title, children }: { n: string; title: string; children: R
   )
 }
 
+// Read the flag per request rather than at build, so it can be flipped without a rebuild.
+export const dynamic = "force-dynamic"
+
 export default function EngagementPage() {
+  // Until activation is live this agreement cannot be accepted by anyone, and publishing
+  // legal terms nobody can act on is worse than not publishing them — it invites reliance
+  // on text counsel has not cleared.
+  if (!activationEnabled()) notFound()
+
   return (
     <div className="min-h-screen bg-white text-gray-900 antialiased">
       <header className="border-b border-gray-100">
