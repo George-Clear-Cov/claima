@@ -65,6 +65,9 @@ export const PAYER_RULES: PayerRule[] = [
       "emblem/united",
       "oxford",
       "optum",
+      // The bare abbreviation matters: real exports write "UHC Community Plan" and
+      // "Oxford UHC", neither of which contains the words "united healthcare".
+      "uhc",
     ],
     appealDays: 180,
     timelyFilingDays: 365, // plan dependent, 90-365; use the outer bound and verify

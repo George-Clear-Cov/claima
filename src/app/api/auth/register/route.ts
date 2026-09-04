@@ -6,12 +6,13 @@ import { logAudit } from "@/lib/audit"
 import { validatePassword } from "@/lib/password"
 import { logError } from "@/lib/log"
 import { parseJson, registerSchema } from "@/lib/validation"
+import { issueVerificationCode } from "@/lib/email-verification"
 
 export async function POST(req: NextRequest) {
   try {
     const parsed = await parseJson(req, registerSchema)
     if (!parsed.ok) return parsed.response
-    const { name, email, password, practiceName, baaAccepted } = parsed.data
+    const { name, email, password, practiceName, baaAccepted, npi, taxId, servicesAgreementAccepted } = parsed.data
 
     const emailNorm = email.toLowerCase().trim()
 
@@ -44,8 +45,12 @@ export async function POST(req: NextRequest) {
         data: {
           id: practiceId,
           name: practiceName,
-          npi: `PENDING-${practiceId}`,
-          taxId: "PENDING",
+          // A real, check-digit-valid NPI when the caller supplied one (self-serve
+          // activation requires it). The PENDING sentinel remains for the plain signup
+          // page, and is what checkNpis() in the claims route rejects — a practice cannot
+          // submit claims until it has a real one.
+          npi: npi ?? `PENDING-${practiceId}`,
+          taxId: taxId ?? "PENDING",
           taxonomy: "193200000X",
           addressLine1: "PENDING",
           city: "PENDING",
@@ -54,6 +59,11 @@ export async function POST(req: NextRequest) {
           phone: "0000000000",
           baaAcceptedAt: new Date(),
           baaAcceptedIp: ip,
+          // Recorded only when actually accepted. The BAA governs data; this is what
+          // creates the engagement and the right to be paid, and the two are never
+          // inferred from one another.
+          servicesAgreementAcceptedAt: servicesAgreementAccepted ? new Date() : null,
+          servicesAgreementAcceptedIp: servicesAgreementAccepted ? ip : null,
         },
       }),
       prisma.user.create({
@@ -67,6 +77,10 @@ export async function POST(req: NextRequest) {
         },
       }),
     ])
+
+    // Prove control of the address before the account is allowed to send us PHI. Best
+    // effort — a delivery failure must not fail an account that already exists.
+    await issueVerificationCode(userId, emailNorm)
 
     const token = await signToken({ userId, email: emailNorm, name, practiceId, role: "ADMIN" })
 
@@ -82,6 +96,17 @@ export async function POST(req: NextRequest) {
     })
     return res
   } catch (err) {
+    // Practice.npi is unique. A collision means this practice is already registered, which
+    // is a legitimate answer to give the caller rather than a 500.
+    if (err && typeof err === "object" && "code" in err && err.code === "P2002") {
+      return NextResponse.json(
+        {
+          error: "A practice with this NPI is already registered",
+          detail: "Sign in to that account, or use a different NPI if this was a typo.",
+        },
+        { status: 409 },
+      )
+    }
     logError("register", err)
     return NextResponse.json({ error: "Registration failed" }, { status: 500 })
   }

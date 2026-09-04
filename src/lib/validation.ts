@@ -17,12 +17,32 @@ const npi = z
 export const npiSchema = npi
 const optionalStr = (max: number) => z.string().trim().max(max).optional().or(z.literal(""))
 
+/**
+ * EIN: 9 digits, optionally hyphenated after the prefix (12-3456789). Normalized to digits
+ * so the value stored is what an 837P REF*EI segment needs.
+ */
+export const taxIdSchema = z
+  .string()
+  .trim()
+  .transform((v) => v.replace(/[^0-9]/g, ""))
+  .refine((v) => /^\d{9}$/.test(v), "Tax ID (EIN) must be 9 digits")
+
 export const registerSchema = z.object({
   name: z.string().trim().min(1).max(200),
   email,
   password,
   practiceName: z.string().trim().min(1).max(200),
   baaAccepted: z.boolean().optional(),
+  // Identity + engagement, supplied by the self-serve activation flow. Optional so the
+  // plain /signup page keeps working, but when a caller sends PHI-bearing data later the
+  // import gate requires the practice to actually hold a real NPI.
+  npi: npi.optional(),
+  taxId: taxIdSchema.optional(),
+  servicesAgreementAccepted: z.boolean().optional(),
+})
+
+export const verifyEmailSchema = z.object({
+  code: z.string().trim().regex(/^\d{6}$/, "Enter the 6-digit code from your email"),
 })
 
 export const forgotPasswordSchema = z.object({ email })

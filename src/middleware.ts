@@ -9,6 +9,8 @@ const PUBLIC_PATHS = [
   "/privacy",
   "/terms",
   "/security",
+  "/leak-report",         // free diagnostic — no account, and deliberately no auth wall
+  "/engagement",          // recovery services agreement — must be readable before accepting
   "/support",             // public help/support page (marketplace + external support links)
   "/store",               // public storefront — customers don't need an account
   "/api/store",          // public product listing for the storefront
@@ -44,6 +46,10 @@ const RATE_LIMITS: [string, number][] = [
   ["/api/auth/login", 20],
   ["/api/auth/forgot-password", 5],
   ["/api/auth/reset-password", 5],
+  // Guessing a 6-digit code is capped per-code at 5 attempts, but a caller can request
+  // new codes; limit both so neither the code space nor the recipient's inbox is a target.
+  ["/api/auth/verify-email/resend", 3],
+  ["/api/auth/verify-email", 10],
 ]
 
 function isRateLimited(ip: string, pathname: string): boolean {

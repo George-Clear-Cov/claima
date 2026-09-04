@@ -44,6 +44,26 @@ export function isSyntheticNpi(value: string | null | undefined): boolean {
   return typeof value === "string" && value.startsWith("IMPORT-")
 }
 
+/**
+ * True for the `PENDING-<practiceId>` placeholder written by /api/auth/register when a
+ * practice signs up without proving its identity. Distinct from isSyntheticNpi (the
+ * IMPORT- provider placeholder) because they come from different places and mean different
+ * things: this one says "we do not know who this practice is."
+ */
+export function isPlaceholderNpi(value: string | null | undefined): boolean {
+  return typeof value === "string" && value.startsWith("PENDING-")
+}
+
+/**
+ * Whether a practice is identified well enough to be allowed to send us PHI. A real,
+ * check-digit-valid NPI is the minimum: it names the covered entity on the BAA, it is the
+ * billing NPI on every 837P, and it is publicly verifiable in the NPPES registry.
+ */
+export function practiceNpiIsUsable(value: string | null | undefined): boolean {
+  if (!value || isPlaceholderNpi(value) || isSyntheticNpi(value)) return false
+  return isValidNpi(value)
+}
+
 export const NPI_INVALID_MESSAGE =
   "NPI check digit is invalid — verify the number in the NPPES registry (npiregistry.cms.hhs.gov)"
 

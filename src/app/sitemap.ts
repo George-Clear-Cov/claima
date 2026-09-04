@@ -7,7 +7,10 @@ const SITE_URL = "https://claima.io"
 export default function sitemap(): MetadataRoute.Sitemap {
   const lastModified = new Date("2026-07-15")
   return [
-    { url: `${SITE_URL}/`,         lastModified, changeFrequency: "weekly",  priority: 1.0 },
+    { url: `${SITE_URL}/`,             lastModified, changeFrequency: "weekly",  priority: 1.0 },
+    // The free diagnostic is the top of the funnel — every other channel points at it.
+    { url: `${SITE_URL}/leak-report`,  lastModified: new Date("2026-09-03"), changeFrequency: "monthly", priority: 0.9 },
+    { url: `${SITE_URL}/engagement`,   lastModified: new Date("2026-09-03"), changeFrequency: "yearly", priority: 0.4 },
     { url: `${SITE_URL}/security`, lastModified, changeFrequency: "monthly", priority: 0.7 },
     { url: `${SITE_URL}/privacy`,  lastModified, changeFrequency: "yearly",  priority: 0.3 },
     { url: `${SITE_URL}/terms`,    lastModified, changeFrequency: "yearly",  priority: 0.3 },

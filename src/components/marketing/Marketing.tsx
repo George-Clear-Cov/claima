@@ -57,6 +57,7 @@ export default function Marketing() {
             <span className="font-semibold text-sm tracking-tight">Claima</span>
           </div>
           <nav className="flex items-center gap-1">
+            <Link href="/leak-report" className="hidden sm:inline-block text-sm text-gray-600 hover:text-gray-900 transition-colors px-3 py-1.5 rounded-md hover:bg-gray-50">Leak Report</Link>
             <Link href="/security" className="hidden sm:inline-block text-sm text-gray-600 hover:text-gray-900 transition-colors px-3 py-1.5 rounded-md hover:bg-gray-50">Security</Link>
             <Link href="/login" className="text-sm text-gray-600 hover:text-gray-900 transition-colors px-3 py-1.5 rounded-md hover:bg-gray-50">Sign in</Link>
             <Link href="/signup" className="ml-2 text-sm font-medium bg-gray-900 hover:bg-gray-700 text-white px-3.5 py-1.5 rounded-md transition-colors">
@@ -86,9 +87,9 @@ export default function Marketing() {
               <Link href="/signup" className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2.5 rounded-lg transition-colors text-sm shadow-sm">
                 Start for free
               </Link>
-              <a href="mailto:support@claima.io" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
-                Talk to us →
-              </a>
+              <Link href="/leak-report" className="text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">
+                Free A/R Leak Report &rarr;
+              </Link>
             </div>
             <div className="flex items-center gap-5 text-xs text-gray-500">
               {["HIPAA compliant", "BAA included", "No setup fee"].map((t) => (

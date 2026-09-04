@@ -18,6 +18,11 @@ model User {
   lockedUntil          DateTime?
   createdAt            DateTime  @default(now())
 
+  // Set once the address has been proven with an emailed code. Required before the
+  // account may send us PHI — an unverified address is an unidentified counterparty,
+  // and a backlog import is the largest PHI ingress in the product.
+  emailVerifiedAt      DateTime?
+
   // TOTP multi-factor auth for email/password logins (SSO logins inherit MFA from the IdP).
   mfaEnabled           Boolean   @default(false)
   mfaSecret            String?   // base32 TOTP secret; stored at setup, enforced once mfaEnabled
@@ -48,6 +53,11 @@ model Practice {
   platformFeePercent Float   @default(5.0)
   baaAcceptedAt     DateTime?
   baaAcceptedIp     String?
+  // The BAA is a data-protection agreement and creates no commercial relationship. The
+  // services agreement is what establishes the engagement and the contingency fee, so it
+  // is recorded independently and must never be inferred from baaAcceptedAt.
+  servicesAgreementAcceptedAt DateTime?
+  servicesAgreementAcceptedIp String?
   createdAt         DateTime @default(now())
 
   providers               Provider[]
@@ -347,6 +357,23 @@ model PasswordResetToken {
   expiresAt DateTime
   usedAt    DateTime?
   createdAt DateTime @default(now())
+}
+
+/**
+ * Short-lived email verification codes. The code itself is never stored — only a SHA-256
+ * hash — so a database read cannot be replayed to verify someone else's address. Attempts
+ * are counted so a 6-digit code cannot be brute forced.
+ */
+model EmailVerificationCode {
+  id        String    @id @default(uuid())
+  userId    String
+  codeHash  String
+  expiresAt DateTime
+  consumedAt DateTime?
+  attempts  Int       @default(0)
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
 }
 
 model ERA {
