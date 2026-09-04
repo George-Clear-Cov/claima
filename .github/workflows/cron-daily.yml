@@ -1,0 +1,24 @@
+name: Daily agent cron (Azure replacement for Vercel Cron)
+
+# Replaces Vercel Cron after the Azure migration. Calls the existing GET /api/cron/daily with the
+# CRON_SECRET bearer — the same contract Vercel Cron uses today.
+#
+# IMPORTANT: keep `schedule` COMMENTED OUT until Vercel Cron is retired at DNS cutover, or the
+# daily job runs twice (duplicate emails). To activate: uncomment the schedule block and set repo
+# secret CRON_SECRET (+ optionally repo variable APP_URL). Until then this only runs on manual
+# dispatch, so it's safe to land now.
+
+on:
+  workflow_dispatch: {}
+  # schedule:
+  #   - cron: "0 11 * * *"   # 11:00 UTC = 6am US Eastern — matches the current Vercel Cron
+
+jobs:
+  daily:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger daily cron endpoint
+        run: |
+          curl -fsS -X GET \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ vars.APP_URL || 'https://claima.io' }}/api/cron/daily"

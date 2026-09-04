@@ -1,4 +1,5 @@
 import { aiComplete, isAIConfigured } from "@/lib/ai"
+import { checkNpis } from "@/lib/npi"
 
 export interface ScrubIssue {
   severity: "error" | "warning" | "info"
@@ -21,6 +22,8 @@ export interface ScrubInput {
   charge?: number
   serviceDate?: string
   specialty?: string
+  billingNpi?: string
+  renderingNpi?: string
 }
 
 export interface ClaimLineInput {
@@ -37,10 +40,10 @@ export interface MultiLineScrubInput {
 }
 
 export async function scrubClaim(input: ScrubInput): Promise<ScrubResult> {
-  const { cptCode, icd10Codes, modifier, payerName, charge, serviceDate, specialty } = input
+  const { cptCode, icd10Codes, modifier, payerName, charge, serviceDate, specialty, billingNpi, renderingNpi } = input
 
   if (!isAIConfigured()) {
-    return basicScrub({ cptCode, icd10Codes, modifier, charge: charge ?? 0 })
+    return basicScrub({ cptCode, icd10Codes, modifier, charge: charge ?? 0, billingNpi, renderingNpi })
   }
 
   const prompt = `You are a medical billing expert with deep knowledge of outpatient claim submission across all specialties (837P). Review this claim for denial risk before it is submitted.
@@ -86,13 +89,27 @@ verdict: clean if score>=85, caution if 60-84, warning if <60. Return an empty a
   }
 }
 
-export function basicScrub({ cptCode, icd10Codes, modifier, charge }: {
+export function basicScrub({ cptCode, icd10Codes, modifier, charge, billingNpi, renderingNpi }: {
   cptCode: string
   icd10Codes: string[]
   modifier?: string
   charge: number
+  billingNpi?: string
+  renderingNpi?: string
 }): ScrubResult {
   const issues: ScrubIssue[] = []
+
+  // NPI check digits — deterministic, and a hard rejection at the clearinghouse if wrong.
+  for (const problem of checkNpis([
+    { label: "Billing NPI", npi: billingNpi },
+    { label: "Rendering NPI", npi: renderingNpi },
+  ])) {
+    issues.push({
+      severity: "error",
+      message: problem,
+      fix: "Look the provider up in the NPPES registry (npiregistry.cms.hhs.gov) and correct the NPI in Settings before submitting",
+    })
+  }
   const cptNum = parseInt(cptCode, 10)
   const isValidCptFormat = /^\d{5}$/.test(cptCode) || /^[A-Z]\d{4}$/.test(cptCode)
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { resolveCustomer } from "@/lib/aws-marketplace"
+import { parseJson, awsActivateSchema } from "@/lib/validation"
 
 /**
  * POST /api/marketplace/aws/activate
@@ -7,11 +8,9 @@ import { resolveCustomer } from "@/lib/aws-marketplace"
  * Resolves the token → AWS customer ID, stores subscription, returns account info.
  */
 export async function POST(req: NextRequest) {
-  const { registrationToken } = await req.json()
-
-  if (!registrationToken) {
-    return NextResponse.json({ error: "registrationToken required" }, { status: 400 })
-  }
+  const parsed = await parseJson(req, awsActivateSchema)
+  if (!parsed.ok) return parsed.response
+  const { registrationToken } = parsed.data
 
   try {
     const customer = await resolveCustomer(registrationToken)

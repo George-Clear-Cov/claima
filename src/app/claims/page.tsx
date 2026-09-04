@@ -102,7 +102,7 @@ function CallScriptModal({ claimId, onClose }: { claimId: string; onClose: () =>
         </div>
 
         {loading && (
-          <div className="flex items-center justify-center py-16 text-gray-400 gap-2">
+          <div className="flex items-center justify-center py-16 text-gray-500 gap-2">
             <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
             Generating script…
           </div>
@@ -110,7 +110,7 @@ function CallScriptModal({ claimId, onClose }: { claimId: string; onClose: () =>
 
         {script && (
           <div className="p-6 space-y-5">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="bg-blue-50 border border-blue-200 rounded-xl p-3">
                 <div className="text-xs font-medium text-blue-700 uppercase tracking-wide mb-1">Provider Line</div>
                 <div className="text-sm text-blue-900 font-medium">{script.providerLine}</div>
@@ -259,21 +259,27 @@ export default function ClaimsPage() {
   const [practiceId, setPracticeId] = useState<string | null>(null)
   const [callScriptClaimId, setCallScriptClaimId] = useState<string | null>(null)
   const [denyingClaimId, setDenyingClaimId] = useState<string | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
   function handleDenied(claimId: string) {
     setClaims(prev => prev.map(c => c.id === claimId ? { ...c, claimStatus: "DENIED" } : c))
     setDenyingClaimId(null)
   }
 
-  useEffect(() => {
-    Promise.all([
-      fetch("/api/claims").then((r) => r.json()),
-      fetch("/api/context").then((r) => r.json()),
-    ]).then(([claimsData, ctx]) => {
+  async function load() {
+    setLoading(true)
+    setLoadError(null)
+    try {
+      const [rClaims, rCtx] = await Promise.all([
+        fetch("/api/claims"),
+        fetch("/api/context"),
+      ])
+      if (!rClaims.ok || !rCtx.ok) throw new Error()
+      const claimsData = await rClaims.json()
+      const ctx = await rCtx.json()
       const list = Array.isArray(claimsData) ? claimsData : []
       setClaims(list)
       setPracticeId(ctx?.practice?.id ?? null)
-      setLoading(false)
 
       // Score pending claims for denial risk
       const pendingIds = list
@@ -294,8 +300,14 @@ export default function ClaimsPage() {
           })
           .catch(() => {})
       }
-    }).catch(() => setLoading(false))
-  }, [])
+    } catch {
+      setLoadError("Couldn't load this page. Please try again.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { load() }, [])
 
   const highRiskCount = Object.values(riskMap).filter((r) => r.risk === "high").length
 
@@ -324,8 +336,15 @@ export default function ClaimsPage() {
           </div>
         </div>
 
-        {loading ? (
-          <div className="flex items-center justify-center py-24 text-gray-400">
+        {loadError ? (
+          <div className="text-center py-24 bg-white border border-gray-200 rounded-2xl shadow-sm">
+            <p className="text-gray-700 font-medium mb-4">{loadError}</p>
+            <button onClick={load} className="inline-flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+              Try again
+            </button>
+          </div>
+        ) : loading ? (
+          <div className="flex items-center justify-center py-24 text-gray-500">
             <svg className="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24" fill="none">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
@@ -340,13 +359,13 @@ export default function ClaimsPage() {
               </svg>
             </div>
             <p className="text-gray-700 font-medium mb-1">No claims yet</p>
-            <p className="text-gray-400 text-sm mb-6">Submit your first 837P claim to get started</p>
+            <p className="text-gray-500 text-sm mb-6">Submit your first 837P claim to get started</p>
             <Link href="/claims/new" className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-sm">
               Submit first claim →
             </Link>
           </div>
         ) : (
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+          <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto shadow-sm">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-200 bg-gray-50">

@@ -8,7 +8,7 @@ function getSecret() {
 
 async function verifyPaymentToken(token: string) {
   try {
-    const { payload } = await jwtVerify(token, getSecret())
+    const { payload } = await jwtVerify(token, getSecret(), { algorithms: ["HS256"] })
     if (payload.type !== "payment_link") return null
     return payload as { statementId: string; practiceId: string; type: string }
   } catch {
@@ -35,6 +35,12 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ tok
 
   if (!statement) return NextResponse.json({ error: "Not found" }, { status: 404 })
 
+  // Per-service cost-transparency detail (billed → allowed → insurance paid → your split).
+  const remit = await prisma.remittanceLine.findMany({
+    where: { claimId: statement.claimId, practiceId: payload.practiceId },
+    orderBy: { chargeAmount: "desc" },
+  })
+
   return NextResponse.json({
     statementId: statement.id,
     practiceName: statement.claim.practice.name,
@@ -43,10 +49,26 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ tok
     totalCharge: Number(statement.totalCharge),
     insurancePaid: Number(statement.insurancePaid),
     adjustments: Number(statement.adjustments),
+    deductible: Number(statement.deductible),
+    coinsurance: Number(statement.coinsurance),
+    copay: Number(statement.copay),
     serviceDate: statement.claim.serviceDate,
     dueDate: statement.dueDate,
     status: statement.statementStatus,
     alreadyPaid: statement.statementStatus === "PAID" || Number(statement.balanceDue) <= 0,
+    lines: remit.map((l: (typeof remit)[number]) => ({
+      cptCode: l.cptCode,
+      units: l.units,
+      billed: Number(l.chargeAmount),
+      allowed: l.allowedAmount != null ? Number(l.allowedAmount) : null,
+      insurancePaid: Number(l.insurancePaid),
+      planDiscount: Number(l.contractualAdjustment),
+      patientResp: Number(l.patientResponsibility),
+      deductible: Number(l.deductible),
+      coinsurance: Number(l.coinsurance),
+      copay: Number(l.copay),
+      other: Number(l.otherPatientResp),
+    })),
   })
 }
 
@@ -96,7 +118,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
     intentParams.transfer_data = { destination: practice.stripeAccountId }
   }
 
-  const intent = await stripe.paymentIntents.create(intentParams)
+  // Idempotency key scoped to this statement + amount: repeated POSTs (React
+  // effect re-fires, remounts, retries) return the SAME PaymentIntent instead
+  // of creating orphaned duplicates. Changes only if the balance changes.
+  const intent = await stripe.paymentIntents.create(intentParams, {
+    idempotencyKey: `pay_${statement.id}_${amountCents}`,
+  })
 
   return NextResponse.json({
     clientSecret: intent.client_secret,

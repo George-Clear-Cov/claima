@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { aiComplete, isAIConfigured } from "@/lib/ai"
 import { getSessionFromRequest } from "@/lib/auth"
+import { logAudit } from "@/lib/audit"
+import { logError } from "@/lib/log"
 
 interface RateRow {
   payer: string
@@ -14,6 +16,7 @@ interface RateRow {
 export async function GET(req: NextRequest) {
   const session = await getSessionFromRequest(req)
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  logAudit({ action: "ai.rate_benchmark", practiceId: session.practiceId, userId: session.userId, userEmail: session.email, req })
   if (!process.env.DATABASE_URL) return NextResponse.json({ error: "No database" }, { status: 503 })
 
   const { prisma } = await import("@/lib/prisma")
@@ -165,7 +168,7 @@ Be specific: name payers, CPT codes, and dollar amounts. Focus on: underpayment,
       const match = stripped.match(/\[[\s\S]*\]/)
       if (match) insights = JSON.parse(match[0])
     } catch (err) {
-      console.error("[intelligence/rates] failed:", err)
+      logError("intelligence/rates", err)
     }
   }
 

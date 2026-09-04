@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { acknowledgeOperation } from "@/lib/azure-marketplace"
+import { parseJson, azureWebhookSchema } from "@/lib/validation"
 
 /**
  * POST /api/webhooks/azure-marketplace
@@ -9,33 +10,43 @@ import { acknowledgeOperation } from "@/lib/azure-marketplace"
  * IMPORTANT: Acknowledge within 10 seconds or Microsoft will retry and eventually
  * block the subscription. We ack immediately then process async.
  */
-export async function POST(req: NextRequest) {
-  let body: Record<string, unknown>
+
+async function validateAzureWebhookToken(req: NextRequest): Promise<boolean> {
+  const tenantId = process.env.AZURE_MARKETPLACE_TENANT_ID
+  const clientId = process.env.AZURE_MARKETPLACE_CLIENT_ID
+  if (!tenantId || !clientId) {
+    // Not yet configured — warn and allow so dev/staging aren't blocked before setup
+    console.warn("[azure-marketplace/webhook] Marketplace env vars not set; skipping JWT validation")
+    return true
+  }
+
+  const auth = req.headers.get("authorization")
+  if (!auth?.startsWith("Bearer ")) return false
+  const token = auth.slice(7)
+
   try {
-    body = await req.json()
+    const { createRemoteJWKSet, jwtVerify } = await import("jose")
+    const JWKS = createRemoteJWKSet(
+      new URL(`https://login.microsoftonline.com/${tenantId}/discovery/v2.0/keys`)
+    )
+    await jwtVerify(token, JWKS, {
+      issuer: `https://sts.windows.net/${tenantId}/`,
+      audience: clientId,
+    })
+    return true
   } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 })
+    return false
+  }
+}
+
+export async function POST(req: NextRequest) {
+  if (!await validateAzureWebhookToken(req)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const {
-    id: operationId,
-    subscriptionId,
-    action,
-    planId,
-    quantity,
-    status,
-  } = body as {
-    id: string
-    subscriptionId: string
-    action: string
-    planId?: string
-    quantity?: number
-    status?: string
-  }
-
-  if (!operationId || !subscriptionId) {
-    return NextResponse.json({ error: "Missing operationId or subscriptionId" }, { status: 400 })
-  }
+  const parsed = await parseJson(req, azureWebhookSchema)
+  if (!parsed.ok) return parsed.response
+  const { id: operationId, subscriptionId, action, planId, quantity, status } = parsed.data
 
   // Process async — ack first, then update DB
   void processAzureWebhook({ operationId, subscriptionId, action, planId, quantity, status })

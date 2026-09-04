@@ -9,8 +9,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const { id: denialId } = await params
   const { prisma } = await import("@/lib/prisma")
 
-  const denial = await prisma.denial.findUnique({
-    where: { id: denialId },
+  const denial = await prisma.denial.findFirst({
+    where: { id: denialId, claim: { practiceId: session.practiceId } },
     include: {
       claim: {
         include: {

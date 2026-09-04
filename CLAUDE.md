@@ -3,16 +3,38 @@
 ## Product
 AI-native medical billing platform. Sells outcomes (% of collections), not software seats. Targets small/mid outpatient practices across all specialties (Family Medicine, Cardiology, Physical Therapy, Psychiatry, etc.) currently outsourcing to RCM firms. HIPAA compliance required on every PR.
 
-Deployed at: **https://claima.io** (Vercel)
+Deployed at: **https://claima.io** — **Azure App Service** (`claima-web-d89893`, RG `claima-prod`,
+West US 3), serving a container from ACR `claimaacrd89893`. **Vercel and Supabase are no longer
+in the serving path** (cutover 2026-09-02).
+
 Local dev: `cd /Users/georgenagib/claima && ~/.bun/bin/bun run dev`
-Deploy: `npx vercel --prod --yes`
+
+**Deploy** (manual — ACR publishing is not automated; `.github/workflows/container-build.yml`
+only proves the image builds):
+```bash
+TAG=$(git rev-parse --short HEAD)
+az acr build --registry claimaacrd89893 --image claima-web:$TAG \
+  --build-arg NEXT_PUBLIC_APP_URL=https://claima.io \
+  --build-arg NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=<pk_live> \
+  --build-arg NEXT_PUBLIC_SENTRY_DSN=<dsn> .
+az webapp config container set -g claima-prod -n claima-web-d89893 \
+  --docker-custom-image-name claimaacrd89893.azurecr.io/claima-web:$TAG
+az webapp restart -g claima-prod -n claima-web-d89893
+```
+⚠️ `az webapp restart` alone does **not** pull a new image — App Service serves the cached one.
+The app is pinned to an explicit tag, so every deploy must set the new tag.
 
 ---
 
 ## Stack
 - **Next.js 15** App Router, TypeScript, Tailwind CSS
 - **Prisma 7** with `@prisma/adapter-pg` + explicit `pg.Pool`
-- **PostgreSQL** on Supabase (project ref: `cocfvcqmwnvuxqzmngpy`, region: us-west-2)
+- **PostgreSQL** — production is **Azure Database for PostgreSQL Flexible Server**
+  (`claima-pgb-d89893`, database `claima`). Connection string lives in Key Vault
+  `claima-kv-d89893` as `POSTGRES-PRISMA-URL`; App Service reads it as a Key Vault reference.
+  **Local dev still points at the retired Supabase project** (`cocfvcqmwnvuxqzmngpy`) on
+  purpose — test there, never against prod. Schema goes to Azure only when work is ready:
+  `export DATABASE_URL=$(az keyvault secret show --vault-name claima-kv-d89893 --name POSTGRES-PRISMA-URL --query value -o tsv) && npx prisma db push`
 - **Bun** as package manager (`~/.bun/bin/bun`)
 - **Stripe Connect** for payments (5% platform fee)
 - **Claim.MD** clearinghouse for 837P EDI + 270/271 eligibility (`src/lib/claimmd.ts`)
@@ -56,8 +78,20 @@ const session = await getSessionFromRequest(req)
 if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 ```
 
-### TLS — do not remove this from prisma.ts
-`process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"` is required. Supabase uses a self-signed CA chain that Prisma's Rust engine rejects. The pg adapter's `ssl` option alone doesn't fix it.
+### Runtime feature flags — read on the server, never as NEXT_PUBLIC_
+`NEXT_PUBLIC_*` values are baked into the Docker image at build time, so flipping one needs a
+rebuild and redeploy. Read flags server-side from `src/lib/flags.ts`, pass them down as props,
+and mark the page `export const dynamic = "force-dynamic"` so the value is read per request.
+A flag can then be flipped with `az webapp config appsettings set` + a restart.
+
+### TLS — never set NODE_TLS_REJECT_UNAUTHORIZED globally
+Do NOT set `process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"` in `prisma.ts` (or anywhere). It is a
+process-global flag that disables TLS certificate verification for ALL outbound HTTPS — including
+PHI sent to the AI provider, Claim.MD, and Stripe — exposing it to man-in-the-middle. Scope the
+Supabase self-signed-CA exception to the DB connection only, via the pg `Pool`'s `ssl` option
+(`ssl: { rejectUnauthorized: false }`). During the Azure migration, replace this with
+`ssl: { ca: <azure-ca>, rejectUnauthorized: true }` so the DB cert is verified too. `scripts/audit.ts`
+enforces the absence of the global flag (CRITICAL).
 
 ---
 
@@ -67,8 +101,10 @@ if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 
 |---|---|---|
 | Auth (email/password) | ✅ Live | — |
 | Azure AD SSO | ✅ Live | — |
-| Claim submission | ⚠️ Mock | `CLAIMMD_ACCOUNT_KEY` + `CLAIMMD_API_KEY` |
-| Eligibility verification | ⚠️ Mock | `CLAIMMD_ACCOUNT_KEY` + `CLAIMMD_API_KEY` |
+| Claim submission | ✅ Live | Claim.MD production key installed 2026-09-01 |
+| Eligibility verification | ✅ Live | Claim.MD production key installed 2026-09-01 |
+| Free A/R Leak Report (`/leak-report`) | ✅ Public | Parses in-browser; sends nothing |
+| Self-serve activation (`/engagement`) | 🔒 Flagged off | `ACTIVATION_ENABLED` — needs counsel review |
 | Stripe payments | ✅ Live | — |
 | Stripe Connect onboarding | ✅ Live | — |
 | Stripe webhooks | ✅ Live | — |
@@ -87,9 +123,16 @@ if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 
 ---
 
 ## GTM Priority
-**Microsoft AppSource listing is the immediate GTM focus.** No customers yet — acquiring through cloud marketplaces. AppSource → AWS Marketplace → Google Cloud Marketplace (in that order).
+**The free A/R Leak Report at `/leak-report` is the conversion asset every channel points at.**
+It parses a practice's own A/R export entirely in the browser and returns a dollar figure. Keep
+that path pure — no fetch, no analytics, no server action — or the page's privacy promise, and
+its exemption from PHI scope, both break.
 
-Azure AD SSO is already built. Needs: Azure app registration, listing copy, screenshots.
+Self-serve activation (account + BAA + Recovery Services Agreement + verified email, then
+ingest) is built but **flagged off** pending counsel review of `/engagement`. The PHI-ingress
+gate in `/api/import/backlog` is enforced regardless of the flag.
+
+Marketplace listings remain a parallel track: AppSource → AWS Marketplace → GCP.
 
 ---
 

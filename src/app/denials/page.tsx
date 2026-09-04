@@ -79,24 +79,43 @@ export default function DenialsPage() {
   const [roi, setRoi] = useState<ROIResult | null>(null)
   const [roiLoading, setRoiLoading] = useState(false)
   const [resubmitting, setResubmitting] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
+  const [statusPending, setStatusPending] = useState(false)
+  const [confirmWriteOff, setConfirmWriteOff] = useState(false)
 
-  useEffect(() => {
-    fetch("/api/denials").then((r) => r.json()).then((data) => {
-      if (Array.isArray(data)) setDenials(data)
-    }).catch(() => {}).finally(() => setLoading(false))
-  }, [])
+  async function load() {
+    setLoading(true)
+    setLoadError(null)
+    try {
+      const r = await fetch("/api/denials")
+      if (!r.ok) throw new Error()
+      const data = await r.json()
+      setDenials(Array.isArray(data) ? data : [])
+    } catch {
+      setLoadError("Couldn't load this page. Please try again.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { load() }, [])
 
   const filtered = filter === "ALL" ? denials
     : denials.filter((d) =>
-        filter === "APPEALABLE" ? d.appealable && d.appealStatus === "PENDING"
+        filter === "AWAITING" ? d.appealStatus === "PENDING"
+        : filter === "IN_PROGRESS" ? d.appealStatus === "IN_PROGRESS"
+        : filter === "SUBMITTED" ? d.appealStatus === "SUBMITTED"
+        : filter === "WON" ? d.appealStatus === "WON"
         : filter === "RESUBMIT" ? d.category === "RESUBMIT"
-        : d.priority === filter)
+        : d.priority.toUpperCase() === filter)
 
   const totalAtRisk = denials
     .filter((d) => ["PENDING", "IN_PROGRESS"].includes(d.appealStatus))
     .reduce((sum, d) => sum + parseFloat(d.claim.totalCharge), 0)
 
   useEffect(() => {
+    setConfirmWriteOff(false)
     if (!selected) { setRoi(null); return }
     setRoi(null)
     setRoiLoading(true)
@@ -137,42 +156,59 @@ export default function DenialsPage() {
   async function handleAutoProcess() {
     setAutoProcessing(true)
     setAutoResult(null)
+    setActionError(null)
     try {
       const res = await fetch("/api/denials/auto-process", { method: "POST" })
+      if (!res.ok) throw new Error()
       const data = await res.json()
       setAutoResult({ processed: data.processed ?? 0, total: data.total ?? 0 })
       // Refresh denials list to show AI-drafted letters
       const refreshed = await fetch("/api/denials").then((r) => r.json())
       if (Array.isArray(refreshed) && refreshed.length > 0) setDenials(refreshed)
-    } catch {}
+    } catch {
+      setActionError("Couldn't auto-process denials. Please try again.")
+    }
     finally { setAutoProcessing(false) }
   }
 
   async function handleResubmit(denial: Denial) {
     setResubmitting(true)
+    setActionError(null)
     try {
       const res = await fetch(`/api/denials/${denial.id}/resubmit`, { method: "POST" })
+      if (!res.ok) throw new Error()
       const data = await res.json()
       if (data.claimId) {
         window.location.href = `/claims?resubmit=${data.claimId}`
       }
-    } catch {}
+    } catch {
+      setActionError("Couldn't create a corrected claim. Please try again.")
+    }
     finally { setResubmitting(false) }
   }
 
   async function handleUpdateStatus(denial: Denial, status: string) {
+    setStatusPending(true)
+    setActionError(null)
     try {
-      await fetch(`/api/denials/${denial.id}/appeal`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ appealStatus: status }) })
+      const res = await fetch(`/api/denials/${denial.id}/appeal`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ appealStatus: status }) })
+      if (!res.ok) throw new Error()
       setDenials((prev) => prev.map((d) => d.id === denial.id ? { ...d, appealStatus: status } : d))
       if (selected?.id === denial.id) setSelected({ ...denial, appealStatus: status })
-    } catch {}
+    } catch {
+      setActionError("Couldn't update the denial status. Please try again.")
+    } finally {
+      setStatusPending(false)
+    }
   }
 
   const statCards = [
     { label: "Total Denials", value: denials.length, accent: "bg-gray-400", valueColor: "text-gray-900" },
-    { label: "High Priority", value: denials.filter((d) => d.priority === "HIGH").length, accent: "bg-red-500", valueColor: "text-red-600" },
-    { label: "Appealable", value: denials.filter((d) => d.appealable && d.appealStatus === "PENDING").length, accent: "bg-amber-500", valueColor: "text-amber-600" },
+    { label: "High Priority", value: denials.filter((d) => d.priority.toUpperCase() === "HIGH").length, accent: "bg-red-500", valueColor: "text-red-600" },
+    { label: "Awaiting Action", value: denials.filter((d) => d.appealStatus === "PENDING").length, accent: "bg-amber-500", valueColor: "text-amber-600" },
     { label: "In Progress", value: denials.filter((d) => d.appealStatus === "IN_PROGRESS").length, accent: "bg-blue-500", valueColor: "text-blue-600" },
+    { label: "Submitted", value: denials.filter((d) => d.appealStatus === "SUBMITTED").length, accent: "bg-indigo-500", valueColor: "text-indigo-600" },
+    { label: "Appeals Won", value: denials.filter((d) => d.appealStatus === "WON").length, accent: "bg-green-500", valueColor: "text-green-600" },
   ]
 
   return (
@@ -186,7 +222,7 @@ export default function DenialsPage() {
           <div className="flex items-center gap-4">
             <div className="text-right">
               <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">Revenue at risk</div>
-              <div className="text-2xl font-bold font-mono text-red-600">${totalAtRisk.toFixed(2)}</div>
+              <div className="text-2xl font-bold font-mono text-red-600">${totalAtRisk.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
             </div>
             <button
               onClick={handleAutoProcess}
@@ -200,10 +236,10 @@ export default function DenialsPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
           {statCards.map((stat) => (
             <div key={stat.label} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
-              <div className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-3">{stat.label}</div>
+              <div className="text-xs text-gray-500 font-medium uppercase tracking-wider mb-3">{stat.label}</div>
               <div className={`text-3xl font-bold ${stat.valueColor}`}>{stat.value}</div>
             </div>
           ))}
@@ -220,10 +256,17 @@ export default function DenialsPage() {
           </div>
         )}
 
-        <div className="flex gap-6">
+        {actionError && (
+          <div className="mb-6 rounded-xl px-4 py-3 text-sm flex items-center justify-between border bg-red-50 border-red-200 text-red-700">
+            <span>{actionError}</span>
+            <button onClick={() => setActionError(null)} className="text-xs opacity-60 hover:opacity-100 ml-4">✕</button>
+          </div>
+        )}
+
+        <div className="flex flex-col lg:flex-row gap-6">
           <div className="flex-1 min-w-0">
             <div className="flex gap-2 mb-4 flex-wrap">
-              {[["ALL", "All"], ["HIGH", "High Priority"], ["APPEALABLE", "Appealable"], ["RESUBMIT", "Resubmit"]].map(([val, label]) => (
+              {[["ALL", "All"], ["HIGH", "High Priority"], ["AWAITING", "Awaiting Action"], ["IN_PROGRESS", "In Progress"], ["SUBMITTED", "Submitted"], ["WON", "Won"], ["RESUBMIT", "Resubmit"]].map(([val, label]) => (
                 <button key={val} onClick={() => setFilter(val)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${filter === val ? "bg-blue-600 text-white shadow-sm" : "bg-white border border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50 shadow-sm"}`}>
                   {label}
@@ -232,21 +275,32 @@ export default function DenialsPage() {
             </div>
 
             <div className="space-y-2">
-              {loading ? (
-                <div className="flex items-center justify-center gap-2 py-16 text-gray-400 bg-white border border-gray-200 rounded-xl shadow-sm">
+              {loadError ? (
+                <div className="text-center py-16 bg-white border border-gray-200 rounded-xl shadow-sm">
+                  <p className="text-gray-700 font-medium mb-4">{loadError}</p>
+                  <button onClick={load} className="inline-flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                    Try again
+                  </button>
+                </div>
+              ) : loading ? (
+                <div className="flex items-center justify-center gap-2 py-16 text-gray-500 bg-white border border-gray-200 rounded-xl shadow-sm">
                   <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
                   Loading denials…
                 </div>
               ) : denials.length === 0 ? (
                 <div className="text-center py-16 bg-white border border-gray-200 rounded-xl shadow-sm">
                   <p className="text-gray-700 font-medium mb-1">No denials yet</p>
-                  <p className="text-gray-400 text-sm mt-1">Denials appear here when you record a payer rejection from the Claims page.</p>
+                  <p className="text-gray-500 text-sm mt-1">Denials appear here when you record a payer rejection from the Claims page.</p>
                 </div>
               ) : filtered.length === 0 ? (
-                <div className="text-center text-gray-400 py-16 bg-white border border-gray-200 rounded-xl shadow-sm">No denials match this filter</div>
+                <div className="text-center text-gray-500 py-16 bg-white border border-gray-200 rounded-xl shadow-sm">No denials match this filter</div>
               ) : null}
               {!loading && filtered.map((denial) => (
-                <div key={denial.id} onClick={() => { setSelected(denial); setAppealLetter(denial.appealLetter) }}
+                <div key={denial.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => { setSelected(denial); setAppealLetter(denial.appealLetter) }}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelected(denial); setAppealLetter(denial.appealLetter) } }}
                   className={`bg-white border rounded-xl p-4 cursor-pointer transition-all shadow-sm ${selected?.id === denial.id ? "border-blue-400 ring-1 ring-blue-400/20" : "border-gray-200 hover:border-gray-300 hover:shadow-md"}`}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
@@ -260,9 +314,9 @@ export default function DenialsPage() {
                         )}
                       </div>
                       <div className="font-medium text-sm text-gray-900">{denial.claim.patient.lastName}, {denial.claim.patient.firstName}
-                        <span className="text-gray-400 font-normal ml-2">· {denial.claim.patient.payerName}</span>
+                        <span className="text-gray-500 font-normal ml-2">· {denial.claim.patient.payerName}</span>
                       </div>
-                      <div className="text-xs text-gray-400 mt-0.5 font-mono">{denial.claim.lineItems.map((l) => l.cptCode).join(", ")} · {new Date(denial.claim.serviceDate).toLocaleDateString()}</div>
+                      <div className="text-xs text-gray-500 mt-0.5 font-mono">{denial.claim.lineItems.map((l) => l.cptCode).join(", ")} · {new Date(denial.claim.serviceDate).toLocaleDateString()}</div>
                       <div className="text-xs text-gray-500 mt-1.5 line-clamp-1">{denial.denialReason}</div>
                     </div>
                     <div className="text-right shrink-0">
@@ -275,7 +329,7 @@ export default function DenialsPage() {
           </div>
 
           {selected && (
-            <div className="w-96 shrink-0">
+            <div className="w-full lg:w-96 shrink-0">
               <div className="bg-white border border-gray-200 rounded-xl p-5 sticky top-20 shadow-sm">
                 <div className="flex items-center justify-between mb-5">
                   <h2 className="font-semibold text-gray-900">Denial Detail</h2>
@@ -284,37 +338,37 @@ export default function DenialsPage() {
 
                 <div className="space-y-4 text-sm">
                   <div>
-                    <div className="text-xs text-gray-400 uppercase tracking-wider mb-1.5">Patient</div>
+                    <div className="text-xs text-gray-500 uppercase tracking-wider mb-1.5">Patient</div>
                     <div className="font-medium text-gray-900">{selected.claim.patient.firstName} {selected.claim.patient.lastName}</div>
                     <div className="text-gray-500 text-xs mt-0.5">{selected.claim.patient.payerName}</div>
                   </div>
                   <div>
-                    <div className="text-xs text-gray-400 uppercase tracking-wider mb-1.5">Denial Reason</div>
+                    <div className="text-xs text-gray-500 uppercase tracking-wider mb-1.5">Denial Reason</div>
                     <div className="bg-red-50 border border-red-200 rounded-xl p-3">
                       <div className="font-mono text-red-600 text-xs mb-1">CARC-{selected.carcCode}</div>
                       <div className="text-red-700 text-xs leading-relaxed">{selected.denialReason}</div>
                     </div>
                   </div>
                   <div>
-                    <div className="text-xs text-gray-400 uppercase tracking-wider mb-1.5">Recommended Action</div>
+                    <div className="text-xs text-gray-500 uppercase tracking-wider mb-1.5">Recommended Action</div>
                     <div className="text-gray-700 text-xs bg-gray-50 border border-gray-200 rounded-xl p-3 leading-relaxed">{selected.action}</div>
                   </div>
-                  <div className="grid grid-cols-2 gap-3 text-xs">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                     <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-                      <div className="text-gray-400 mb-1">Amount</div>
+                      <div className="text-gray-500 mb-1">Amount</div>
                       <div className="font-mono font-bold text-gray-900">${parseFloat(selected.claim.totalCharge).toFixed(2)}</div>
                     </div>
                     <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-                      <div className="text-gray-400 mb-1">CPT Code(s)</div>
+                      <div className="text-gray-500 mb-1">CPT Code(s)</div>
                       <div className="font-mono text-gray-900">{selected.claim.lineItems.map((l) => l.cptCode).join(", ")}</div>
                     </div>
                   </div>
 
                   {/* ROI Analysis */}
                   <div>
-                    <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">Appeal ROI</div>
+                    <div className="text-xs text-gray-500 uppercase tracking-wider mb-2">Appeal ROI</div>
                     {roiLoading ? (
-                      <div className="flex items-center gap-2 text-xs text-gray-400 bg-gray-50 border border-gray-200 rounded-xl p-3">
+                      <div className="flex items-center gap-2 text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded-xl p-3">
                         <svg className="animate-spin h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
                         Analyzing…
                       </div>
@@ -329,13 +383,13 @@ export default function DenialsPage() {
                             <div className={`h-full rounded-full transition-all ${roi.winProbability >= 50 ? "bg-green-500" : roi.winProbability >= 30 ? "bg-amber-400" : "bg-red-400"}`} style={{ width: `${roi.winProbability}%` }} />
                           </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                           <div>
-                            <div className="text-gray-400 mb-0.5">Expected Value</div>
+                            <div className="text-gray-500 mb-0.5">Expected Value</div>
                             <div className="font-mono font-bold text-gray-800">${roi.expectedValue.toFixed(0)}</div>
                           </div>
                           <div>
-                            <div className="text-gray-400 mb-0.5">Net ROI</div>
+                            <div className="text-gray-500 mb-0.5">Net ROI</div>
                             <div className={`font-mono font-bold ${roi.netROI >= 0 ? "text-green-600" : "text-red-600"}`}>${roi.netROI.toFixed(0)}</div>
                           </div>
                         </div>
@@ -349,7 +403,7 @@ export default function DenialsPage() {
                         </div>
                         <div className="text-xs text-gray-500 leading-relaxed">{roi.rationale}</div>
                         {roi.historicalContext && (
-                          <div className="text-xs text-gray-400 italic border-t border-gray-200 pt-2">{roi.historicalContext}</div>
+                          <div className="text-xs text-gray-500 italic border-t border-gray-200 pt-2">{roi.historicalContext}</div>
                         )}
                       </div>
                     ) : null}
@@ -377,21 +431,31 @@ export default function DenialsPage() {
                       </button>
                     ) : (
                       <div>
-                        <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">Appeal Letter</div>
+                        <div className="text-xs text-gray-500 uppercase tracking-wider mb-2">Appeal Letter</div>
                         <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 text-xs text-gray-700 max-h-48 overflow-y-auto whitespace-pre-wrap font-mono leading-relaxed">{appealLetter}</div>
                         <div className="flex gap-2 mt-3">
                           <button onClick={() => navigator.clipboard.writeText(appealLetter)}
                             className="flex-1 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 py-2 rounded-lg text-xs font-medium transition-colors shadow-sm">Copy Letter</button>
-                          <button onClick={() => handleUpdateStatus(selected, "SUBMITTED")}
-                            className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg text-xs font-medium transition-colors shadow-sm">Mark Submitted ✓</button>
+                          <button onClick={() => { setConfirmWriteOff(false); handleUpdateStatus(selected, "SUBMITTED") }}
+                            disabled={statusPending}
+                            className="flex-1 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white py-2 rounded-lg text-xs font-medium transition-colors shadow-sm">Mark Submitted ✓</button>
                         </div>
                       </div>
                     )}
                     {selected.appealStatus !== "PENDING" && (
                       <div className="flex gap-2">
-                        <button onClick={() => handleUpdateStatus(selected, "WON")} className="flex-1 bg-green-50 hover:bg-green-100 border border-green-200 text-green-700 py-1.5 rounded-lg text-xs font-medium transition-colors">Won ✓</button>
-                        <button onClick={() => handleUpdateStatus(selected, "LOST")} className="flex-1 bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 py-1.5 rounded-lg text-xs font-medium transition-colors">Lost ✗</button>
-                        <button onClick={() => handleUpdateStatus(selected, "WRITE_OFF")} className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-600 py-1.5 rounded-lg text-xs font-medium transition-colors">Write Off</button>
+                        <button onClick={() => { setConfirmWriteOff(false); handleUpdateStatus(selected, "WON") }} disabled={statusPending} className="flex-1 bg-green-50 hover:bg-green-100 disabled:opacity-50 border border-green-200 text-green-700 py-1.5 rounded-lg text-xs font-medium transition-colors">Won ✓</button>
+                        <button onClick={() => { setConfirmWriteOff(false); handleUpdateStatus(selected, "LOST") }} disabled={statusPending} className="flex-1 bg-red-50 hover:bg-red-100 disabled:opacity-50 border border-red-200 text-red-700 py-1.5 rounded-lg text-xs font-medium transition-colors">Lost ✗</button>
+                        <button
+                          onClick={() => {
+                            if (confirmWriteOff) { setConfirmWriteOff(false); handleUpdateStatus(selected, "WRITE_OFF") }
+                            else setConfirmWriteOff(true)
+                          }}
+                          disabled={statusPending}
+                          className={`flex-1 disabled:opacity-50 py-1.5 rounded-lg text-xs font-medium transition-colors ${confirmWriteOff ? "bg-red-600 hover:bg-red-700 text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-600"}`}
+                        >
+                          {confirmWriteOff ? "Confirm write-off?" : "Write Off"}
+                        </button>
                       </div>
                     )}
                   </div>

@@ -26,7 +26,7 @@ export default function PrivacyPage() {
 
           <section>
             <h2 className="text-lg font-semibold text-gray-900 mb-3">Overview</h2>
-            <p>Claima ("we," "us," or "our") is a HIPAA-compliant medical billing platform operated by Claima, Inc. This Privacy Policy describes how we collect, use, disclose, and safeguard information when you use our service. We are committed to protecting both personal information and protected health information (PHI) in accordance with applicable law, including the Health Insurance Portability and Accountability Act (HIPAA).</p>
+            <p>Claima (“we,” “us,” or “our”) is a HIPAA-compliant medical billing platform operated by Claima, Inc. This Privacy Policy describes how we collect, use, disclose, and safeguard information when you use our service. We are committed to protecting both personal information and protected health information (PHI) in accordance with applicable law, including the Health Insurance Portability and Accountability Act (HIPAA).</p>
           </section>
 
           <section>
@@ -123,7 +123,7 @@ export default function PrivacyPage() {
         </div>
       </main>
 
-      <footer className="border-t border-gray-200 mt-16 py-8 text-center text-xs text-gray-400">
+      <footer className="border-t border-gray-200 mt-16 py-8 text-center text-xs text-gray-500">
         <div className="flex items-center justify-center gap-4">
           <Link href="/privacy" className="hover:text-gray-600 text-gray-600 font-medium">Privacy Policy</Link>
           <Link href="/terms" className="hover:text-gray-600">Terms of Service</Link>

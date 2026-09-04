@@ -43,3 +43,8 @@ next-env.d.ts
 /src/generated/prisma
 .env.local
 .gstack/
+
+# agent skills — vendored content + generated symlinks, both derived from
+# skills-lock.json (which IS tracked). Restore with: npx skills install
+.agents/
+.claude/skills/

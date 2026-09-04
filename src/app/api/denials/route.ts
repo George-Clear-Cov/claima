@@ -3,6 +3,7 @@ import { z } from "zod"
 import { classifyDenial } from "@/lib/denial-codes"
 import { getSessionFromRequest } from "@/lib/auth"
 import { logAudit } from "@/lib/audit"
+import { logError } from "@/lib/log"
 
 const eraSchema = z.object({
   claimId: z.string().uuid(),
@@ -58,7 +59,7 @@ export async function POST(req: NextRequest) {
     if (err instanceof z.ZodError) {
       return NextResponse.json({ error: err.issues }, { status: 400 })
     }
-    console.error(err)
+    logError("denials", err)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

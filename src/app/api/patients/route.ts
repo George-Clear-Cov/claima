@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { getSessionFromRequest } from "@/lib/auth"
 import { logAudit } from "@/lib/audit"
+import { logError } from "@/lib/log"
 
 const createSchema = z.object({
   firstName: z.string().min(1),
@@ -28,23 +29,12 @@ export async function GET(req: NextRequest) {
 
   if (!process.env.DATABASE_URL) return NextResponse.json([], { status: 200 })
 
-  const search = req.nextUrl.searchParams.get("q")?.trim()
-
   const { prisma } = await import("@/lib/prisma")
   logAudit({ action: "patient.list", practiceId: session.practiceId, userId: session.userId, userEmail: session.email, req })
+  // Return the full practice-scoped list; the client filters locally so patient identifiers are
+  // never placed in a request URL / access log (search moved client-side — see HIPAA audit H4).
   const patients = await prisma.patient.findMany({
-    where: {
-      practiceId: session.practiceId,
-      ...(search
-        ? {
-            OR: [
-              { firstName: { contains: search, mode: "insensitive" } },
-              { lastName: { contains: search, mode: "insensitive" } },
-              { memberId: { contains: search, mode: "insensitive" } },
-            ],
-          }
-        : {}),
-    },
+    where: { practiceId: session.practiceId },
     orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
   })
   return NextResponse.json(patients)
@@ -73,7 +63,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(patient, { status: 201 })
   } catch (err) {
     if (err instanceof z.ZodError) return NextResponse.json({ error: err.issues }, { status: 400 })
-    console.error(err)
+    logError("patients", err)
     return NextResponse.json({ error: "Failed to create patient" }, { status: 500 })
   }
 }

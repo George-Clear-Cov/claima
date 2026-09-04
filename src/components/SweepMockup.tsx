@@ -3,13 +3,12 @@
 import { useState, useEffect, useRef } from "react"
 
 const TASKS = [
-  { text: "ERA posted — Cigna 11/14",  sub: "$8,400 applied"    },
-  { text: "3 appeal letters drafted",  sub: "Ready to send"     },
-  { text: "Timely filing alerts sent", sub: "2 claims flagged"  },
-  { text: "Eligibility checks",        sub: "8 visits pending"  },
-  { text: "Aging AR review",           sub: "In queue"          },
+  { text: "ERA posted — Cigna 11/14",  sub: "$8,400 applied"     },
+  { text: "3 appeal letters drafted",  sub: "Ready to send"      },
+  { text: "Timely filing alerts sent", sub: "2 claims flagged"   },
+  { text: "Eligibility checks",        sub: "8 visits verified"  },
+  { text: "Aging AR review",           sub: "surfaced by value"  },
 ]
-const DONE_AT = 3
 
 function sleep(ms: number) {
   return new Promise<void>(r => setTimeout(r, ms))
@@ -17,6 +16,7 @@ function sleep(ms: number) {
 
 export default function SweepMockup() {
   const ref = useRef<HTMLDivElement>(null)
+  const playedRef = useRef(false)
   const [inView, setInView] = useState(false)
   const [checked, setChecked] = useState(0)
 
@@ -32,23 +32,27 @@ export default function SweepMockup() {
   }, [])
 
   useEffect(() => {
-    if (!inView) {
-      setChecked(0)
+    // Play once, then hold the completed state. (Previously looped forever,
+    // perpetually resetting to "0 of 5 · 0%", and badged "Complete" at 60%.)
+    if (!inView || playedRef.current) return
+    playedRef.current = true
+
+    const reduce = typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    if (reduce) {
+      setChecked(TASKS.length)
       return
     }
 
     let cancelled = false
 
     async function run() {
-      while (!cancelled) {
-        setChecked(0)
-        await sleep(800)
-        for (let i = 1; i <= DONE_AT; i++) {
-          if (cancelled) return
-          await sleep(850)
-          setChecked(i)
-        }
-        await sleep(4500)
+      setChecked(0)
+      await sleep(800)
+      for (let i = 1; i <= TASKS.length; i++) {
+        if (cancelled) return
+        await sleep(650)
+        setChecked(i)
       }
     }
 
@@ -68,11 +72,11 @@ export default function SweepMockup() {
           <span className="text-xs font-semibold text-gray-700">Daily Sweep</span>
         </div>
         <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${
-          checked >= DONE_AT
+          checked >= TASKS.length
             ? "text-green-700 bg-green-50 border-green-200"
             : "text-blue-600 bg-blue-50 border-blue-100"
         }`}>
-          {checked >= DONE_AT ? "Complete" : "Running"}
+          {checked >= TASKS.length ? "Complete" : "Running"}
         </span>
       </div>
 

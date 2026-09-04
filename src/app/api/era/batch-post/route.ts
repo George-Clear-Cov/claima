@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { getSessionFromRequest } from "@/lib/auth"
 import { logAudit } from "@/lib/audit"
 import { sendEmail } from "@/lib/email"
-import { isClaimMdConfigured, fetchAvailableERAs, fetchERAById } from "@/lib/claimmd"
+import { isClaimMdConfigured, fetchAvailableERAs, fetchERAById, type ClaimMdERAClaimLine } from "@/lib/claimmd"
+import { classifyDenial, normalizeCarc } from "@/lib/denial-codes"
 
 const PAYER_RATES: Record<string, { insRate: number; adjRate: number }> = {
   "Aetna":                { insRate: 0.70, adjRate: 0.10 },
@@ -12,6 +13,30 @@ const PAYER_RATES: Record<string, { insRate: number; adjRate: number }> = {
   "Humana":               { insRate: 0.65, adjRate: 0.13 },
 }
 const DEFAULT_RATES = { insRate: 0.70, adjRate: 0.10 }
+
+// Build per-service-line remittance rows (the billed → allowed → paid → patient-split
+// waterfall) that power the patient cost-transparency EOB.
+function buildRemittanceLines(practiceId: string, eraId: string, claimId: string | null, line: ClaimMdERAClaimLine) {
+  return line.lines.map((sl) => ({
+    practiceId,
+    eraId,
+    claimId,
+    cptCode: sl.cpt,
+    modifiers: sl.modifiers,
+    units: sl.units,
+    serviceDate: line.service_date ? new Date(line.service_date) : null,
+    chargeAmount: sl.billed_amount,
+    allowedAmount: sl.allowed_amount,
+    insurancePaid: sl.paid_amount,
+    contractualAdjustment: sl.contractual_adjustment,
+    patientResponsibility: sl.patient_responsibility,
+    deductible: sl.deductible,
+    coinsurance: sl.coinsurance,
+    copay: sl.copay,
+    otherPatientResp: sl.other_patient_resp,
+    carcCodes: sl.carc_codes,
+  }))
+}
 
 export async function POST(req: NextRequest) {
   const session = await getSessionFromRequest(req)
@@ -59,6 +84,7 @@ async function postRealERAs(_req: NextRequest, practiceId: string, adminEmail: s
     matchType: "exact" | "fuzzy" | "unmatched"
     insurancePaid: number
     status: "posted" | "pending_review" | "error"
+    denied?: boolean
   }> = []
 
   for (const eraEntry of eraList) {
@@ -103,6 +129,10 @@ async function postRealERAs(_req: NextRequest, practiceId: string, adminEmail: s
         insurancePaid: line.paid_amount,
         adjustments: line.adjustment_amount,
         patientResponsibility: line.patient_responsibility,
+        deductible: line.deductible,
+        coinsurance: line.coinsurance,
+        copay: line.copay,
+        otherPatientResp: line.other_patient_resp,
         carcCodes: line.carc_codes ?? [],
         rawData: line as object,
         matchedAt: matched ? new Date() : null,
@@ -111,32 +141,60 @@ async function postRealERAs(_req: NextRequest, practiceId: string, adminEmail: s
 
       try {
         if (matched) {
-          const patientOwes = Math.max(
-            Math.round((line.billed_amount - line.paid_amount - line.adjustment_amount) * 100) / 100,
-            0
-          )
-          await prisma.$transaction([
-            prisma.eRA.create({ data: eraRecord }),
-            prisma.claim.update({
-              where: { id: matched.id },
-              data: { claimStatus: "PAID", paidAmount: line.paid_amount, paidAt: new Date() },
-            }),
-            prisma.patientStatement.create({
-              data: {
-                patientId: matched.patientId,
-                claimId: matched.id,
-                totalCharge: line.billed_amount,
-                insurancePaid: line.paid_amount,
-                adjustments: line.adjustment_amount,
-                patientOwes,
-                balanceDue: patientOwes,
-                statementStatus: patientOwes === 0 ? "PAID" : "PENDING",
-                dueDate: new Date(Date.now() + 30 * 86400000),
-                notes: `ERA posted — ${eraEntry.payer_name} check #${eraEntry.check_number} (${matchType} match)`,
-              },
-            }),
-          ])
-          results.push({ eraId: eraEntry.era_id, claimId: matched.id, matched: true, matchType, insurancePaid: line.paid_amount, status: "posted" })
+          // A remittance line with $0 paid and CARC code(s) is a denial, not a payment.
+          const rawCarc = line.carc_codes?.[0]
+          const primaryCarc = rawCarc ? normalizeCarc(rawCarc) : undefined
+          const isDenial = line.paid_amount === 0 && !!primaryCarc
+
+          if (isDenial) {
+            // Record the denial for the recovery workflow (no patient statement — we appeal/resubmit).
+            const cls = classifyDenial(primaryCarc!)
+            await prisma.$transaction([
+              prisma.eRA.create({ data: eraRecord }),
+              prisma.remittanceLine.createMany({ data: buildRemittanceLines(practiceId, eraRecord.id, matched.id, line) }),
+              prisma.claim.update({
+                where: { id: matched.id },
+                data: { claimStatus: "DENIED", denialCode: primaryCarc, denialReason: cls.description },
+              }),
+              prisma.denial.upsert({
+                where: { claimId: matched.id },
+                create: { claimId: matched.id, carcCode: primaryCarc!, denialReason: cls.description, category: cls.category, priority: cls.priority, action: cls.action, appealable: cls.appealable },
+                update: { carcCode: primaryCarc!, denialReason: cls.description, category: cls.category, priority: cls.priority, action: cls.action, appealable: cls.appealable },
+              }),
+            ])
+            results.push({ eraId: eraEntry.era_id, claimId: matched.id, matched: true, matchType, insurancePaid: 0, status: "posted", denied: true })
+          } else {
+            const patientOwes = Math.max(
+              Math.round((line.billed_amount - line.paid_amount - line.adjustment_amount) * 100) / 100,
+              0
+            )
+            await prisma.$transaction([
+              prisma.eRA.create({ data: eraRecord }),
+              prisma.remittanceLine.createMany({ data: buildRemittanceLines(practiceId, eraRecord.id, matched.id, line) }),
+              prisma.claim.update({
+                where: { id: matched.id },
+                data: { claimStatus: "PAID", paidAmount: line.paid_amount, paidAt: new Date() },
+              }),
+              prisma.patientStatement.create({
+                data: {
+                  patientId: matched.patientId,
+                  claimId: matched.id,
+                  totalCharge: line.billed_amount,
+                  insurancePaid: line.paid_amount,
+                  adjustments: line.adjustment_amount,
+                  deductible: line.deductible,
+                  coinsurance: line.coinsurance,
+                  copay: line.copay,
+                  patientOwes,
+                  balanceDue: patientOwes,
+                  statementStatus: patientOwes === 0 ? "PAID" : "PENDING",
+                  dueDate: new Date(Date.now() + 30 * 86400000),
+                  notes: `ERA posted — ${eraEntry.payer_name} check #${eraEntry.check_number} (${matchType} match)`,
+                },
+              }),
+            ])
+            results.push({ eraId: eraEntry.era_id, claimId: matched.id, matched: true, matchType, insurancePaid: line.paid_amount, status: "posted" })
+          }
         } else {
           // Store for manual review — no claim matched
           await prisma.eRA.create({ data: eraRecord })
@@ -150,6 +208,7 @@ async function postRealERAs(_req: NextRequest, practiceId: string, adminEmail: s
 
   const posted = results.filter((r) => r.status === "posted")
   const unmatched = results.filter((r) => r.status === "pending_review")
+  const deniedCount = posted.filter((r) => r.denied).length
   const totalInsurancePaid = posted.reduce((s, r) => s + r.insurancePaid, 0)
 
   if (posted.length > 0 && adminEmail) {
@@ -160,6 +219,7 @@ async function postRealERAs(_req: NextRequest, practiceId: string, adminEmail: s
 <ul>
   <li><strong>Claims matched and posted:</strong> ${posted.length}</li>
   <li><strong>Insurance payments recorded:</strong> $${totalInsurancePaid.toFixed(2)}</li>
+  ${deniedCount > 0 ? `<li><strong>Denials recorded for appeal:</strong> ${deniedCount}</li>` : ""}
   ${unmatched.length > 0 ? `<li><strong>Unmatched ERAs for review:</strong> ${unmatched.length}</li>` : ""}
 </ul>`,
     }).catch((e) => console.error("[email] ERA notification failed:", e))
@@ -167,6 +227,7 @@ async function postRealERAs(_req: NextRequest, practiceId: string, adminEmail: s
 
   return NextResponse.json({
     processed: posted.length,
+    denied: deniedCount,
     unmatched: unmatched.length,
     total: results.length,
     totalInsurancePaid,
@@ -195,7 +256,7 @@ async function postMockERAs(practiceId: string, adminEmail: string, prisma: any)
   if (eligible.length === 0) {
     return NextResponse.json({
       processed: 0,
-      message: "No claims pending 14+ days. Add CLAIMMD_ACCOUNT_KEY + CLAIMMD_API_KEY to enable real ERA retrieval.",
+      message: "No claims pending 14+ days. Add CLAIMMD_ACCOUNT_KEY to enable real ERA retrieval.",
       results: [],
       mode: "mock",
     })

@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
+import { LogoMark } from "@/components/Logo"
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
   PieChart, Pie, Cell, LineChart, Line, ReferenceLine,
@@ -97,9 +98,9 @@ function fmtK(n: number) { return n >= 1000 ? `$${(n / 1000).toFixed(1)}k` : fmt
 function KPI({ label, value, sub, color = "text-gray-900" }: { label: string; value: string; sub: string; color?: string; accent?: string }) {
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
-      <div className="text-xs text-gray-400 font-medium mb-3 uppercase tracking-wider">{label}</div>
+      <div className="text-xs text-gray-500 font-medium mb-3 uppercase tracking-wider">{label}</div>
       <div className={`text-2xl font-bold font-mono ${color}`}>{value}</div>
-      <div className="text-xs text-gray-400 mt-1">{sub}</div>
+      <div className="text-xs text-gray-500 mt-1">{sub}</div>
     </div>
   )
 }
@@ -107,7 +108,7 @@ function KPI({ label, value, sub, color = "text-gray-900" }: { label: string; va
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-3 mb-4">
-      <span className="text-xs text-gray-400 uppercase tracking-widest font-medium">{children}</span>
+      <span className="text-xs text-gray-500 uppercase tracking-widest font-medium">{children}</span>
       <div className="flex-1 h-px bg-gray-200" />
     </div>
   )
@@ -199,7 +200,7 @@ export default function AnalyticsPage() {
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-32 text-gray-400">
+          <div className="flex items-center justify-center py-32 text-gray-500">
             <svg className="animate-spin h-6 w-6 mr-3" viewBox="0 0 24 24" fill="none">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
@@ -207,18 +208,18 @@ export default function AnalyticsPage() {
             Calculating…
           </div>
         ) : !data ? (
-          <div className="text-center py-24 text-gray-400">No data available. Submit some claims to see analytics.</div>
+          <div className="text-center py-24 text-gray-500">No data available. Submit some claims to see analytics.</div>
         ) : (
           <>
             {/* KPI row */}
-            <div className="grid grid-cols-4 gap-4 mb-10">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
               <KPI label="Total Billed" value={fmtK(s!.totalBilled)} sub="gross charges" accent="bg-gray-300" />
               <KPI label="Total Collected" value={fmtK(s!.totalCollected)} sub={`${s!.collectionRate}% collection rate`} color="text-green-600" accent="bg-green-500" />
               <KPI label="Outstanding" value={fmtK(s!.totalBilled - s!.totalCollected)} sub="uncollected" color="text-amber-600" accent="bg-amber-500" />
               <KPI label="Denial Rate" value={`${s!.denialRate}%`} sub={`${s!.openDenials} open denials`} color={s!.denialRate > 10 ? "text-red-600" : "text-gray-900"} accent={s!.denialRate > 10 ? "bg-red-500" : "bg-gray-300"} />
             </div>
 
-            <div className="grid grid-cols-4 gap-4 mb-10">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
               <KPI label="Insurance Paid" value={fmtK(s!.insurancePaid)} sub="ERA payments" color="text-blue-600" accent="bg-blue-500" />
               <KPI label="Patient Collected" value={fmtK(s!.patientCollected)} sub="copays & balances" color="text-purple-600" accent="bg-purple-500" />
               <KPI label="Clean Claim Rate" value={`${data.claimsByStatus.find((c) => c.status === "DENIED") ? Math.round((1 - (data.claimsByStatus.find((c) => c.status === "DENIED")!.count / (data.claimsByStatus.reduce((s, c) => s + c.count, 0) || 1))) * 100) : 100}%`} sub="first-pass acceptance" color="text-indigo-600" accent="bg-indigo-500" />
@@ -230,7 +231,7 @@ export default function AnalyticsPage() {
               <>
                 <SectionLabel>
                   <span className="flex items-center gap-2">
-                    <span className="w-4 h-4 rounded bg-blue-600 flex items-center justify-center text-white text-xs font-bold">C</span>
+                    <LogoMark size={16} />
                     AI Insights
                   </span>
                 </SectionLabel>
@@ -272,7 +273,7 @@ export default function AnalyticsPage() {
                         <span className={`text-xs font-mono font-semibold w-10 text-right ${c.denialRate > 20 ? "text-red-600" : c.denialRate > 10 ? "text-amber-600" : "text-green-600"}`}>
                           {c.denialRate}%
                         </span>
-                        <span className="text-xs text-gray-400 w-20 text-right">{c.denied}/{c.total} denied</span>
+                        <span className="text-xs text-gray-500 w-20 text-right">{c.denied}/{c.total} denied</span>
                       </div>
                     ))}
                   </div>
@@ -284,7 +285,7 @@ export default function AnalyticsPage() {
             <SectionLabel>Monthly Revenue</SectionLabel>
             <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm mb-6">
               {data.monthlyRevenue.length === 0 ? (
-                <div className="h-48 flex items-center justify-center text-gray-400 text-sm">No claims in this period</div>
+                <div className="h-48 flex items-center justify-center text-gray-500 text-sm">No claims in this period</div>
               ) : (
                 <ResponsiveContainer width="100%" height={240}>
                   <BarChart data={data.monthlyRevenue} margin={{ top: 4, right: 4, left: 8, bottom: 0 }} barSize={18} barGap={2}>
@@ -333,12 +334,12 @@ export default function AnalyticsPage() {
             )}
 
             {/* Status breakdown + AR Aging side by side */}
-            <div className="grid grid-cols-2 gap-6 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
               {/* Claim status donut */}
               <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
                 <div className="text-xs text-gray-500 uppercase tracking-widest font-medium mb-4">Claim Status</div>
                 {data.claimsByStatus.length === 0 ? (
-                  <div className="h-48 flex items-center justify-center text-gray-400 text-sm">No claims</div>
+                  <div className="h-48 flex items-center justify-center text-gray-500 text-sm">No claims</div>
                 ) : (
                   <div className="flex items-center gap-4">
                     <ResponsiveContainer width="55%" height={200}>
@@ -368,7 +369,7 @@ export default function AnalyticsPage() {
                           </div>
                           <div className="text-right">
                             <span className="font-mono text-gray-700">{s.count}</span>
-                            <span className="text-gray-400 ml-1">· {fmt(s.amount)}</span>
+                            <span className="text-gray-500 ml-1">· {fmt(s.amount)}</span>
                           </div>
                         </div>
                       ))}
@@ -381,7 +382,7 @@ export default function AnalyticsPage() {
               <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
                 <div className="text-xs text-gray-500 uppercase tracking-widest font-medium mb-4">AR Aging (Outstanding)</div>
                 {data.arAging.every((b) => b.amount === 0) ? (
-                  <div className="h-48 flex items-center justify-center text-gray-400 text-sm">No outstanding balances</div>
+                  <div className="h-48 flex items-center justify-center text-gray-500 text-sm">No outstanding balances</div>
                 ) : (
                   <ResponsiveContainer width="100%" height={200}>
                     <BarChart data={data.arAging} layout="vertical" margin={{ top: 0, right: 24, left: 8, bottom: 0 }} barSize={14}>
@@ -416,7 +417,7 @@ export default function AnalyticsPage() {
             {data.byPayer.length > 0 && (
               <div className="mb-6">
                 <SectionLabel>By Payer</SectionLabel>
-                <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+                <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto shadow-sm">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="bg-gray-50 border-b border-gray-200">
@@ -457,7 +458,7 @@ export default function AnalyticsPage() {
             {data.byProvider.length > 0 && (
               <div>
                 <SectionLabel>By Provider</SectionLabel>
-                <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+                <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto shadow-sm">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="bg-gray-50 border-b border-gray-200">

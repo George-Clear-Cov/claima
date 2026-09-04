@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { aiComplete, isAIConfigured } from "@/lib/ai"
 import { getSessionFromRequest } from "@/lib/auth"
 import { logAudit } from "@/lib/audit"
+import { logError } from "@/lib/log"
 
 export async function GET(req: NextRequest) {
   const session = await getSessionFromRequest(req)
@@ -136,7 +137,7 @@ Rules:
     const ai = JSON.parse(match[0])
     return NextResponse.json({ ...data, ...ai })
   } catch (err) {
-    console.error("[briefing] failed:", err)
+    logError("briefing", err)
     return NextResponse.json({
       ...data,
       headline: `${data.paidYesterday} payments · ${data.newDenials} new denials · ${data.timelyRisks} timely filing risks`,

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { LogoMark } from "@/components/Logo"
 import AppLayout from "@/components/AppLayout"
 import Link from "next/link"
 
@@ -29,9 +30,9 @@ interface AgentResult {
 function StatCard({ label, value, sub, color }: { label: string; value: string; sub?: string; accent?: string; color: string }) {
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-      <div className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-2">{label}</div>
+      <div className="text-xs text-gray-500 font-medium uppercase tracking-wider mb-2">{label}</div>
       <div className={`text-2xl font-bold font-mono ${color}`}>{value}</div>
-      {sub && <div className="text-xs text-gray-400 mt-0.5">{sub}</div>}
+      {sub && <div className="text-xs text-gray-500 mt-0.5">{sub}</div>}
     </div>
   )
 }
@@ -113,7 +114,7 @@ export default function AgentPage() {
             {/* Narrative */}
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-5">
               <div className="flex items-center gap-2 mb-2">
-                <div className="w-5 h-5 rounded bg-blue-600 flex items-center justify-center text-white text-xs font-bold shrink-0">C</div>
+                <LogoMark size={20} className="shrink-0" />
                 <span className="text-xs font-semibold text-blue-800 uppercase tracking-wider">Agent Report</span>
                 <span className="text-xs text-blue-400 ml-auto">{(result.durationMs / 1000).toFixed(1)}s · {new Date(result.runAt).toLocaleTimeString()}</span>
               </div>
@@ -121,7 +122,7 @@ export default function AgentPage() {
             </div>
 
             {/* KPIs */}
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               <StatCard label="ERAs Posted" value={String(result.actions.erasPosted)} sub={fmt(result.actions.erasAmount)} accent="bg-green-500" color="text-green-700" />
               <StatCard label="Appeals Drafted" value={String(result.actions.appealsGenerated)} sub={fmt(result.actions.appealsAmount)} accent="bg-blue-500" color="text-blue-700" />
               <StatCard label="Timely Risks" value={String(result.actions.timelyRisks)} sub={fmt(result.actions.timelyAmount)} accent={result.actions.timelyRisks > 0 ? "bg-red-500" : "bg-gray-300"} color={result.actions.timelyRisks > 0 ? "text-red-700" : "text-gray-600"} />
@@ -145,16 +146,16 @@ export default function AgentPage() {
 
             {/* ERA log */}
             {result.eraResults.length > 0 && (
-              <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+              <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto shadow-sm">
                 <div className="px-5 py-3 border-b border-gray-100 bg-gray-50">
                   <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">ERAs Posted ({result.eraResults.length})</h3>
                 </div>
                 <table className="w-full text-sm">
                   <thead><tr className="border-b border-gray-100">
-                    <th className="px-5 py-2.5 text-left text-xs text-gray-400 font-medium">Patient</th>
-                    <th className="px-5 py-2.5 text-left text-xs text-gray-400 font-medium">Payer</th>
-                    <th className="px-5 py-2.5 text-right text-xs text-gray-400 font-medium">Ins. Paid</th>
-                    <th className="px-5 py-2.5 text-right text-xs text-gray-400 font-medium">Pt. Owes</th>
+                    <th className="px-5 py-2.5 text-left text-xs text-gray-500 font-medium">Patient</th>
+                    <th className="px-5 py-2.5 text-left text-xs text-gray-500 font-medium">Payer</th>
+                    <th className="px-5 py-2.5 text-right text-xs text-gray-500 font-medium">Ins. Paid</th>
+                    <th className="px-5 py-2.5 text-right text-xs text-gray-500 font-medium">Pt. Owes</th>
                   </tr></thead>
                   <tbody className="divide-y divide-gray-50">
                     {result.eraResults.map((r, i) => (
@@ -172,7 +173,7 @@ export default function AgentPage() {
 
             {/* Timely filing risks */}
             {result.timelyRisks.length > 0 && (
-              <div className="bg-red-50 border border-red-200 rounded-xl overflow-hidden">
+              <div className="bg-red-50 border border-red-200 rounded-xl overflow-x-auto">
                 <div className="px-5 py-3 border-b border-red-200">
                   <h3 className="text-xs font-semibold text-red-700 uppercase tracking-wider">⚠ Timely Filing Risks ({result.timelyRisks.length})</h3>
                   <p className="text-xs text-red-600 mt-0.5">Claims 90+ days old — timely filing window may be closing. Follow up with payers immediately.</p>
@@ -204,7 +205,7 @@ export default function AgentPage() {
             <div className="flex gap-3 pt-2">
               <Link href="/denials" className="text-sm text-blue-600 hover:text-blue-700 hover:underline">Review drafted appeals →</Link>
               <Link href="/billing" className="text-sm text-blue-600 hover:text-blue-700 hover:underline">View new statements →</Link>
-              <Link href="/" className="text-sm text-blue-600 hover:text-blue-700 hover:underline">Today's briefing →</Link>
+              <Link href="/" className="text-sm text-blue-600 hover:text-blue-700 hover:underline">Today’s briefing →</Link>
             </div>
           </div>
         )}
@@ -213,7 +214,7 @@ export default function AgentPage() {
         {!result && !running && !error && (
           <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
             <h3 className="text-sm font-semibold text-gray-700 mb-3">What the agent handles automatically</h3>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[
                 { icon: "💳", title: "ERA Posting", desc: "Posts insurance payments for claims pending 14+ days using contracted rates" },
                 { icon: "✉", title: "Appeal Letters", desc: "Drafts AI-generated appeal letters for all new PENDING denials" },

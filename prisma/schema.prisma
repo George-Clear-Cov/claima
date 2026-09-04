@@ -18,6 +18,16 @@ model User {
   lockedUntil          DateTime?
   createdAt            DateTime  @default(now())
 
+  // Set once the address has been proven with an emailed code. Required before the
+  // account may send us PHI — an unverified address is an unidentified counterparty,
+  // and a backlog import is the largest PHI ingress in the product.
+  emailVerifiedAt      DateTime?
+
+  // TOTP multi-factor auth for email/password logins (SSO logins inherit MFA from the IdP).
+  mfaEnabled           Boolean   @default(false)
+  mfaSecret            String?   // base32 TOTP secret; stored at setup, enforced once mfaEnabled
+  mfaBackupCodes       String[]  @default([]) // bcrypt hashes of unused single-use backup codes
+
   practice Practice @relation(fields: [practiceId], references: [id])
 }
 
@@ -43,6 +53,11 @@ model Practice {
   platformFeePercent Float   @default(5.0)
   baaAcceptedAt     DateTime?
   baaAcceptedIp     String?
+  // The BAA is a data-protection agreement and creates no commercial relationship. The
+  // services agreement is what establishes the engagement and the contingency fee, so it
+  // is recorded independently and must never be inferred from baaAcceptedAt.
+  servicesAgreementAcceptedAt DateTime?
+  servicesAgreementAcceptedIp String?
   createdAt         DateTime @default(now())
 
   providers               Provider[]
@@ -57,6 +72,9 @@ model Practice {
   providerCredentials     ProviderCredential[]
   oigChecks               OigCheck[]
   aiUsage                 AiUsage[]
+  feeSchedule             FeeScheduleEntry[]
+  remittanceLines         RemittanceLine[]
+  goodFaithEstimates      GoodFaithEstimate[]
 }
 
 model AiUsage {
@@ -160,6 +178,7 @@ model Patient {
   statements        PatientStatement[]
   priorAuths        PriorAuthorization[]
   ccmTimeLogs       CcmTimeLog[]
+  goodFaithEstimates GoodFaithEstimate[]
 }
 
 model Claim {
@@ -191,6 +210,8 @@ model Claim {
   denial     Denial?
   statement  PatientStatement?
   era        ERA?
+  eligibilityChecks EligibilityCheck[]
+  remittanceLines   RemittanceLine[]
 }
 
 model Denial {
@@ -220,6 +241,10 @@ model PatientStatement {
   totalCharge      Decimal         @db.Decimal(10, 2)
   insurancePaid    Decimal         @db.Decimal(10, 2)
   adjustments      Decimal         @db.Decimal(10, 2) @default(0)
+  // Patient-responsibility split (from 835 CAS PR group) — powers the transparency EOB
+  deductible       Decimal         @db.Decimal(10, 2) @default(0)
+  coinsurance      Decimal         @db.Decimal(10, 2) @default(0)
+  copay            Decimal         @db.Decimal(10, 2) @default(0)
   patientOwes      Decimal         @db.Decimal(10, 2)
   patientPaid      Decimal         @db.Decimal(10, 2) @default(0)
   balanceDue       Decimal         @db.Decimal(10, 2)
@@ -267,6 +292,8 @@ model EligibilityCheck {
   deductibleMet    Decimal? @db.Decimal(10, 2)
   outOfPocketMax   Decimal? @db.Decimal(10, 2)
   outOfPocketMet   Decimal? @db.Decimal(10, 2)
+  deductibleRemaining  Decimal? @db.Decimal(10, 2)
+  outOfPocketRemaining Decimal? @db.Decimal(10, 2)
   copay            Decimal? @db.Decimal(10, 2)
   coinsurance      Int?
   visitLimit       Int?
@@ -276,9 +303,14 @@ model EligibilityCheck {
   effectiveDate    String?
   terminationDate  String?
   rawResponse      Json?
+  claimId          String?
   checkedAt        DateTime @default(now())
 
   patient Patient @relation(fields: [patientId], references: [id])
+  claim   Claim?  @relation(fields: [claimId], references: [id])
+
+  @@index([patientId])
+  @@index([claimId])
 }
 
 model ClaimLine {
@@ -327,6 +359,23 @@ model PasswordResetToken {
   createdAt DateTime @default(now())
 }
 
+/**
+ * Short-lived email verification codes. The code itself is never stored — only a SHA-256
+ * hash — so a database read cannot be replayed to verify someone else's address. Attempts
+ * are counted so a 6-digit code cannot be brute forced.
+ */
+model EmailVerificationCode {
+  id        String    @id @default(uuid())
+  userId    String
+  codeHash  String
+  expiresAt DateTime
+  consumedAt DateTime?
+  attempts  Int       @default(0)
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
 model ERA {
   id                    String    @id @default(cuid())
   practiceId            String
@@ -343,6 +392,10 @@ model ERA {
   insurancePaid         Decimal   @db.Decimal(10, 2)
   adjustments           Decimal   @db.Decimal(10, 2)
   patientResponsibility Decimal   @db.Decimal(10, 2)
+  deductible            Decimal   @db.Decimal(10, 2) @default(0)
+  coinsurance           Decimal   @db.Decimal(10, 2) @default(0)
+  copay                 Decimal   @db.Decimal(10, 2) @default(0)
+  otherPatientResp      Decimal   @db.Decimal(10, 2) @default(0)
   carcCodes             String[]
   rawData               Json
   matchedAt             DateTime?
@@ -350,8 +403,9 @@ model ERA {
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
-  practice Practice @relation(fields: [practiceId], references: [id])
-  claim    Claim?   @relation(fields: [claimId], references: [id])
+  practice        Practice         @relation(fields: [practiceId], references: [id])
+  claim           Claim?           @relation(fields: [claimId], references: [id])
+  remittanceLines RemittanceLine[]
 
   @@index([practiceId, createdAt])
 }
@@ -470,4 +524,95 @@ model CcmTimeLog {
 
   @@index([practiceId])
   @@index([patientId, logDate])
+}
+
+// ── Patient cost transparency ──────────────────────────────────────────────
+// Per-service-line remittance detail. The 835 parser computes this per line; we
+// persist it so a patient can see, for each CPT: billed → allowed → insurance
+// paid → their responsibility, split into deductible / coinsurance / copay.
+model RemittanceLine {
+  id                    String    @id @default(uuid())
+  practiceId            String
+  eraId                 String
+  claimId               String?
+  cptCode               String
+  modifiers             String[]  @default([])
+  units                 Int       @default(1)
+  serviceDate           DateTime?
+  chargeAmount          Decimal   @db.Decimal(10, 2)
+  allowedAmount         Decimal?  @db.Decimal(10, 2)
+  insurancePaid         Decimal   @db.Decimal(10, 2) @default(0)
+  contractualAdjustment Decimal   @db.Decimal(10, 2) @default(0) // CAS group CO (plan write-off)
+  patientResponsibility Decimal   @db.Decimal(10, 2) @default(0) // total PR
+  deductible            Decimal   @db.Decimal(10, 2) @default(0) // PR-1
+  coinsurance           Decimal   @db.Decimal(10, 2) @default(0) // PR-2
+  copay                 Decimal   @db.Decimal(10, 2) @default(0) // PR-3
+  otherPatientResp      Decimal   @db.Decimal(10, 2) @default(0) // other PR (non-covered, etc.)
+  carcCodes             String[]  @default([])
+  createdAt             DateTime  @default(now())
+
+  practice Practice @relation(fields: [practiceId], references: [id])
+  era      ERA      @relation(fields: [eraId], references: [id], onDelete: Cascade)
+  claim    Claim?   @relation(fields: [claimId], references: [id])
+
+  @@index([practiceId])
+  @@index([eraId])
+  @@index([claimId])
+}
+
+// Charge master / fee schedule. Authoritative expected charges per CPT — the
+// source a compliant Good Faith Estimate cites. payerId null = practice list
+// price (self-pay / GFE); a payerId row carries the expected in-network allowed.
+model FeeScheduleEntry {
+  id              String    @id @default(uuid())
+  practiceId      String
+  cptCode         String
+  modifier        String?
+  payerId         String?   // null = practice default / self-pay list price
+  payerName       String?
+  expectedCharge  Decimal   @db.Decimal(10, 2)  // cited on the Good Faith Estimate
+  expectedAllowed Decimal?  @db.Decimal(10, 2)  // expected payer allowed (insured estimate)
+  source          FeeSource @default(MANUAL)
+  effectiveDate   DateTime  @default(now())
+  active          Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  practice Practice @relation(fields: [practiceId], references: [id])
+
+  @@unique([practiceId, cptCode, modifier, payerId, effectiveDate])
+  @@index([practiceId, cptCode])
+}
+
+enum FeeSource {
+  MANUAL
+  DERIVED
+  IMPORTED
+}
+
+// A compliant Good Faith Estimate (No Surprises Act). Persisted as an immutable
+// snapshot for the required retention period (≥6 years). `lines` holds the
+// EstimateLine[] exactly as shown to the patient; `disclaimer` is the served text.
+model GoodFaithEstimate {
+  id              String    @id @default(uuid())
+  practiceId      String
+  patientId       String?
+  providerId      String?
+  payerId         String?
+  payerName       String?
+  insured         Boolean   @default(false)
+  totalCharge     Decimal   @db.Decimal(10, 2)
+  totalAllowed    Decimal   @db.Decimal(10, 2)
+  patientEstimate Decimal   @db.Decimal(10, 2)
+  lines           Json      // EstimateLine[] snapshot as presented
+  diagnosisCodes  String[]  @default([])
+  disclaimer      String
+  expiresAt       DateTime?
+  createdAt       DateTime  @default(now())
+
+  practice Practice @relation(fields: [practiceId], references: [id])
+  patient  Patient? @relation(fields: [patientId], references: [id])
+
+  @@index([practiceId, createdAt])
+  @@index([patientId])
 }

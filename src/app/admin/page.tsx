@@ -73,7 +73,7 @@ export default function AdminPage() {
   if (!data) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-sm text-gray-400">Loading platform data…</div>
+        <div className="text-sm text-gray-500">Loading platform data…</div>
       </div>
     )
   }
@@ -137,14 +137,14 @@ export default function AdminPage() {
                   <tr key={p.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3">
                       <div className="font-medium text-gray-900">{p.name}</div>
-                      <div className="text-xs text-gray-400">{p.city}, {p.state} · NPI {p.npi}</div>
+                      <div className="text-xs text-gray-500">{p.city}, {p.state} · NPI {p.npi}</div>
                     </td>
                     <td className="px-4 py-3 text-gray-600 text-xs">{p.adminEmail ?? "—"}</td>
                     <td className="px-4 py-3 text-right text-gray-700">{p.claimCount}</td>
                     <td className="px-4 py-3 text-right text-gray-700">{fmt(p.totalBilled)}</td>
                     <td className="px-4 py-3 text-right">
                       <span className="text-gray-900 font-medium">{fmt(p.totalCollected + p.patientCollected)}</span>
-                      <span className="text-xs text-gray-400 ml-1">({p.collectionRate}%)</span>
+                      <span className="text-xs text-gray-500 ml-1">({p.collectionRate}%)</span>
                     </td>
                     <td className="px-4 py-3 text-right font-semibold text-blue-700">{fmt(p.platformFeeEarned)}</td>
                     <td className="px-4 py-3 text-right">
@@ -167,13 +167,13 @@ export default function AdminPage() {
             </table>
           </div>
           {practices.length === 0 && (
-            <div className="px-6 py-12 text-center text-sm text-gray-400">No practices yet.</div>
+            <div className="px-6 py-12 text-center text-sm text-gray-500">No practices yet.</div>
           )}
         </div>
 
-        <p className="mt-6 text-xs text-gray-400 text-center">
+        <p className="mt-6 text-xs text-gray-500 text-center">
           Platform fee = {practices[0]?.platformFeePercent ?? 5}% of total collected per practice.
-          Add your email to <code>PLATFORM_ADMIN_EMAILS</code> in Vercel to grant access.
+          Add your email to <code>PLATFORM_ADMIN_EMAILS</code> in the App Service configuration to grant access.
         </p>
       </div>
     </div>

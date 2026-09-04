@@ -4,6 +4,7 @@ import { checkEligibility } from "@/lib/eligibility"
 import { getServiceTypeForCPT } from "@/lib/specialty"
 import { getSessionFromRequest } from "@/lib/auth"
 import { logAudit } from "@/lib/audit"
+import { logError } from "@/lib/log"
 
 const schema = z.object({
   patientId: z.string().uuid().optional(),
@@ -60,6 +61,8 @@ export async function POST(req: NextRequest) {
               deductibleMet: result.coverage?.deductibleMet,
               outOfPocketMax: result.coverage?.outOfPocketMax,
               outOfPocketMet: result.coverage?.outOfPocketMet,
+              deductibleRemaining: result.coverage?.deductibleRemaining,
+              outOfPocketRemaining: result.coverage?.outOfPocketRemaining,
               copay: result.coverage?.copay,
               coinsurance: result.coverage?.coinsurance,
               visitLimit: result.coverage?.visitLimit,
@@ -82,7 +85,7 @@ export async function POST(req: NextRequest) {
     if (err instanceof z.ZodError) {
       return NextResponse.json({ error: err.issues }, { status: 400 })
     }
-    console.error(err)
+    logError("eligibility", err)
     return NextResponse.json({ error: "Eligibility check failed" }, { status: 500 })
   }
 }

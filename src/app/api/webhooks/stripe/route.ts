@@ -43,8 +43,20 @@ export async function POST(req: NextRequest) {
 
   // ─── V2 Thin Event Handler ───────────────────────────────────────────────
   if (isV2ThinEvent) {
-    if (!v2WebhookSecret || !sig) {
-      console.warn("V2 webhook received without STRIPE_WEBHOOK_SECRET — skipping verification (dev only)")
+    // A configured secret means signatures are MANDATORY. Treating a missing
+    // `stripe-signature` header as "dev mode" let anyone skip verification just
+    // by omitting the header — the request is attacker-controlled, so it can
+    // never be the thing that decides whether to verify.
+    if (v2WebhookSecret && !sig) {
+      console.error("V2 webhook rejected: signing secret configured but no stripe-signature header")
+      return NextResponse.json({ error: "Missing signature" }, { status: 400 })
+    }
+    if (!v2WebhookSecret && process.env.NODE_ENV === "production") {
+      console.error("V2 webhook rejected: STRIPE_WEBHOOK_SECRET is not configured in production")
+      return NextResponse.json({ error: "Webhook not configured" }, { status: 503 })
+    }
+    if (!v2WebhookSecret) {
+      console.warn("V2 webhook: no signing secret — unsigned event accepted (non-production only)")
     } else {
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -112,18 +124,27 @@ export async function POST(req: NextRequest) {
 
   if (v1WebhookSecret && sig) {
     try {
-      event = stripeClient.webhooks.constructEvent(body, sig, v1WebhookSecret)
+      // constructEventAsync, not constructEvent: the sync variant throws
+      // ("SubtleCryptoProvider cannot be used in a synchronous context") wherever the
+      // Stripe SDK selects the Web Crypto provider rather than Node's — edge runtimes
+      // and some test runners. The async form works under both.
+      event = await stripeClient.webhooks.constructEventAsync(body, sig, v1WebhookSecret)
     } catch (err) {
       console.error("V1 webhook signature verification failed:", err)
       return NextResponse.json({ error: "Invalid signature" }, { status: 400 })
     }
+  } else if (v1WebhookSecret && !sig) {
+    // Secret configured but no signature header — reject. See the V2 note above:
+    // the caller must not be able to opt out of verification.
+    console.error("V1 webhook rejected: signing secret configured but no stripe-signature header")
+    return NextResponse.json({ error: "Missing signature" }, { status: 400 })
+  } else if (process.env.NODE_ENV === "production") {
+    console.error("V1 webhook rejected: STRIPE_V1_WEBHOOK_SECRET is not configured in production")
+    return NextResponse.json({ error: "Webhook not configured" }, { status: 503 })
   } else {
-    // No secret — accept unsigned (dev only)
-    try {
-      event = parsedBody as Stripe.Event
-    } catch {
-      return NextResponse.json({ error: "Invalid event" }, { status: 400 })
-    }
+    // Non-production only: no signing secret configured, accept unsigned for local testing.
+    console.warn("V1 webhook: no signing secret — unsigned event accepted (non-production only)")
+    event = parsedBody as Stripe.Event
   }
 
   try {

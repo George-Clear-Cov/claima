@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { getSessionFromRequest } from "@/lib/auth"
 import { logAudit } from "@/lib/audit"
+import { logError } from "@/lib/log"
 
 const updateSchema = z.object({
   name: z.string().min(1).optional(),
@@ -48,7 +49,7 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json(practice)
   } catch (err) {
     if (err instanceof z.ZodError) return NextResponse.json({ error: err.issues }, { status: 400 })
-    console.error(err)
+    logError("practices", err)
     return NextResponse.json({ error: "Update failed" }, { status: 500 })
   }
 }

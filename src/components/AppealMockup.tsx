@@ -10,6 +10,7 @@ function sleep(ms: number) {
 
 export default function AppealMockup() {
   const ref = useRef<HTMLDivElement>(null)
+  const playedRef = useRef(false)
   const [inView, setInView] = useState(false)
   const [text, setText]         = useState("")
   const [showButton, setShowBtn] = useState(false)
@@ -26,28 +27,32 @@ export default function AppealMockup() {
   }, [])
 
   useEffect(() => {
-    if (!inView) {
-      setText(""); setShowBtn(false)
+    // Type the appeal once, then hold "Ready to send". (Previously looped
+    // forever, wiping the letter back to blank every ~5s.)
+    if (!inView || playedRef.current) return
+    playedRef.current = true
+
+    const reduce = typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    if (reduce) {
+      setText(APPEAL); setShowBtn(true)
       return
     }
 
     let cancelled = false
 
     async function run() {
-      while (!cancelled) {
-        setText(""); setShowBtn(false)
-        await sleep(1000)
+      setText(""); setShowBtn(false)
+      await sleep(1000)
 
-        for (let i = 1; i <= APPEAL.length; i++) {
-          if (cancelled) return
-          setText(APPEAL.slice(0, i))
-          await sleep(14)
-        }
-
-        await sleep(400)
-        if (!cancelled) setShowBtn(true)
-        await sleep(4500)
+      for (let i = 1; i <= APPEAL.length; i++) {
+        if (cancelled) return
+        setText(APPEAL.slice(0, i))
+        await sleep(14)
       }
+
+      await sleep(400)
+      if (!cancelled) setShowBtn(true)
     }
 
     run()

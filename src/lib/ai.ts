@@ -33,13 +33,21 @@ function weightedPick(items: { provider: Provider; weight: number }[]): Provider
   return items[items.length - 1].provider
 }
 
-// Priority: per-call pin → explicit AI_PROVIDER → weighted split → auto-detect by creds.
-function getProvider(params?: { provider?: Provider }): Provider {
+// Priority: per-call pin → fast-tier override → explicit AI_PROVIDER → weighted split → auto-detect.
+function getProvider(params?: { provider?: Provider; tier?: Tier }): Provider {
   if (params?.provider) return params.provider
+  // Route the low-stakes fast tier to a specific cloud (e.g. AI_PROVIDER_FAST=azure
+  // sends parse/interpret/summary calls to Azure OpenAI while Sonnet keeps the
+  // quality-critical smart tier). No-op unless the env var is set.
+  const fastOverride = process.env.AI_PROVIDER_FAST as Provider | undefined
+  if (params?.tier === "fast" && fastOverride && ["anthropic", "bedrock", "azure"].includes(fastOverride)) {
+    return fastOverride
+  }
   const explicit = process.env.AI_PROVIDER as Provider | undefined
   if (explicit) return explicit
   const split = parseSplit()
   if (split) return weightedPick(split)
+  if (process.env.BEDROCK_API_KEY || process.env.AWS_BEARER_TOKEN_BEDROCK) return "bedrock"
   if (process.env.AWS_BEDROCK_REGION && process.env.AWS_ACCESS_KEY_ID) return "bedrock"
   if (process.env.AZURE_OPENAI_ENDPOINT && process.env.AZURE_OPENAI_KEY) return "azure"
   return "anthropic"
@@ -62,21 +70,25 @@ export function isAIConfigured(): boolean {
   const p = getProvider()
   if (p === "bedrock")
     return !!(
-      process.env.AWS_BEDROCK_REGION &&
-      process.env.AWS_ACCESS_KEY_ID &&
-      process.env.AWS_SECRET_ACCESS_KEY
+      process.env.BEDROCK_API_KEY ||
+      process.env.AWS_BEARER_TOKEN_BEDROCK ||
+      (process.env.AWS_BEDROCK_REGION &&
+        process.env.AWS_ACCESS_KEY_ID &&
+        process.env.AWS_SECRET_ACCESS_KEY)
     )
   if (p === "azure")
     return !!(process.env.AZURE_OPENAI_ENDPOINT && process.env.AZURE_OPENAI_KEY)
-  return !!process.env.ANTHROPIC_API_KEY
+  // Direct Anthropic (standard tier) has no BAA → not HIPAA-permissible for PHI. Report it as
+  // "not configured" unless a signed Anthropic BAA is explicitly acknowledged, so PHI routes
+  // fall back to their deterministic non-AI path instead of leaking PHI. Prefer Bedrock/Azure.
+  return !!process.env.ANTHROPIC_API_KEY && process.env.ANTHROPIC_BAA_ACCEPTED === "1"
 }
 
 // ── Model selection & pricing ───────────────────────────────────────────────────
 
 const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL ?? "claude-sonnet-4-6"
 const ANTHROPIC_FAST_MODEL = process.env.ANTHROPIC_FAST_MODEL ?? "claude-haiku-4-5-20251001"
-const BEDROCK_MODEL =
-  process.env.AWS_BEDROCK_MODEL_ID ?? "us.anthropic.claude-sonnet-4-6-20260909-v1:0"
+const BEDROCK_MODEL = process.env.AWS_BEDROCK_MODEL_ID ?? "us.anthropic.claude-sonnet-4-6"
 
 function pickModel(provider: Provider, tier?: Tier): string {
   const fast = tier === "fast"
@@ -139,6 +151,15 @@ async function logUsage(model: string, label: string | undefined, u: Usage | und
 const MAX_INPUT_CHARS = Number(process.env.AI_MAX_INPUT_CHARS ?? 60000)
 
 async function guard(params: AIMessageParams): Promise<void> {
+  // HIPAA fail-closed (backstop): never send PHI to the direct Anthropic API (no BAA). Route via
+  // Bedrock/Azure. Escape hatch ANTHROPIC_BAA_ACCEPTED=1 only with a signed Anthropic BAA +
+  // zero-retention (e.g. local dev on non-PHI seed data).
+  if (getProvider(params) === "anthropic" && process.env.ANTHROPIC_BAA_ACCEPTED !== "1") {
+    throw new AiGuardError(
+      "baa",
+      "AI blocked (HIPAA): direct Anthropic API has no BAA. Set AI_PROVIDER=bedrock (BAA via AWS Artifact), or ANTHROPIC_BAA_ACCEPTED=1 only with a signed Anthropic BAA.",
+    )
+  }
   const chars =
     (params.system?.length ?? 0) + params.messages.reduce((s, m) => s + m.content.length, 0)
   if (chars > MAX_INPUT_CHARS) {
@@ -296,11 +317,9 @@ function sigV4Headers(
 }
 
 async function bedrockComplete(params: AIMessageParams): Promise<string> {
-  const region = process.env.AWS_BEDROCK_REGION!
-  const accessKey = process.env.AWS_ACCESS_KEY_ID!
-  const secretKey = process.env.AWS_SECRET_ACCESS_KEY!
-  const sessionToken = process.env.AWS_SESSION_TOKEN
+  const region = process.env.AWS_BEDROCK_REGION ?? "us-east-1"
   const model = pickModel("bedrock", params.tier)
+  const bearer = process.env.BEDROCK_API_KEY || process.env.AWS_BEARER_TOKEN_BEDROCK
 
   const body = JSON.stringify({
     anthropic_version: "bedrock-2023-05-31",
@@ -311,16 +330,19 @@ async function bedrockComplete(params: AIMessageParams): Promise<string> {
   })
 
   const path = `/model/${encodeURIComponent(model)}/invoke`
-  const headers = sigV4Headers(
-    "POST",
-    path,
-    region,
-    "bedrock-runtime",
-    body,
-    accessKey,
-    secretKey,
-    sessionToken,
-  )
+  // Auth: a Bedrock API key (bearer token) is simplest — no signing. Otherwise SigV4-sign IAM creds.
+  const headers: Record<string, string> = bearer
+    ? { "content-type": "application/json", Authorization: `Bearer ${bearer}` }
+    : sigV4Headers(
+        "POST",
+        path,
+        region,
+        "bedrock-runtime",
+        body,
+        process.env.AWS_ACCESS_KEY_ID!,
+        process.env.AWS_SECRET_ACCESS_KEY!,
+        process.env.AWS_SESSION_TOKEN,
+      )
 
   const res = await fetch(`https://bedrock-runtime.${region}.amazonaws.com${path}`, {
     method: "POST",
@@ -353,6 +375,16 @@ function toAzureMessages(params: AIMessageParams): Array<{ role: string; content
   return msgs
 }
 
+/**
+ * Azure token-limit parameter name.
+ *
+ * GPT-5-family deployments reject `max_tokens` outright ("Unsupported parameter:
+ * 'max_tokens' is not supported with this model. Use 'max_completion_tokens'"), while older
+ * deployments (gpt-4o and earlier) accept only `max_tokens`. Overridable so swapping the
+ * deployment to an older model is an app-setting change rather than a code change.
+ */
+const AZURE_TOKEN_PARAM = process.env.AZURE_OPENAI_TOKEN_PARAM ?? "max_completion_tokens"
+
 function azureUrl(deployment: string, path: string): string {
   const endpoint = (process.env.AZURE_OPENAI_ENDPOINT ?? "").replace(/\/$/, "")
   const apiVersion = process.env.AZURE_OPENAI_API_VERSION ?? "2024-12-01-preview"
@@ -369,7 +401,7 @@ async function azureComplete(params: AIMessageParams): Promise<string> {
     },
     body: JSON.stringify({
       messages: toAzureMessages(params),
-      max_tokens: params.max_tokens,
+      [AZURE_TOKEN_PARAM]: params.max_tokens,
       ...(params.temperature !== undefined ? { temperature: params.temperature } : {}),
     }),
   })
@@ -397,7 +429,7 @@ async function* azureStream(params: AIMessageParams): AsyncGenerator<string> {
     },
     body: JSON.stringify({
       messages: toAzureMessages(params),
-      max_tokens: params.max_tokens,
+      [AZURE_TOKEN_PARAM]: params.max_tokens,
       stream: true,
       ...(params.temperature !== undefined ? { temperature: params.temperature } : {}),
     }),

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { getSessionFromRequest } from "@/lib/auth"
 import { logAudit } from "@/lib/audit"
+import { logError } from "@/lib/log"
 
 const updateSchema = z.object({
   authNumber: z.string().optional(),
@@ -46,7 +47,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json(updated)
   } catch (err) {
     if (err instanceof z.ZodError) return NextResponse.json({ error: err.issues }, { status: 400 })
-    console.error(err)
+    logError("prior-auth", err)
     return NextResponse.json({ error: "Failed to update prior authorization" }, { status: 500 })
   }
 }

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getSessionFromRequest } from "@/lib/auth"
+import { logAudit } from "@/lib/audit"
+import { parseJson, denialRiskSchema } from "@/lib/validation"
 
 export interface DenialRiskResult {
   denialRate: number
@@ -12,15 +14,15 @@ export interface DenialRiskResult {
 export async function POST(req: NextRequest) {
   const session = await getSessionFromRequest(req)
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  logAudit({ action: "ai.denial_risk", practiceId: session.practiceId, userId: session.userId, userEmail: session.email, req })
 
   if (!process.env.DATABASE_URL) {
     return NextResponse.json({ denialRate: 0, sampleSize: 0, topReasons: [], riskLevel: "low", message: "No history yet" })
   }
 
-  const { payerName, cptCode } = await req.json()
-  if (!payerName || !cptCode) {
-    return NextResponse.json({ error: "payerName and cptCode required" }, { status: 400 })
-  }
+  const parsed = await parseJson(req, denialRiskSchema)
+  if (!parsed.ok) return parsed.response
+  const { payerName, cptCode } = parsed.data
 
   const { prisma } = await import("@/lib/prisma")
 

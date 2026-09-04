@@ -25,6 +25,13 @@ export const CARC_CODES: Record<string, { description: string } & DenialCategory
     action: "Bill patient for coinsurance",
     appealable: false,
   },
+  "3": {
+    description: "Co-payment amount",
+    category: "PATIENT_RESPONSIBILITY",
+    priority: "LOW",
+    action: "Bill patient for copay",
+    appealable: false,
+  },
   "4": {
     description: "The service is not covered by this payer/contractor",
     category: "WRITE_OFF",
@@ -165,12 +172,69 @@ export const CARC_CODES: Record<string, { description: string } & DenialCategory
     action: "Review contract terms; appeal if service should be covered",
     appealable: true,
   },
+  "15": {
+    description: "Authorization number missing, invalid, or does not apply",
+    category: "RESUBMIT",
+    priority: "HIGH",
+    action: "Obtain the auth number from the payer and resubmit with it populated",
+    appealable: true,
+  },
+  "109": {
+    description: "Claim/service not covered by this payer/contractor",
+    category: "RESUBMIT",
+    priority: "HIGH",
+    action: "Wrong payer. Verify payer ID and member's active plan, then resubmit to the correct payer",
+    appealable: false,
+  },
+  "167": {
+    description: "Diagnosis not covered, missing, or invalid",
+    category: "RESUBMIT",
+    priority: "MEDIUM",
+    action: "Verify the ICD-10 is covered for this CPT and coded to full specificity; correct and resubmit",
+    appealable: true,
+  },
+  "204": {
+    description: "Service/equipment/drug not covered under the patient's current benefit plan",
+    category: "PATIENT_RESPONSIBILITY",
+    priority: "LOW",
+    action: "Confirm the benefit exclusion, then bill the patient (ABN/waiver if Medicare)",
+    appealable: false,
+  },
+  "242": {
+    description: "Services not provided by network/primary care providers",
+    category: "APPEAL",
+    priority: "HIGH",
+    action:
+      "Verify in-network status for the DOS. If the provider was in network, appeal as a " +
+      "credentialing/loading error with the executed contract effective date",
+    appealable: true,
+  },
+  "252": {
+    description: "An attachment or other documentation is required to adjudicate",
+    category: "INFO_NEEDED",
+    priority: "HIGH",
+    action: "Read the RARC for the specific document requested; submit records with the appeal",
+    appealable: true,
+  },
+}
+
+/**
+ * Normalize a CARC to its bare code for lookup. Sources vary: an 835 CAS segment carries the group
+ * code (CO/PR/OA/PI/CR) and reason code in separate elements, but some feeds/imports combine them
+ * as "CO-45", "CO45", or "PR 1". Strip a leading group-code prefix only when a digit follows, so a
+ * bare "45" and RARC-style codes (M1, MA01) are left untouched.
+ */
+export function normalizeCarc(carcCode: string): string {
+  const c = String(carcCode ?? "").trim().toUpperCase()
+  const m = c.match(/^(?:CO|PR|OA|PI|CR)[-_\s]?(\d.*)$/)
+  return m ? m[1] : c
 }
 
 export function classifyDenial(carcCode: string): DenialCategory & { description: string } {
+  const code = normalizeCarc(carcCode)
   return (
-    CARC_CODES[carcCode] ?? {
-      description: `Unknown denial code: ${carcCode}`,
+    CARC_CODES[code] ?? {
+      description: `Unknown denial code: ${code}`,
       category: "APPEAL" as const,
       priority: "MEDIUM" as const,
       action: "Review denial reason and determine appropriate action",
@@ -181,4 +245,27 @@ export function classifyDenial(carcCode: string): DenialCategory & { description
 
 export function getPriorityScore(priority: string): number {
   return { HIGH: 3, MEDIUM: 2, LOW: 1 }[priority] ?? 1
+}
+
+/**
+ * RARC (Remittance Advice Remark Codes) accompany a CARC on the 835 and carry the specific
+ * reason. A CARC says "we need documentation"; the RARC says *which* document. Appeals that
+ * ignore the RARC usually get denied a second time for the same reason.
+ */
+export const RARC_CODES: Record<string, { description: string; action: string }> = {
+  M51: { description: "Missing/incomplete/invalid procedure code", action: "Correct the CPT/HCPCS and resubmit" },
+  M76: { description: "Missing/incomplete/invalid diagnosis or condition", action: "Correct the ICD-10 to full specificity and resubmit" },
+  M127: { description: "Missing patient medical record for this service", action: "Attach the encounter note/operative report and resubmit with the appeal" },
+  N30: { description: "Patient ineligible for this service on the date of service", action: "Re-verify eligibility (270/271) for the DOS; rebill correct payer or bill patient" },
+  N115: { description: "Decision based on a Local Coverage Determination (LCD)", action: "Pull the LCD and document how the service meets its criteria" },
+  N130: { description: "Consult plan benefit documents for limitations", action: "Check plan-level limits (visit caps, frequency); bill patient if exhausted" },
+  N180: { description: "Item/service does not meet criteria for the category billed", action: "Re-code to the correct category or appeal with clinical justification" },
+  N290: { description: "Missing/incomplete/invalid rendering provider identifier", action: "Populate the rendering provider NPI (loop 2310B) and resubmit" },
+  N382: { description: "Missing/incomplete/invalid patient identifier", action: "Correct the member ID against the card/271 and resubmit" },
+  N479: { description: "Missing Explanation of Benefits from the primary payer", action: "Attach the primary EOB; this is a COB sequencing issue" },
+}
+
+export function classifyRarc(rarcCode: string): { description: string; action: string } | null {
+  const c = String(rarcCode ?? "").trim().toUpperCase().replace(/[-_\s]/g, "")
+  return RARC_CODES[c] ?? null
 }

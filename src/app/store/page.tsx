@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { LogoMark } from "@/components/Logo"
 import Link from "next/link"
 import type Stripe from "stripe"
 
@@ -45,7 +46,7 @@ export default function StorePage() {
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">C</div>
+          <LogoMark size={28} className="shrink-0" />
           <span className="font-semibold text-gray-900">Claima Services</span>
         </div>
         <Link href="/" className="text-sm text-gray-500 hover:text-gray-700 transition-colors">
@@ -78,13 +79,13 @@ export default function StorePage() {
           </div>
         ) : products.length === 0 ? (
           <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
-            <p className="text-gray-400 text-sm">No services available yet.</p>
-            <Link
-              href="/billing"
+            <p className="text-gray-500 text-sm">No services available yet.</p>
+            <a
+              href="mailto:support@claima.io"
               className="mt-4 inline-block text-sm text-blue-600 hover:text-blue-700 font-medium"
             >
-              Go to billing →
-            </Link>
+              Questions? Contact us →
+            </a>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -114,7 +115,7 @@ export default function StorePage() {
                       <span className="text-2xl font-bold text-gray-900">
                         {amount !== null ? `$${amount.toFixed(2)}` : "—"}
                       </span>
-                      <span className="text-sm text-gray-400 mb-0.5">{currency}</span>
+                      <span className="text-sm text-gray-500 mb-0.5">{currency}</span>
                     </div>
 
                     <button

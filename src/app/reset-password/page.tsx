@@ -21,7 +21,7 @@ function PasswordStrength({ password }: { password: string }) {
         {PASSWORD_RULES.map((rule) => {
           const ok = !check.errors.includes(rule)
           return (
-            <li key={rule} className={`text-xs flex items-center gap-1 ${ok ? "text-green-600" : "text-gray-400"}`}>
+            <li key={rule} className={`text-xs flex items-center gap-1 ${ok ? "text-green-600" : "text-gray-500"}`}>
               <span>{ok ? "✓" : "·"}</span>{rule}
             </li>
           )
@@ -90,8 +90,10 @@ function ResetForm() {
             onChange={(e) => setPassword(e.target.value)}
             required
             autoFocus
+            autoComplete="new-password"
+            aria-label="New password"
             placeholder="••••••••"
-            className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all placeholder-gray-300"
+            className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all placeholder-gray-400"
           />
           <PasswordStrength password={password} />
         </div>
@@ -102,8 +104,10 @@ function ResetForm() {
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
             required
+            autoComplete="new-password"
+            aria-label="Confirm password"
             placeholder="••••••••"
-            className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all placeholder-gray-300"
+            className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all placeholder-gray-400"
           />
         </div>
 
@@ -134,7 +138,7 @@ export default function ResetPasswordPage() {
           <LogoMark size={40} />
           <div>
             <div className="text-xl font-semibold tracking-tight text-gray-900">Claima</div>
-            <div className="text-xs text-gray-400 -mt-0.5">Medical billing platform</div>
+            <div className="text-xs text-gray-500 -mt-0.5">Medical billing platform</div>
           </div>
         </div>
 

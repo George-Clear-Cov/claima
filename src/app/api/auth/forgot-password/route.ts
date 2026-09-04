@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
 import { randomBytes } from "crypto"
 import { sendEmail } from "@/lib/email"
+import { parseJson, forgotPasswordSchema } from "@/lib/validation"
 
 export async function POST(req: NextRequest) {
-  const { email } = await req.json()
-  if (!email || typeof email !== "string") {
-    return NextResponse.json({ error: "Email is required" }, { status: 400 })
-  }
+  const parsed = await parseJson(req, forgotPasswordSchema)
+  if (!parsed.ok) return parsed.response
+  const { email } = parsed.data
 
   const { prisma } = await import("@/lib/prisma")
 

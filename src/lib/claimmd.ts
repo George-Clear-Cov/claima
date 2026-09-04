@@ -1,23 +1,91 @@
 /**
- * Claim.MD clearinghouse integration.
- * Docs: https://claimmd.com/developers
- * REST API — 837P claim submission, 270/271 eligibility, and 835 ERA retrieval.
+ * Claim.MD clearinghouse integration — REST API.
+ * Docs: https://docs.claim.md  ·  API reference: https://api.claim.md
+ *
+ * Auth model: a SINGLE AccountKey (portal → Settings → Account Settings),
+ * sent as a form field on every request. Responses are XML by default; we ask
+ * for JSON via the Accept header. Base host: https://svc.claim.md/services.
+ *
+ * Field names below are sourced from Claim.MD's API reference (response schemas
+ * for upload/response/eralist/eradata). Auth + payerlist are validated live;
+ * ERA/status field mappings should still be spot-checked against the first real
+ * 835 / claim response, since the account had no data at build time.
  */
 
 const CLAIMMD_ACCOUNT_KEY = process.env.CLAIMMD_ACCOUNT_KEY || ""
-const CLAIMMD_API_KEY = process.env.CLAIMMD_API_KEY || ""
-const CLAIMMD_BASE_URL = "https://www.claimmd.com/api"
+const CLAIMMD_BASE_URL = "https://svc.claim.md/services"
 
 export function isClaimMdConfigured(): boolean {
-  return Boolean(CLAIMMD_ACCOUNT_KEY && CLAIMMD_API_KEY)
+  return Boolean(CLAIMMD_ACCOUNT_KEY)
 }
 
-function claimMdHeaders() {
-  return {
-    "Content-Type": "application/json",
-    "X-Account-Key": CLAIMMD_ACCOUNT_KEY,
-    "X-API-Key": CLAIMMD_API_KEY,
+/**
+ * POST to a Claim.MD service endpoint with the AccountKey + params.
+ * When `file` is supplied the request is multipart/form-data (for /upload/);
+ * otherwise it's application/x-www-form-urlencoded. Always asks for JSON.
+ */
+async function claimMdPost(
+  path: string,
+  params: Record<string, string> = {},
+  file?: { content: string; filename: string },
+): Promise<{ ok: boolean; status: number; data: Record<string, unknown> }> {
+  const headers: Record<string, string> = { Accept: "application/json" }
+  let body: BodyInit
+
+  if (file) {
+    const form = new FormData()
+    form.set("AccountKey", CLAIMMD_ACCOUNT_KEY)
+    for (const [k, v] of Object.entries(params)) form.set(k, v)
+    form.set("File", new Blob([file.content], { type: "text/plain" }), file.filename)
+    body = form // fetch sets the multipart boundary + Content-Type itself
+  } else {
+    body = new URLSearchParams({ AccountKey: CLAIMMD_ACCOUNT_KEY, ...params })
+    headers["Content-Type"] = "application/x-www-form-urlencoded"
   }
+
+  const res = await fetch(`${CLAIMMD_BASE_URL}${path}`, { method: "POST", headers, body })
+  const text = await res.text()
+  let data: Record<string, unknown>
+  try {
+    data = JSON.parse(text) as Record<string, unknown>
+  } catch {
+    data = { raw: text }
+  }
+  return { ok: res.ok, status: res.status, data }
+}
+
+function firstOf(v: unknown): Record<string, unknown> | undefined {
+  if (Array.isArray(v)) return v[0] as Record<string, unknown> | undefined
+  if (v && typeof v === "object") return v as Record<string, unknown>
+  return undefined
+}
+
+function asArray(v: unknown): Record<string, unknown>[] {
+  if (Array.isArray(v)) return v as Record<string, unknown>[]
+  if (v && typeof v === "object") return [v as Record<string, unknown>]
+  return []
+}
+
+const num = (v: unknown): number => {
+  const n = parseFloat(String(v ?? "").replace(/[^0-9.\-]/g, ""))
+  return Number.isFinite(n) ? n : 0
+}
+const str = (v: unknown): string => (v == null ? "" : String(v))
+
+// Claim.MD returns messages under a claim's nested `messages` (mesgid/message/status/fields).
+function collectMessages(data: Record<string, unknown>): string[] {
+  const out: string[] = []
+  const claim = firstOf(data.claim)
+  for (const m of asArray(claim?.messages)) {
+    const msg = str(m.message ?? m.error ?? m.desc)
+    if (msg) out.push(m.fields ? `${msg} (${str(m.fields)})` : msg)
+  }
+  if (typeof data.error === "string") out.push(data.error)
+  for (const e of asArray(data.error)) {
+    const msg = str(e.message ?? e.error)
+    if (msg) out.push(msg)
+  }
+  return out
 }
 
 export interface ClearinghouseSubmitResult {
@@ -28,8 +96,6 @@ export interface ClearinghouseSubmitResult {
 }
 
 // ERA types — Claim.MD 835 retrieval
-// Endpoint: GET /api/eras/  (list available ERA files)
-// Endpoint: GET /api/eras/{era_id}  (download specific ERA)
 export interface ClaimMdERAEntry {
   era_id: string
   check_number: string
@@ -40,60 +106,71 @@ export interface ClaimMdERAEntry {
   claim_count: number
 }
 
+/** One service line (CPT) within an ERA claim, with its cost waterfall split out. */
+export interface ClaimMdERAServiceLine {
+  cpt: string
+  modifiers: string[]
+  units: number
+  billed_amount: number
+  paid_amount: number
+  allowed_amount: number | null
+  contractual_adjustment: number // CAS group CO
+  patient_responsibility: number // total PR
+  deductible: number             // PR-1
+  coinsurance: number            // PR-2
+  copay: number                  // PR-3
+  other_patient_resp: number     // other PR (non-covered, benefit-max, etc.)
+  carc_codes: string[]
+}
+
 export interface ClaimMdERAClaimLine {
-  claim_id: string        // matches stediClaimId on our Claim model
+  claim_id: string
   patient_first: string
   patient_last: string
-  service_date: string    // YYYY-MM-DD
+  service_date: string // YYYY-MM-DD
   billed_amount: number
   paid_amount: number
   adjustment_amount: number
   patient_responsibility: number
+  // Patient-responsibility split (claim-level, aggregated across lines) for the transparency EOB.
+  contractual_adjustment: number
+  deductible: number
+  coinsurance: number
+  copay: number
+  other_patient_resp: number
   carc_codes: string[]
+  lines: ClaimMdERAServiceLine[]
 }
 
 export interface ClaimMdERADetail extends ClaimMdERAEntry {
   claims: ClaimMdERAClaimLine[]
-  raw_835?: string        // raw EDI if Claim.MD returns it
+  raw_835?: string
 }
 
+/** Submit an 837P as a file to POST /services/upload/. */
 export async function submitClaim(edi837p: string): Promise<ClearinghouseSubmitResult> {
-  if (!CLAIMMD_ACCOUNT_KEY || !CLAIMMD_API_KEY) {
-    return {
-      claimId: `MOCK-${Date.now()}`,
-      status: "accepted",
-      raw: { mock: true },
-    }
+  if (!isClaimMdConfigured()) {
+    return { claimId: `MOCK-${Date.now()}`, status: "accepted", raw: { mock: true } }
   }
 
   try {
-    const res = await fetch(`${CLAIMMD_BASE_URL}/claims/`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Account-Key": CLAIMMD_ACCOUNT_KEY,
-        "X-API-Key": CLAIMMD_API_KEY,
-      },
-      body: JSON.stringify({ transaction: edi837p }),
+    const { ok, data } = await claimMdPost("/upload/", {}, {
+      content: edi837p,
+      filename: `claima-837p-${Date.now()}.txt`,
     })
 
-    const data = await res.json()
-
-    if (!res.ok) {
-      return {
-        claimId: "",
-        status: "rejected",
-        errors: [data.message || data.error || "Claim.MD submission failed"],
-        raw: data,
-      }
-    }
-
-    const hasErrors = data.status === "R" || (data.errors && data.errors.length > 0)
+    const claim = firstOf(data.claim)
+    // Claim.MD returns claimid="" on the initial ACK; fall back to its internal claimmd_id so the
+    // claim is trackable (|| not ?? — treat empty string as absent).
+    const claimId = str(claim?.claimid || claim?.claimmd_id || claim?.remote_claimid || data.batchid)
+    const status = str(claim?.status).toUpperCase() // "A" = acknowledged/accepted
+    const messages = collectMessages(data)
+    const accepted = ok && (status.startsWith("A") || (status === "" && messages.length === 0))
 
     return {
-      claimId: data.claim_id ?? data.ClaimID ?? "",
-      status: hasErrors ? "rejected" : "accepted",
-      errors: hasErrors ? (data.errors ?? ["Claim rejected by clearinghouse"]) : undefined,
+      claimId,
+      status: accepted ? "accepted" : "rejected",
+      errors: accepted ? undefined : (messages.length ? messages : [`Claim not accepted (status: ${status || "unknown"})`]),
       raw: data,
     }
   } catch (err) {
@@ -112,55 +189,260 @@ export interface ClaimStatusResult {
   message?: string
 }
 
+/** Poll claim status via POST /services/response/ (ResponseID=0 for a full pull). */
 export async function getClaimStatus(claimId: string): Promise<ClaimStatusResult | null> {
   if (!isClaimMdConfigured()) return null
   try {
-    const res = await fetch(`${CLAIMMD_BASE_URL}/claims/${claimId}`, {
-      method: "GET",
-      headers: claimMdHeaders(),
-    })
-    if (!res.ok) return null
-    const data = await res.json()
-    const rawStatus = String(data.status ?? data.claim_status ?? "").toUpperCase()
+    const { ok, data } = await claimMdPost("/response/", { ResponseID: "0", ClaimID: claimId })
+    if (!ok) return null
+
+    // /response/ is keyed off ResponseID and can echo back several claims, so match the exact claim
+    // we asked about by its Claim.MD id / pcn. Never blindly take the first — that reports a stale,
+    // unrelated claim's status. If our claim isn't in the response yet, report "pending".
+    const claims = asArray(data.claim)
+    const match =
+      claims.find(
+        (c) => str(c?.claimmd_id) === claimId || str(c?.claimid) === claimId || str(c?.pcn) === claimId,
+      ) ?? (claims.length === 1 ? claims[0] : undefined)
+    if (!match) return { claimId, status: "pending", message: undefined }
+
+    const raw = str(match.status).toUpperCase() // "A" acknowledged
     const status: ClaimStatusResult["status"] =
-      rawStatus === "A" ? "accepted" :
-      rawStatus === "R" ? "rejected" :
-      rawStatus === "P" ? "paid" :
-      rawStatus === "D" ? "denied" : "pending"
-    return { claimId, status, message: data.message }
+      raw.startsWith("A") ? "accepted" :
+      raw.startsWith("R") ? "rejected" :
+      raw.startsWith("P") ? "paid" :
+      raw.startsWith("D") ? "denied" : "pending"
+
+    const messages: string[] = []
+    for (const m of asArray(match.messages)) {
+      const msg = str(m.message ?? m.error ?? m.desc)
+      if (msg) messages.push(m.fields ? `${msg} (${str(m.fields)})` : msg)
+    }
+    return { claimId, status, message: messages[0] }
   } catch {
     return null
   }
 }
 
+/** List received ERAs via POST /services/eralist/ (ERAID=0 pulls all). */
 export async function fetchAvailableERAs(): Promise<ClaimMdERAEntry[]> {
   if (!isClaimMdConfigured()) return []
-
   try {
-    const res = await fetch(`${CLAIMMD_BASE_URL}/eras/`, {
-      method: "GET",
-      headers: claimMdHeaders(),
-    })
-    if (!res.ok) return []
-    const data = await res.json()
-    // Claim.MD returns { eras: [...] } or a top-level array
-    return Array.isArray(data) ? data : (data.eras ?? [])
+    const { ok, data } = await claimMdPost("/eralist/", { ERAID: "0" })
+    if (!ok) return []
+    return parseERAList(data)
   } catch {
     return []
   }
 }
 
+/** Pure parser for a /eralist/ response — exported for fixture testing. */
+export function parseERAList(data: Record<string, unknown>): ClaimMdERAEntry[] {
+  return asArray(data.era).map(mapERAEntry)
+}
+
+/** Fetch structured ERA detail (claims + CARC) via POST /services/eradata/. */
 export async function fetchERAById(eraId: string): Promise<ClaimMdERADetail | null> {
   if (!isClaimMdConfigured()) return null
-
   try {
-    const res = await fetch(`${CLAIMMD_BASE_URL}/eras/${eraId}`, {
-      method: "GET",
-      headers: claimMdHeaders(),
-    })
-    if (!res.ok) return null
-    return await res.json()
+    const { ok, data } = await claimMdPost("/eradata/", { eraid: eraId })
+    if (!ok) return null
+    return parseERADetail(data, eraId)
   } catch {
     return null
+  }
+}
+
+/** Pure parser for a /eradata/ (835) response — exported so the field mappings can be validated
+ *  with a fixture, without a live Claim.MD call. */
+export function parseERADetail(data: Record<string, unknown>, eraId: string): ClaimMdERADetail {
+  const claims = asArray(data.claim).map(mapERAClaimLine)
+  return {
+    ...mapERAEntry(data),
+    era_id: eraId,
+    claim_count: claims.length,
+    claims,
+    raw_835: data.x12 ? str(data.x12) : undefined,
+  }
+}
+
+// eralist record + eradata top-level share these field names (Claim.MD API ref).
+function mapERAEntry(e: Record<string, unknown>): ClaimMdERAEntry {
+  return {
+    era_id: str(e.eraid ?? e.era_id),
+    check_number: str(e.check_number ?? e.checknum),
+    payment_date: str(e.paid_date ?? e.payment_date ?? e.check_date),
+    payer_id: str(e.payerid ?? e.payer_id),
+    payer_name: str(e.payer_name ?? e.payername),
+    total_payment: num(e.paid_amount ?? e.total_payment),
+    claim_count: Math.round(num(e.claim_count ?? (Array.isArray(e.claim) ? (e.claim as unknown[]).length : 0))),
+  }
+}
+
+// eradata hierarchy: claim → charge[] → adjustment[]. Gather adjustments from both levels.
+function collectAdjustments(c: Record<string, unknown>): Record<string, unknown>[] {
+  const out = asArray(c.adjustment)
+  for (const charge of asArray(c.charge)) out.push(...asArray(charge.adjustment))
+  return out
+}
+
+// ── Payer enrollment (EDI/ERA) ────────────────────────────────────────────────
+
+export interface ClaimMdPayerInfo {
+  payerId: string
+  payerName: string
+  claimsSupported: boolean
+  eraMode: string // e.g. "auto" | "enrollment" | "no" — VERIFY exact values vs sandbox
+  eligibilitySupported: boolean
+  raw: Record<string, unknown>
+}
+
+/** Look up a payer's enrollment requirements via POST /services/payerlist/. */
+export async function lookupPayer(payerIdOrName: string): Promise<ClaimMdPayerInfo | null> {
+  if (!isClaimMdConfigured()) return null
+  try {
+    // Payer IDs are 4–10 alphanumerics that contain a digit (e.g. "60054", "SB580"); a pure-alpha
+    // token like "aetna" is a name, not an id — search by name so we don't miss it.
+    const byId = /^[A-Z0-9]{4,10}$/i.test(payerIdOrName) && /\d/.test(payerIdOrName)
+    const { ok, data } = await claimMdPost("/payerlist/", byId ? { payerid: payerIdOrName } : { payer_name: payerIdOrName })
+    if (!ok) return null
+    const p = firstOf(data.payer)
+    if (!p) return null
+    return {
+      payerId: str(p.payerid),
+      payerName: str(p.payer_name),
+      claimsSupported: str(p["1500_claims"]).toLowerCase() === "yes",
+      eraMode: str(p.era),
+      eligibilitySupported: str(p.eligibility).toLowerCase() === "yes",
+      raw: p,
+    }
+  } catch {
+    return null
+  }
+}
+
+export interface EnrollmentInitResult {
+  ok: boolean
+  enrollmentUrl?: string
+  message?: string
+  raw: unknown
+}
+
+/**
+ * Initiate a payer enrollment via POST /services/enroll/.
+ * Returns the enrollment-portal link Claim.MD generates.
+ * VERIFY: exact enroll_type values + response field names against the sandbox
+ * before first real enrollment (request params per api.claim.md).
+ */
+export async function initiateEnrollment(params: {
+  payerId: string
+  enrollType: string // e.g. "era" | "claim" — VERIFY accepted values
+  taxId: string
+  npi?: string
+  providerName?: string
+  contactEmail?: string
+}): Promise<EnrollmentInitResult> {
+  if (!isClaimMdConfigured()) {
+    return { ok: true, enrollmentUrl: `https://claim.md/enroll/MOCK-${params.payerId}`, message: "mock mode", raw: { mock: true } }
+  }
+  try {
+    const { ok, data } = await claimMdPost("/enroll/", {
+      payerid: params.payerId,
+      enroll_type: params.enrollType,
+      prov_taxid: params.taxId.replace(/-/g, ""),
+      ...(params.npi ? { prov_npi: params.npi } : {}),
+      ...(params.providerName ? { prov_name: params.providerName } : {}),
+      ...(params.contactEmail ? { contact_email: params.contactEmail } : {}),
+    })
+    const errors = data.error ? [str(data.error)] : []
+    const url = str(data.enroll_url ?? data.enrollment_url ?? data.url) // VERIFY field name
+    return {
+      ok: ok && errors.length === 0,
+      enrollmentUrl: url || undefined,
+      message: errors[0],
+      raw: data,
+    }
+  } catch (err) {
+    return { ok: false, message: err instanceof Error ? err.message : "Network error", raw: null }
+  }
+}
+
+const r2 = (n: number) => Math.round(n * 100) / 100
+const adjCode = (a: Record<string, unknown>) => str(a.code ?? a.carc ?? a.reason)
+
+/**
+ * Split a set of CAS adjustments into the cost-transparency buckets: contractual
+ * write-off (group CO) and patient responsibility (group PR) broken out by CARC
+ * reason — deductible (PR-1), coinsurance (PR-2), copay (PR-3), everything else PR
+ * into `other`. Never collapse PR back to one number; the patient sees each part.
+ */
+function splitAdjustments(adjustments: Record<string, unknown>[]) {
+  let contractual = 0, deductible = 0, coinsurance = 0, copay = 0, other = 0
+  for (const a of adjustments) {
+    const amt = num(a.amount)
+    const group = str(a.group).toUpperCase()
+    if (group === "CO") contractual += amt
+    else if (group === "PR") {
+      const code = adjCode(a)
+      if (code === "1") deductible += amt
+      else if (code === "2") coinsurance += amt
+      else if (code === "3") copay += amt
+      else other += amt
+    }
+  }
+  return {
+    contractual: r2(contractual),
+    deductible: r2(deductible),
+    coinsurance: r2(coinsurance),
+    copay: r2(copay),
+    other: r2(other),
+    patientResp: r2(deductible + coinsurance + copay + other),
+  }
+}
+
+// One eradata charge[] entry = one service line. VERIFY charge field names vs the sandbox.
+function mapERAServiceLine(charge: Record<string, unknown>): ClaimMdERAServiceLine {
+  const adjustments = asArray(charge.adjustment)
+  const s = splitAdjustments(adjustments)
+  return {
+    cpt: str(charge.proc_code ?? charge.cpt ?? charge.procedure),
+    modifiers: [charge.mod1, charge.mod2, charge.mod3, charge.mod4].map((m) => str(m)).filter(Boolean),
+    units: Math.round(num(charge.units ?? charge.unit)) || 1,
+    billed_amount: num(charge.charge ?? charge.billed ?? charge.total_charge),
+    paid_amount: num(charge.paid ?? charge.total_paid),
+    allowed_amount: charge.allowed != null ? num(charge.allowed) : null,
+    contractual_adjustment: s.contractual,
+    patient_responsibility: s.patientResp,
+    deductible: s.deductible,
+    coinsurance: s.coinsurance,
+    copay: s.copay,
+    other_patient_resp: s.other,
+    carc_codes: adjustments.map(adjCode).filter(Boolean),
+  }
+}
+
+function mapERAClaimLine(c: Record<string, unknown>): ClaimMdERAClaimLine {
+  const adjustments = collectAdjustments(c)
+  const carc = adjustments.map(adjCode).filter(Boolean)
+  const adjustmentAmount = adjustments.reduce((s, a) => s + num(a.amount), 0)
+  const split = splitAdjustments(adjustments)
+  const lines = asArray(c.charge).map(mapERAServiceLine)
+
+  return {
+    claim_id: str(c.claimid ?? c.remote_claimid ?? c.pcn ?? c.claim_id),
+    patient_first: str(c.pat_name_f ?? c.patient_first),
+    patient_last: str(c.pat_name_l ?? c.patient_last),
+    service_date: str(c.from_dos ?? c.fdos ?? c.service_date),
+    billed_amount: num(c.total_charge ?? c.charge),
+    paid_amount: num(c.total_paid ?? c.paid),
+    adjustment_amount: r2(adjustmentAmount),
+    patient_responsibility: split.patientResp,
+    contractual_adjustment: split.contractual,
+    deductible: split.deductible,
+    coinsurance: split.coinsurance,
+    copay: split.copay,
+    other_patient_resp: split.other,
+    carc_codes: carc,
+    lines,
   }
 }

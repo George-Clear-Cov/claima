@@ -36,7 +36,7 @@ export default function ForgotPasswordPage() {
           <LogoMark size={40} />
           <div>
             <div className="text-xl font-semibold tracking-tight text-gray-900">Claima</div>
-            <div className="text-xs text-gray-400 -mt-0.5">Medical billing platform</div>
+            <div className="text-xs text-gray-500 -mt-0.5">Medical billing platform</div>
           </div>
         </div>
 
@@ -70,8 +70,10 @@ export default function ForgotPasswordPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     required
                     autoFocus
+                    autoComplete="email"
+                    aria-label="Email"
                     placeholder="admin@yourpractice.com"
-                    className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all placeholder-gray-300"
+                    className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all placeholder-gray-400"
                   />
                 </div>
 

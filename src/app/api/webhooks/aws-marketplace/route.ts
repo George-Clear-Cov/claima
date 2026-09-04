@@ -1,13 +1,46 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createHash } from "crypto"
+import { createHash, createVerify } from "crypto"
 
 /**
  * POST /api/webhooks/aws-marketplace
  * Receives SNS notifications from AWS Marketplace for subscription events.
  * AWS sends: subscribe-success, subscribe-fail, unsubscribe-pending, unsubscribe-success
- *
- * SNS message signature verification is performed before processing.
  */
+
+async function verifySNSSignature(message: Record<string, unknown>): Promise<boolean> {
+  const certUrl = message.SigningCertURL as string
+  if (!certUrl) return false
+
+  let certHostname: string
+  try {
+    certHostname = new URL(certUrl).hostname
+  } catch {
+    return false
+  }
+  if (!certHostname.endsWith(".amazonaws.com")) return false
+
+  try {
+    const certRes = await fetch(certUrl)
+    if (!certRes.ok) return false
+    const cert = await certRes.text()
+
+    const messageType = message.Type as string
+    const fields =
+      messageType === "SubscriptionConfirmation"
+        ? ["Message", "MessageId", "SubscribeURL", "Timestamp", "Token", "TopicArn", "Type"]
+        : ["Message", "MessageId", "Subject", "Timestamp", "TopicArn", "Type"].filter(
+            (f) => message[f] !== undefined
+          )
+
+    const stringToSign = fields.map((f) => `${f}\n${message[f]}\n`).join("")
+    const verifier = createVerify("RSA-SHA1")
+    verifier.update(stringToSign)
+    return verifier.verify(cert, Buffer.from(message.Signature as string, "base64"))
+  } catch {
+    return false
+  }
+}
+
 export async function POST(req: NextRequest) {
   const body = await req.text()
   let message: Record<string, unknown>
@@ -18,13 +51,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 })
   }
 
+  const valid = await verifySNSSignature(message)
+  if (!valid) {
+    return NextResponse.json({ error: "Invalid SNS signature" }, { status: 403 })
+  }
+
   const messageType = req.headers.get("x-amz-sns-message-type")
 
-  // Handle subscription confirmation (AWS sends this first)
   if (messageType === "SubscriptionConfirmation") {
     const subscribeUrl = message.SubscribeURL as string
-    if (subscribeUrl?.startsWith("https://sns.us-east-1.amazonaws.com/")) {
-      // Confirm the SNS subscription automatically
+    if (subscribeUrl) {
       try {
         await fetch(subscribeUrl)
         console.log("[aws-marketplace/webhook] SNS subscription confirmed")
@@ -35,7 +71,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true })
   }
 
-  // Handle notification events
   if (messageType === "Notification") {
     let notification: Record<string, unknown>
     try {
@@ -57,7 +92,6 @@ export async function POST(req: NextRequest) {
     try {
       const { prisma } = await import("@/lib/prisma")
 
-      // Compute a stable externalId from customer+product
       const externalId = createHash("sha256")
         .update(`${customerId}:${productCode}`)
         .digest("hex")
@@ -107,7 +141,7 @@ export async function POST(req: NextRequest) {
           console.warn(`[aws-marketplace/webhook] Unknown action: ${action}`)
       }
 
-      void externalId // used above
+      void externalId
     } catch (err) {
       console.error("[aws-marketplace/webhook] DB error:", err)
       // Return 200 so AWS doesn't retry — log and investigate separately

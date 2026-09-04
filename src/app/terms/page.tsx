@@ -26,7 +26,7 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-lg font-semibold text-gray-900 mb-3">1. Acceptance of Terms</h2>
-            <p>By accessing or using Claima (the "Service"), operated by Claima, Inc. ("Company," "we," "us"), you agree to be bound by these Terms of Service ("Terms"). If you are using the Service on behalf of an organization, you represent that you have authority to bind that organization to these Terms.</p>
+            <p>By accessing or using Claima (the “Service”), operated by Claima, Inc. (“Company,” “we,” “us”), you agree to be bound by these Terms of Service (“Terms”). If you are using the Service on behalf of an organization, you represent that you have authority to bind that organization to these Terms.</p>
           </section>
 
           <section>
@@ -75,7 +75,7 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-lg font-semibold text-gray-900 mb-3">8. Limitation of Liability</h2>
-            <p>TO THE MAXIMUM EXTENT PERMITTED BY LAW, MEDIBILL SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING LOSS OF REVENUE, LOSS OF PROFITS, OR LOSS OF DATA. OUR TOTAL LIABILITY FOR ANY CLAIM SHALL NOT EXCEED THE FEES YOU PAID IN THE THREE MONTHS PRECEDING THE CLAIM.</p>
+            <p>TO THE MAXIMUM EXTENT PERMITTED BY LAW, CLAIMA SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING LOSS OF REVENUE, LOSS OF PROFITS, OR LOSS OF DATA. OUR TOTAL LIABILITY FOR ANY CLAIM SHALL NOT EXCEED THE FEES YOU PAID IN THE THREE MONTHS PRECEDING THE CLAIM.</p>
           </section>
 
           <section>
@@ -105,7 +105,7 @@ export default function TermsPage() {
         </div>
       </main>
 
-      <footer className="border-t border-gray-200 mt-16 py-8 text-center text-xs text-gray-400">
+      <footer className="border-t border-gray-200 mt-16 py-8 text-center text-xs text-gray-500">
         <div className="flex items-center justify-center gap-4">
           <Link href="/privacy" className="hover:text-gray-600">Privacy Policy</Link>
           <Link href="/terms" className="hover:text-gray-600 text-gray-600 font-medium">Terms of Service</Link>

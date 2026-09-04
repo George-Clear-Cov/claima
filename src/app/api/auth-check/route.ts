@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
 import { aiComplete, isAIConfigured } from "@/lib/ai"
 import { getSessionFromRequest } from "@/lib/auth"
+import { logAudit } from "@/lib/audit"
+import { logError } from "@/lib/log"
 
 export async function POST(req: NextRequest) {
   const session = await getSessionFromRequest(req)
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  logAudit({ action: "ai.prior_auth_check", practiceId: session.practiceId, userId: session.userId, userEmail: session.email, req })
 
   const body = await req.json()
   const { patientId, payerName, payerId, cptCode, serviceDate, specialty } = body
@@ -88,11 +91,10 @@ Context on prior claim count:
     const text = await aiComplete({ max_tokens: 1024, messages: [{ role: "user", content: prompt }] })
     const stripped = text.replace(/```json\s*/gi, "").replace(/```\s*/g, "")
     const match = stripped.match(/\{[\s\S]*\}/)
-    if (!match) throw new Error(`No JSON in response: ${text.slice(0, 200)}`)
+    if (!match) throw new Error("AI response was not valid JSON")
     return NextResponse.json(JSON.parse(match[0]))
   } catch (err) {
-    console.error("[auth-check] failed:", err)
-    const msg = err instanceof Error ? err.message : "Auth check failed"
-    return NextResponse.json({ error: msg }, { status: 422 })
+    logError("auth-check", err)
+    return NextResponse.json({ error: "Auth check failed" }, { status: 422 })
   }
 }

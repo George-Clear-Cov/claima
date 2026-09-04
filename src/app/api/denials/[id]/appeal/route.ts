@@ -3,6 +3,7 @@ import { z } from "zod"
 import { generateAppealLetter } from "@/lib/appeal-generator"
 import { getSessionFromRequest } from "@/lib/auth"
 import { logAudit } from "@/lib/audit"
+import { logError } from "@/lib/log"
 
 export async function POST(
   req: NextRequest,
@@ -57,7 +58,7 @@ export async function POST(
 
     return NextResponse.json({ letter, denial: updated })
   } catch (err) {
-    console.error(err)
+    logError("denials/appeal", err)
     return NextResponse.json({ error: "Failed to generate appeal" }, { status: 500 })
   }
 }
@@ -100,7 +101,7 @@ export async function PATCH(
     return NextResponse.json(denial)
   } catch (err) {
     if (err instanceof z.ZodError) return NextResponse.json({ error: err.issues }, { status: 400 })
-    console.error(err)
+    logError("denials/appeal", err)
     return NextResponse.json({ error: "Update failed" }, { status: 500 })
   }
 }

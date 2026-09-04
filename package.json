@@ -12,14 +12,16 @@
     "deps-check": "bun scripts/deps-check.ts",
     "go-live": "bun scripts/go-live-check.ts",
     "prepare": "git config core.hooksPath .githooks || true",
-    "setup:webhook": "bun run scripts/setup-stripe-webhook.ts"
+    "setup:webhook": "bun run scripts/setup-stripe-webhook.ts",
+    "test": "bun test",
+    "test:watch": "bun test --watch",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.100.1",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "@sentry/nextjs": "^10.58.0",
-    "@stedi/sdk": "^0.0.5",
     "@stripe/react-stripe-js": "^6.6.0",
     "@stripe/stripe-js": "^9.7.0",
     "bcryptjs": "^3.0.3",
@@ -37,6 +39,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/bcryptjs": "^3.0.0",
+    "@types/bun": "^1.4.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

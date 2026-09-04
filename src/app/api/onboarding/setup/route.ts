@@ -1,17 +1,16 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getSessionFromRequest } from "@/lib/auth"
+import { logError } from "@/lib/log"
+import { parseJson, onboardingSetupSchema } from "@/lib/validation"
 
 export async function POST(req: NextRequest) {
   const session = await getSessionFromRequest(req)
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   try {
-    const body = await req.json()
-    const { practiceName, npi, taxId, addressLine1, city, state, zip, phone, taxonomy } = body
-
-    if (!practiceName || !npi || !taxId || !addressLine1 || !city || !state || !zip || !phone) {
-      return NextResponse.json({ error: "All required fields must be filled in" }, { status: 400 })
-    }
+    const parsed = await parseJson(req, onboardingSetupSchema)
+    if (!parsed.ok) return parsed.response
+    const { practiceName, npi, taxId, addressLine1, city, state, zip, phone, taxonomy } = parsed.data
 
     const { prisma } = await import("@/lib/prisma")
 
@@ -40,7 +39,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true })
   } catch (err) {
-    console.error("[onboarding/setup] failed:", err)
+    logError("onboarding/setup", err)
     return NextResponse.json({ error: "Setup failed" }, { status: 500 })
   }
 }

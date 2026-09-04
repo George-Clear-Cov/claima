@@ -1,0 +1,53 @@
+# The container image is what actually runs in production. Without this, `main` and the
+# deployed image can silently diverge — a dead npm dependency (@stedi/sdk) once froze the
+# deployed image ~6 weeks behind main because nothing built it on merge.
+name: Container Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - "Dockerfile"
+      - "package.json"
+      - "bun.lock"
+      - "src/**"
+      - "prisma/**"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Build only — proves the image still builds and that every dependency still
+      # resolves. Publishing is a separate, credentialed step (see below).
+      - name: Build image
+        run: |
+          docker build \
+            --build-arg NEXT_PUBLIC_APP_URL=https://claima.io \
+            --build-arg NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_ci_placeholder \
+            --build-arg NEXT_PUBLIC_SENTRY_DSN= \
+            -t claima-web:ci .
+
+
+  # Publishing to ACR requires AZURE_CREDENTIALS in repo secrets. Until that is set,
+  # the build job above still guards against a broken or unbuildable image reaching main.
+  # To enable: add the secret, then uncomment.
+  #
+  # publish:
+  #   needs: build
+  #   if: github.ref == 'refs/heads/main'
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: azure/login@v2
+  #       with:
+  #         creds: ${{ secrets.AZURE_CREDENTIALS }}
+  #     - name: Build and push to ACR
+  #       run: |
+  #         az acr build --registry claimaacrd89893 \
+  #           --image claima-web:${{ github.sha }} \
+  #           --image claima-web:latest \
+  #           --build-arg NEXT_PUBLIC_APP_URL=https://claima.io \
+  #           .

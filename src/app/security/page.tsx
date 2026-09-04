@@ -115,7 +115,7 @@ export default function SecurityPage() {
                 <div className="w-2 h-2 rounded-full bg-green-500 shrink-0 mt-1.5" />
                 <div>
                   <div className="font-medium text-gray-900">At Rest</div>
-                  <div className="text-gray-500 mt-0.5">All data at rest is encrypted using AES-256. This includes PHI stored in our PostgreSQL database (hosted on Supabase with encryption at the storage layer) and all backups.</div>
+                  <div className="text-gray-500 mt-0.5">All data at rest is encrypted using AES-256. This includes PHI stored in our PostgreSQL database (Azure Database for PostgreSQL, with encryption at the storage layer) and all backups.</div>
                 </div>
               </div>
               <div className="flex gap-3 p-3 bg-gray-50 border border-gray-200 rounded-xl">
@@ -146,10 +146,10 @@ export default function SecurityPage() {
               Claima uses AI to power appeal letter drafting, billing insights, and claim assistance. PHI processed through AI systems is handled as follows:
             </p>
             <ul className="list-disc pl-5 space-y-1.5 text-sm">
-              <li><strong>Anthropic (Claude):</strong> PHI is processed under a Business Associate Agreement with Anthropic. PHI is never used to train general-purpose models.</li>
+              <li><strong>AI subprocessor:</strong> AI-assisted features are provided by a third-party model provider. PHI is only shared with an AI subprocessor under a Business Associate Agreement, and is never used to train general-purpose models.</li>
               <li><strong>Claim.MD:</strong> EDI claim transmission is handled by Claim.MD under BAA as a HIPAA-compliant clearinghouse.</li>
               <li><strong>Stripe:</strong> Payment processing is PCI-DSS Level 1 compliant. Claima does not store full card numbers.</li>
-              <li><strong>Supabase / AWS:</strong> Database hosted on AWS infrastructure with SOC 2 Type II and HIPAA compliance.</li>
+              <li><strong>Microsoft Azure:</strong> PHI database hosted on Microsoft Azure, covered under Microsoft&apos;s HIPAA Business Associate Agreement.</li>
             </ul>
             <p className="text-sm mt-3 text-gray-500">A full list of sub-processors is available upon request.</p>
           </section>
@@ -157,11 +157,11 @@ export default function SecurityPage() {
           <section>
             <h2 className="text-lg font-semibold text-gray-900 mb-3">Infrastructure & Availability</h2>
             <ul className="list-disc pl-5 space-y-1.5 text-sm">
-              <li>Hosted on Vercel (edge network) and AWS (database), both with 99.9%+ uptime SLAs</li>
-              <li>Automated daily database backups with 30-day retention</li>
-              <li>Point-in-time recovery available on database tier</li>
-              <li>Zero-downtime deployments via Vercel's edge infrastructure</li>
-              <li>US-East data residency (AWS us-east-1)</li>
+              <li>Hosted on Microsoft Azure App Service, with the PHI database on Azure Database for PostgreSQL Flexible Server</li>
+              <li>Automated daily database backups with 7-day retention and point-in-time restore</li>
+              <li>HTTPS enforced on all traffic; TLS 1.2 or higher in transit</li>
+              <li>Container-based deployments with health-checked restarts</li>
+              <li>United States data residency (Azure West US 3); no PHI is processed outside the United States</li>
             </ul>
           </section>
 

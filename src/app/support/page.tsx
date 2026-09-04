@@ -24,7 +24,7 @@ const FAQS = [
   },
   {
     q: "How do I sign a Business Associate Agreement (BAA)?",
-    a: "Visit the BAA page to review and accept the Claima BAA. This is required before any PHI touches the system. For Stripe, Vercel, Supabase, and Anthropic BAAs, contact us and we'll send you the documents.",
+    a: "Visit the BAA page to review and accept the Claima BAA. This is required before any PHI touches the system. For our subprocessor BAAs, contact us and we’ll send you the current list and documentation.",
     link: { label: "Review BAA →", href: "/baa" },
   },
   {
@@ -88,7 +88,7 @@ export default function SupportPage() {
         </div>
 
         {/* Legal links */}
-        <div className="mt-8 pt-6 border-t border-gray-200 flex gap-4 text-xs text-gray-400">
+        <div className="mt-8 pt-6 border-t border-gray-200 flex gap-4 text-xs text-gray-500">
           <Link href="/baa" className="hover:text-gray-600">BAA</Link>
           <Link href="/security" className="hover:text-gray-600">Security</Link>
           <Link href="/privacy" className="hover:text-gray-600">Privacy</Link>
