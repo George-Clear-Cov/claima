@@ -147,7 +147,7 @@ export default function SecurityPage() {
             </p>
             <ul className="list-disc pl-5 space-y-1.5 text-sm">
               <li><strong>AI subprocessor:</strong> AI-assisted features are provided by a third-party model provider. PHI is only shared with an AI subprocessor under a Business Associate Agreement, and is never used to train general-purpose models.</li>
-              <li><strong>Claim.MD:</strong> EDI claim transmission is handled by Claim.MD under BAA as a HIPAA-compliant clearinghouse.</li>
+              <li><strong>Claim.MD:</strong> EDI claim transmission is handled by Claim.MD, a clearinghouse operating under a signed Business Associate Agreement.</li>
               <li><strong>Stripe:</strong> Payment processing is PCI-DSS Level 1 compliant. Claima does not store full card numbers.</li>
               <li><strong>Microsoft Azure:</strong> PHI database hosted on Microsoft Azure, covered under Microsoft&apos;s HIPAA Business Associate Agreement.</li>
             </ul>
@@ -214,7 +214,7 @@ export default function SecurityPage() {
           <section>
             <h2 className="text-lg font-semibold text-gray-900 mb-3">Contact</h2>
             <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm space-y-1">
-              <p className="font-medium text-gray-900">Claima, Inc. — Security Team</p>
+              <p className="font-medium text-gray-900">Claima LLC Security Team</p>
               <p>Security inquiries & BAA requests: <a href="mailto:security@claima.io" className="text-blue-600 hover:underline">security@claima.io</a></p>
               <p>Privacy inquiries: <a href="mailto:privacy@claima.io" className="text-blue-600 hover:underline">privacy@claima.io</a></p>
               <p>General support: <a href="mailto:support@claima.io" className="text-blue-600 hover:underline">support@claima.io</a></p>
@@ -231,7 +231,7 @@ export default function SecurityPage() {
           <Link href="/security" className="hover:text-gray-600 text-gray-600 font-medium">Security</Link>
           <a href="mailto:security@claima.io" className="hover:text-gray-600">security@claima.io</a>
         </div>
-        <p className="mt-3">© 2026 Claima, Inc. All rights reserved.</p>
+        <p className="mt-3">© 2026 Claima LLC. All rights reserved.</p>
       </footer>
     </div>
   )

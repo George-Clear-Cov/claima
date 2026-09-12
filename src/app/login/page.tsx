@@ -206,7 +206,7 @@ function LoginForm() {
         </p>
 
         <p className="text-center text-xs text-gray-500 mt-5">
-          Claima · HIPAA-compliant billing platform ·{" "}
+          Claima · HIPAA-ready billing platform ·{" "}
           <Link href="/privacy" className="underline hover:text-gray-600">Privacy</Link>{" "}·{" "}
           <Link href="/terms" className="underline hover:text-gray-600">Terms</Link>
         </p>

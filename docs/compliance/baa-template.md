@@ -5,10 +5,12 @@ STATUS: Execution-ready draft. **Healthcare-attorney review still required befor
 Based on the HHS model BAA provisions (45 CFR §164.504(e)) plus Claima-specific terms.
 
 BEFORE YOU SEND, FILL IN / CONFIRM:
-  1. §Preamble — Business Associate legal name. As of 2026-08-31 the NY DOS registry shows
-     **PATHFINDER PROJECTS LLC** (DOS ID 7249876, Active). The Certificate of Amendment to
-     "Claima LLC" was decided but NEVER FILED. Do not sign as "Claima LLC" until the amendment
-     is filed and confirmed. Re-check the registry before every signature.
+  1. §Preamble — Business Associate legal name is **CLAIMA LLC**, a New York limited liability
+     company, DOS ID 7249876, Active. The Certificate of Amendment (application
+     DOS2120-2026-001821) was filed and processed; verified against the live NY DOS registry
+     on 2026-09-12, and "PATHFINDER PROJECTS LLC" no longer appears there. Same DOS ID, so the
+     EIN and the 2024 §206 publication carry over. Still re-check the registry before every
+     signature.
   2. Exhibit A — must match production on the day you send it. Delete any row whose subprocessor
      BAA is not executed and dated. If the app is still on Vercel/Supabase at signature, those
      are the hosting/database subprocessors and must be listed (with executed BAAs) instead of
@@ -22,9 +24,11 @@ BEFORE YOU SEND, FILL IN / CONFIRM:
      Agreement **B1810932D4F5, effective 2026-07-10** (from `az billing agreement list`). The
      HIPAA BAA attaches to that agreement automatically, so this is the date for both Microsoft
      rows — not any resource creation date.
-  7. Azure OpenAI is a STANDBY (AI_PROVIDER=bedrock). If it is not the active provider on the day
-     you send this, either strike its row or keep it and disclose it as standby — but never send
-     an Exhibit A that omits a provider PHI can actually reach.
+  7. Azure OpenAI is the **ACTIVE** AI provider (`AI_PROVIDER=azure` since 2026-09-03, confirmed
+     in App Service settings 2026-09-12: deployment `claima-fast`). Its Exhibit A row is
+     mandatory — do not strike it. It is covered by the Microsoft DPA/BAA as a first-party
+     service, unlike Claude-in-Foundry where Anthropic is the processor. AWS Bedrock is now the
+     standby; keep or strike its row per whether it can still receive PHI on the send date.
 
   NOT IN THIS DOCUMENT ON PURPOSE (do not re-add until true):
   - Insurance covenant — cyber/E&O is not bound. Add a §12 Insurance clause only once a policy

@@ -1,5 +1,10 @@
 # Federal Exclusion Screening Log
 
+> **Entity name change — 2026-09-09.** NY DOS accepted the Certificate of Amendment
+> (App DOS2120-2026-001821). The entity formerly named **Pathfinder Projects LLC** is now
+> **CLAIMA LLC** — same DOS ID **7249876**, same EIN, unbroken good standing. Records dated
+> before this line were executed under the prior name and remain valid.
+
 Satisfies the representation at **BAA §11(c)** — that neither Business Associate nor any
 person with an ownership or control interest in, or employed or contracted by, Business
 Associate is excluded, debarred, or otherwise ineligible to participate in a federal health
@@ -25,7 +30,7 @@ non-payable from the date of exclusion regardless of when you discover it.
 | Subject | Role | Search terms | Result |
 |---|---|---|---|
 | George Nagib | Founder; Security & Privacy Officer; sole workforce member | LASTNAME `NAGIB` (any first name); LASTNAME `NAGIB` + FIRSTNAME `GEORGE` | ✅ **No match** |
-| Pathfinder Projects LLC | Business Associate (legal entity) | BUSNAME contains `PATHFINDER` | ✅ **No match** |
+| CLAIMA LLC | Business Associate (legal entity) | BUSNAME contains `PATHFINDER` | ✅ **No match** |
 | Claima | Trade name | BUSNAME contains `CLAIMA` | ✅ **No match** |
 
 **Result: CLEAR.** No excluded individual or entity identified.
@@ -44,7 +49,7 @@ non-payable from the date of exclusion regardless of when you discover it.
 
 | Date | Screened by | Sources | Subjects | Result |
 |---|---|---|---|---|
-| 2026-08-31 | George Nagib | OIG LEIE (83842 records) | Nagib, George · Pathfinder Projects LLC · Claima | ✅ Clear |
+| 2026-08-31 | George Nagib | OIG LEIE (83842 records) | Nagib, George · CLAIMA LLC · Claima | ✅ Clear |
 |  |  |  |  |  |
 
 *Retain each screening result for six (6) years per 45 CFR §164.316(b)(2)(i).*

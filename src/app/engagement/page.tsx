@@ -16,9 +16,8 @@ import { activationEnabled } from "@/lib/flags"
  *     terms below mirror the defensible posture those bills describe (no control over the
  *     fees charged, collections paid directly to the practice, no referral-based
  *     compensation), but that posture has not been cleared by counsel.
- *  2. The signing entity is still legally Pathfinder Projects LLC. Until the Certificate of
- *     Amendment is filed, the legal name here and on the BAA must match the entity that
- *     actually exists.
+ *  2. The signing entity is CLAIMA LLC (NY DOS 7249876). The Certificate of Amendment was
+ *     accepted 2026-09-09, so the legal name here and on the BAA now matches the registry.
  *
  * Section 3 already carves Medicaid out to a flat per-claim fee, which addresses the
  * separate and narrower NY Medicaid percentage prohibition.

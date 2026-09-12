@@ -26,7 +26,7 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-lg font-semibold text-gray-900 mb-3">1. Acceptance of Terms</h2>
-            <p>By accessing or using Claima (the “Service”), operated by Claima, Inc. (“Company,” “we,” “us”), you agree to be bound by these Terms of Service (“Terms”). If you are using the Service on behalf of an organization, you represent that you have authority to bind that organization to these Terms.</p>
+            <p>By accessing or using Claima (the “Service”), operated by Claima LLC, a New York limited liability company (“Company,” “we,” “us”), you agree to be bound by these Terms of Service (“Terms”). If you are using the Service on behalf of an organization, you represent that you have authority to bind that organization to these Terms.</p>
           </section>
 
           <section>
@@ -38,7 +38,7 @@ export default function TermsPage() {
             <h2 className="text-lg font-semibold text-gray-900 mb-3">3. HIPAA and Healthcare Compliance</h2>
             <p>You acknowledge that you are a HIPAA Covered Entity or Business Associate, and that your use of Claima involves Protected Health Information (PHI). By using the Service:</p>
             <ul className="list-disc pl-5 space-y-1 mt-2">
-              <li>You agree to enter into a Business Associate Agreement (BAA) with Claima, Inc. prior to processing PHI.</li>
+              <li>You agree to enter into a Business Associate Agreement (BAA) with Claima LLC prior to processing PHI.</li>
               <li>You are responsible for ensuring your use of the Service complies with all applicable laws, including HIPAA, state privacy laws, and billing regulations.</li>
               <li>You are responsible for verifying the accuracy of all claims submitted through the Service.</li>
               <li>You acknowledge that AI-generated outputs (appeal letters, code suggestions, billing insights) are assistive tools and must be reviewed by qualified staff before use.</li>
@@ -96,7 +96,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-lg font-semibold text-gray-900 mb-3">12. Contact</h2>
             <div className="mt-2 bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm">
-              <p>Claima, Inc.</p>
+              <p>Claima LLC</p>
               <p>Email: <a href="mailto:legal@claima.io" className="text-blue-600 hover:underline">legal@claima.io</a></p>
               <p>Support: <a href="mailto:support@claima.io" className="text-blue-600 hover:underline">support@claima.io</a></p>
             </div>
@@ -112,7 +112,7 @@ export default function TermsPage() {
           <Link href="/security" className="hover:text-gray-600">Security</Link>
           <a href="mailto:legal@claima.io" className="hover:text-gray-600">legal@claima.io</a>
         </div>
-        <p className="mt-3">© 2026 Claima, Inc. All rights reserved.</p>
+        <p className="mt-3">© 2026 Claima LLC. All rights reserved.</p>
       </footer>
     </div>
   )

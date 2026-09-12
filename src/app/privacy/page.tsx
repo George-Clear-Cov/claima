@@ -26,7 +26,7 @@ export default function PrivacyPage() {
 
           <section>
             <h2 className="text-lg font-semibold text-gray-900 mb-3">Overview</h2>
-            <p>Claima (“we,” “us,” or “our”) is a HIPAA-compliant medical billing platform operated by Claima, Inc. This Privacy Policy describes how we collect, use, disclose, and safeguard information when you use our service. We are committed to protecting both personal information and protected health information (PHI) in accordance with applicable law, including the Health Insurance Portability and Accountability Act (HIPAA).</p>
+            <p>Claima (“we,” “us,” or “our”) is a medical billing platform operated by Claima LLC, a New York limited liability company. We handle protected health information as a HIPAA Business Associate under a signed Business Associate Agreement with each practice we serve. This Privacy Policy describes how we collect, use, disclose, and safeguard information when you use our service. We are committed to protecting both personal information and protected health information (PHI) in accordance with applicable law, including the Health Insurance Portability and Accountability Act (HIPAA).</p>
           </section>
 
           <section>
@@ -68,7 +68,7 @@ export default function PrivacyPage() {
             <h2 className="text-lg font-semibold text-gray-900 mb-3">AI and Machine Learning</h2>
             <p>Claima uses AI models (including third-party AI APIs) to provide features such as claim code extraction, denial analysis, appeal letter drafting, and revenue insights. When processing PHI through AI systems:</p>
             <ul className="list-disc pl-5 space-y-1 mt-2">
-              <li>PHI is processed through HIPAA-compliant AI service providers under BAA.</li>
+              <li>PHI is processed only through AI service providers covered by a Business Associate Agreement.</li>
               <li>We do not use PHI to train general-purpose AI models.</li>
               <li>AI-generated outputs (appeal letters, insights) are reviewed and controlled by your practice.</li>
             </ul>
@@ -114,7 +114,7 @@ export default function PrivacyPage() {
             <h2 className="text-lg font-semibold text-gray-900 mb-3">Contact Us</h2>
             <p>For privacy inquiries, HIPAA questions, or to request a BAA:</p>
             <div className="mt-2 bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm">
-              <p>Claima, Inc.</p>
+              <p>Claima LLC</p>
               <p>Email: <a href="mailto:privacy@claima.io" className="text-blue-600 hover:underline">privacy@claima.io</a></p>
               <p>Support: <a href="mailto:support@claima.io" className="text-blue-600 hover:underline">support@claima.io</a></p>
             </div>
@@ -130,7 +130,7 @@ export default function PrivacyPage() {
           <Link href="/security" className="hover:text-gray-600">Security</Link>
           <a href="mailto:privacy@claima.io" className="hover:text-gray-600">privacy@claima.io</a>
         </div>
-        <p className="mt-3">© 2026 Claima, Inc. All rights reserved.</p>
+        <p className="mt-3">© 2026 Claima LLC. All rights reserved.</p>
       </footer>
     </div>
   )

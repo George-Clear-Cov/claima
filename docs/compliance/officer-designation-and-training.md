@@ -1,10 +1,15 @@
 # Security & Privacy Officer Designation and Workforce Training
 
+> **Entity name change — 2026-09-09.** NY DOS accepted the Certificate of Amendment
+> (App DOS2120-2026-001821). The entity formerly named **Pathfinder Projects LLC** is now
+> **CLAIMA LLC** — same DOS ID **7249876**, same EIN, unbroken good standing. Records dated
+> before this line were executed under the prior name and remain valid.
+
 *Not legal advice — have healthcare counsel review before use.*
 
-**Entity:** **Pathfinder Projects LLC** d/b/a **Claima** ("Claima"), a Business Associate under HIPAA.
-> ⚠️ The legal name is Pathfinder Projects LLC (NY DOS ID 7249876, Active). The rename to
-> "Claima LLC" was decided but never filed — use the registered name on anything executed.
+**Entity:** **CLAIMA LLC** d/b/a **Claima** ("Claima"), a Business Associate under HIPAA.
+> The legal name is CLAIMA LLC (NY DOS ID 7249876, Active), confirmed against the live NY DOS
+> registry on 2026-09-12. Use the registered name on anything executed.
 **Effective date:** 2026-08-31
 **Owner:** Security & Privacy Officer
 
@@ -12,14 +17,14 @@
 
 ## 1. Designation of Security Officer (45 CFR §164.308(a)(2))
 
-Pathfinder Projects LLC ("Claima") designates **George Nagib** as its **HIPAA Security Officer**, responsible for developing,
+CLAIMA LLC ("Claima") designates **George Nagib** as its **HIPAA Security Officer**, responsible for developing,
 implementing, and maintaining the organization's security policies and procedures, conducting the
 periodic risk analysis, overseeing the security incident and breach-notification process, and
 serving as the primary point of contact for security matters.
 
 ## 2. Designation of Privacy Officer (45 CFR §164.530(a), as applicable to a Business Associate)
 
-Pathfinder Projects LLC ("Claima") designates **George Nagib** as its **HIPAA Privacy Officer**, responsible for the
+CLAIMA LLC ("Claima") designates **George Nagib** as its **HIPAA Privacy Officer**, responsible for the
 organization's privacy practices, permitted uses and disclosures of PHI under its Business
 Associate Agreements, minimum-necessary enforcement, and supporting Covered Entities in honoring
 individuals' rights.
@@ -74,7 +79,7 @@ policy pack and attesting below. Each row maps to a topic the rule requires.
 
 ## 4. Workforce Acknowledgment (template)
 
-> I, the undersigned, acknowledge that I have received, read, and understand Pathfinder Projects LLC's HIPAA
+> I, the undersigned, acknowledge that I have received, read, and understand CLAIMA LLC's HIPAA
 > Policies & Procedures, Incident Response & Breach Notification Plan, and Security & Privacy
 > obligations. I agree to comply with them, to access and use PHI only as permitted and to the
 > minimum necessary, and to report any suspected security incident or breach to the Security
@@ -86,4 +91,4 @@ policy pack and attesting below. Each row maps to a topic the rule requires.
 ---
 
 **Version:** 1.0 · **Effective:** 2026-08-31 · **Next review:** 2027-08-31 (at least annually)
-**Approved by:** George Nagib, Security & Privacy Officer, Pathfinder Projects LLC — signature: ____________  date: **2026-09-02**
+**Approved by:** George Nagib, Security & Privacy Officer, CLAIMA LLC — signature: ____________  date: **2026-09-02**

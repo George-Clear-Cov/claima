@@ -92,7 +92,7 @@ export default function Marketing() {
               </Link>
             </div>
             <div className="flex items-center gap-5 text-xs text-gray-500">
-              {["HIPAA compliant", "BAA included", "No setup fee"].map((t) => (
+              {["HIPAA-ready", "BAA included", "No setup fee"].map((t) => (
                 <span key={t} className="flex items-center gap-1.5">
                   <svg className="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
                   {t}
@@ -347,7 +347,7 @@ export default function Marketing() {
         <div className="max-w-6xl mx-auto px-6 flex items-center justify-between text-xs text-gray-400">
           <div className="flex items-center gap-2">
             <LogoMark size={20} />
-            <span>© 2026 Claima, Inc.</span>
+            <span>© 2026 Claima LLC</span>
           </div>
           <div className="flex items-center gap-5">
             <Link href="/privacy" className="hover:text-gray-200 transition-colors">Privacy</Link>

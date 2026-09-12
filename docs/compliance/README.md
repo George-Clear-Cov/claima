@@ -1,5 +1,10 @@
 # Compliance — claima
 
+> **Entity name change — 2026-09-09.** NY DOS accepted the Certificate of Amendment
+> (App DOS2120-2026-001821). The entity formerly named **Pathfinder Projects LLC** is now
+> **CLAIMA LLC** — same DOS ID **7249876**, same EIN, unbroken good standing. Records dated
+> before this line were executed under the prior name and remain valid.
+
 HIPAA compliance evidence pack. **These are internal drafts, not legal advice and not final.**
 The BAA and all policies must be reviewed by a healthcare attorney before use. Fields in
 `[FILL IN: ...]` / `[BRACKETS]` need real values (dates, phone, signatures).
@@ -26,11 +31,11 @@ trail, sized to the buyer:
 > (`[FILL IN: security@claima.io]`).
 
 ## What still gates "we are compliant" (updated 2026-07-13)
-1. **Legal entity — ⚠️ CORRECTION (2026-08-08).** "Claima LLC" was **never formed.** The NY DOS
-   registry shows **PATHFINDER PROJECTS LLC** (DOS ID 7249876, Active) — the $60 Certificate of
-   Amendment was decided on 2026-07-11 but never filed. The entity is real and usable, but every
-   BAA, marketplace, bank, and insurance form must carry the name **Pathfinder Projects LLC**
-   until the amendment is filed and confirmed. Re-check the registry before signing anything.
+1. ~~**Legal entity**~~ — ✅ **CLOSED 2026-09-09.** NY DOS accepted the Certificate of Amendment
+   (App DOS2120-2026-001821); a live registry query on 2026-09-12 returns `CLAIMA LLC | 7249876 |
+   Active` and no longer lists Pathfinder Projects LLC. Same DOS ID, so the EIN and the 2024 §206
+   publication carry over. **Every BAA, marketplace, bank, and insurance form now carries
+   `Claima LLC`.** Documents executed before 2026-09-09 under the prior name remain valid.
 2. **Execute subprocessor BAAs** — AWS (self-serve/Artifact), Microsoft/Azure (Product Terms), Claim.MD, Stripe. *In progress — entity now unblocks signing.*
 3. ~~Close the Anthropic-direct AI gap~~ — ✅ code now **fail-closed** (PHI blocked from any non-BAA AI provider); flip `AI_PROVIDER=bedrock` at cutover.
 4. ~~Adopt written policies + designate officer~~ — ✅ **drafted (this pack)**; George Nagib designated Security & Privacy Officer. Needs attorney review + effective dates.
@@ -50,7 +55,7 @@ Last updated: 2026-07-13.
 | `src/app/baa/page.tsx` (`/baa`) | Click-through version accepted at signup (`BaaGate`, timestamp + IP stored) | Self-serve signup |
 
 **Known drift in the click-through version (`/baa` v1.0, eff. 2026-06-16) — fix before real clients:**
-- Business Associate is named as "claima.io," not a legal entity. Must read **Pathfinder Projects LLC d/b/a Claima**.
+- Business Associate is named as "claima.io," not a legal entity. Must read **CLAIMA LLC d/b/a Claima**.
 - Subprocessor list is stale: names Vercel (being retired) and Stripe (§1179 — receives no PHI), and **omits AWS Bedrock and Claim.MD**.
 - **No AI clause at all** — the full agreement's §3 (BAA-covered inference, no model training on PHI, no provider retention, human oversight) is the single most-asked question in diligence and the license for the de-identified data moat (§2.5). Missing here.
 - Breach notice is **30 days**; the full agreement says **5 business days**. A 30-day vendor notice eats half the covered entity's own 60-day clock and reads as unserious.
