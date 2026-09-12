@@ -1,4 +1,10 @@
 # VC Target List — Claima pre-seed
+
+> ⚠️ **SUPERSEDED 2026-09-08 by `CORRECTION-verified-2026-09-08.md`.**
+> This document's conflict analysis and whitespace claims came from a NYC-only
+> dataset and were wrong. Oak HC/FT, General Catalyst, Bain and F-Prime are all
+> conflicted; dental/post-acute/PI/vet are not whitespace. Read the correction first.
+
 Built 2026-09-03 from the 2026 Strebulaev-Jackson Venture Ranking (Stanford GSB).
 Full ranking: `strebulaev-jackson-2026-top100.csv`
 
@@ -36,7 +42,7 @@ cannot invest in Claima at this stage regardless of how good they are:
 | Rank | Firm | HQ | Why | Partners found |
 |---:|---|---|---|---:|
 | 85 | Primary Venture Partners | New York | NYC seed specialist. Right check size, local. | 4 partners + 1 VP |
-| 69 | FirstMark | New York | Top deal Ro (healthcare). | 2 MD + 1 VP |
+| 69 | ~~FirstMark~~ | New York | ❌ **CONFLICTED — led Alaffia's $10M Series A (2024-04), healthcare claims review.** See funded-comparables-2026.md | ~~2 MD + 1 VP~~ |
 | 92 | Greycroft | New York | Pie Insurance — fintech/insurtech. | 2 partners |
 | 48 | Lux | New York | Top deal Ramp. | 4 partners |
 | 45 | First Round | SF | Seed-stage specialist. | 3 partners + 1 VP |
@@ -83,14 +89,14 @@ before sending, people change seats.**
 | Person | Firm | Why them |
 |---|---|---|
 | **Carl Byers** · cbyers@fprimecapital.com | F-Prime | Believed to be **former athenahealth CFO**. athenahealth *is* RCM. If that holds, he is the single best-matched human on this list — he has lived the exact P&L Claima sells into. |
-| **Steve Kraus** · steve@bvp.com | Bessemer | Long-time head of healthcare at BVP. |
+| ~~Steve Kraus~~ · steve@bvp.com | Bessemer | ❌ **CONFLICTED** — Bessemer led Amperos (denial management), 2026-04. |
 | **Bryan Roberts** · broberts@venrock.com | Venrock | Healthcare lead; Venrock's top deal (Devoted Health) is his lane. |
 | **Matt Harris** · mharris@baincapitalventures.com | BCV | Fintech/payments infrastructure — the financing half of the thesis. |
 | **Merritt Hummer** · mhummer@baincapital.com | BCV | Fintech × healthcare crossover. |
 | **Deena Shakir** · deena.shakir@luxcapital.com | Lux | Well-known healthcare investor. |
 | **Billy Deitch / Allen Miller** · billy@ / allen@oakhcft.com | Oak HC/FT | The fund whose entire mandate is healthcare + fintech. |
 | **Emily Man** · emily@primary.vc | Primary | NYC seed, fintech focus — right stage *and* right city. |
-| **Sofia Guerra** · sguerra@bvp.com | Bessemer | Healthcare investing. |
+| ~~Sofia Guerra~~ · sguerra@bvp.com | Bessemer | ❌ **CONFLICTED** — same. |
 | **Gaurav Tuli** · gtuli@fprimecapital.com | F-Prime | Health-IT partner. |
 
 ⚠️ **General Catalyst got 18 names but not the right one.** GC's healthcare thesis (and the
@@ -131,7 +137,7 @@ conversion.**
 ## Two unlocks, in order
 
 **1. The Farag BAA.** Converts the traction answer from "one pilot in contracting" to
-"live pilot, $96,952 book, 31-52% recoverable, $8.9-15.0k to us." That is the difference
+"live pilot, $152,813 book, $96,952 analyzed, 31-52% recoverable, $8.9-15.0k to us." That is the difference
 between a story and a business. It costs one signature.
 
 **2. The full-time answer.** Institutional pre-seed investors fund full-time founders.
@@ -171,7 +177,7 @@ this list is in Tier 3 of the ranking, not Tier 1.
 
 Four sentences. No deck attached, no calendar link in the first mail.
 1. One line of credibility that is specific to them (their portfolio company, not flattery).
-2. The finding, in numbers: 78 accounts, $96,952, **68% never worked by anyone.**
+2. The finding, in numbers: a $152,813 book; the $96,952 / 78 accounts I could analyze were **68% never worked by anyone.**
 3. What Claima is, in one sentence.
 4. One ask: 20 minutes.
 
