@@ -1,0 +1,294 @@
+{
+ "tierA": [
+  {
+   "name": "Katherine Tamberelli",
+   "email": "Katherine,\n\nYou run revenue cycle at Upper East Orthopaedics, so you know this number better than\nI do. I'm writing because the public data suggests it's worth a look.\n\nCMS shows 57,570 Medicare services across 4,915 patients at your practice — $1,656,045\nin allowed charges. MGMA puts the median practice at 47 days in A/R with 9–25% aging\npast 120 days, which would imply roughly $63,973–$177,703 sitting past that line. Past\n120 days the odds of collecting fall under 50%.\n\nThat's a benchmark, not a claim about your books. You have the real number; I don't.\n\nThe first practice book I analyzed had 68% of its aged accounts with no worklog entry\nat all — $65,287 nobody had ever touched. Not denials. Claims that just went quiet.\nIts second-largest payer was invisible too: UnitedHealthcare under five different\nspellings, $15,399 that never showed up as one payer on any report.\n\nYou can check yours in two minutes without talking to me:\n\n    https://claima.io/leak-report\n\nDrop in an A/R aging export from your PM system. It returns your unworked percentage,\nthe payers hiding under multiple spellings, a tiered recovery estimate, and the\nbalance aging out of the filing window in the next 30–60 days. Parsing runs entirely\nin your browser — nothing is uploaded, no signup.\n\nSize doesn't slow it down: 100,000 claim lines come back in under a second. That's the\npart that's different from asking a billing company for an A/R review and waiting two\nweeks for a spreadsheet. The recovery work still takes as long as payers take — but\nknowing what you're sitting on shouldn't take any time at all.\n\nIf it surfaces something worth working, I take it on contingency: 30% of what I\nactually recover, nothing otherwise. No system switch, no per-seat fee.\n\nGeorge Nagib\nClaima · claima.io · gnagib99@gmail.com",
+   "title": "Practice Administrator",
+   "practice": "Upper East Orthopaedics",
+   "city": "New York",
+   "st": "NY",
+   "heads": 16,
+   "cms": {
+    "n": 2,
+    "allowed": 1656044.8200004832,
+    "svcs": 57570,
+    "benes": 4915,
+    "lo": 63973.23825207346,
+    "hi": 177703.43958909294,
+    "specs": {
+     "Physical Medicine and Rehabilitation": 1,
+     "Orthopedic Surgery": 1
+    },
+    "docs": [
+     "Rachel Bergang",
+     "Andrew Rosen"
+    ]
+   },
+   "why": "2 providers at 315 E 83rd St — matches the practice exactly",
+   "to": "ktamberelli@ueortho.com",
+   "subject": "Upper East Orthopaedics — A/R aged past 120 days",
+   "fee": 16835.623866670667
+  },
+  {
+   "name": "Carla Wyman",
+   "email": "Carla,\n\nYou run revenue cycle at NY Orthopedics, so you know this number better than I do. I'm\nwriting because the public data suggests it's worth a look.\n\nCMS shows 37,459 Medicare services across 5,086 patients at your practice — $1,058,570\nin allowed charges. MGMA puts the median practice at 47 days in A/R with 9–25% aging\npast 120 days, which would imply roughly $40,893–$113,591 sitting past that line. Past\n120 days the odds of collecting fall under 50%.\n\nThat's a benchmark, not a claim about your books. You have the real number; I don't.\n\nThe first practice book I analyzed had 68% of its aged accounts with no worklog entry\nat all — $65,287 nobody had ever touched. Not denials. Claims that just went quiet.\nIts second-largest payer was invisible too: UnitedHealthcare under five different\nspellings, $15,399 that never showed up as one payer on any report.\n\nYou can check yours in two minutes without talking to me:\n\n    https://claima.io/leak-report\n\nDrop in an A/R aging export from your PM system. It returns your unworked percentage,\nthe payers hiding under multiple spellings, a tiered recovery estimate, and the\nbalance aging out of the filing window in the next 30–60 days. Parsing runs entirely\nin your browser — nothing is uploaded, no signup.\n\nSize doesn't slow it down: 100,000 claim lines come back in under a second. That's the\npart that's different from asking a billing company for an A/R review and waiting two\nweeks for a spreadsheet. The recovery work still takes as long as payers take — but\nknowing what you're sitting on shouldn't take any time at all.\n\nIf it surfaces something worth working, I take it on contingency: 30% of what I\nactually recover, nothing otherwise. No system switch, no per-seat fee.\n\nGeorge Nagib\nClaima · claima.io · gnagib99@gmail.com",
+   "title": "Director of Revenue Cycle",
+   "practice": "NY Orthopedics",
+   "city": "New York",
+   "st": "NY",
+   "heads": 27,
+   "cms": {
+    "n": 16,
+    "allowed": 1058569.9300029045,
+    "svcs": 37459,
+    "benes": 5086,
+    "lo": 40892.70140559165,
+    "hi": 113590.83723775459,
+    "specs": {
+     "Physical Therapist in Private Practice": 7,
+     "Orthopedic Surgery": 2,
+     "Sports Medicine": 3,
+     "Physician Assistant": 3,
+     "Chiropractic": 1
+    },
+    "docs": [
+     "Gavin Silver",
+     "Benjamin Bedford",
+     "Matthew Mendez-Zfass",
+     "Gabriel Stasyszyn",
+     "Kaileen Murray",
+     "Keir Ross"
+    ]
+   },
+   "why": "16 providers at 159 E 74th St, their listed HQ",
+   "to": "cwyman@newyorkorthopedics.com",
+   "subject": "NY Orthopedics — A/R aged past 120 days",
+   "fee": 10761.59591990487
+  },
+  {
+   "name": "Annmarie Randazzo",
+   "email": "Annmarie,\n\nYou run revenue cycle at Orthopaedic and Neurosurgery Specialists, so you know this\nnumber better than I do. I'm writing because the public data suggests it's worth a\nlook.\n\nCMS shows 222,880 Medicare services across 40,010 patients at your practice —\n$6,350,522 in allowed charges. MGMA puts the median practice at 47 days in A/R with\n9–25% aging past 120 days, which would imply roughly $245,322–$681,449 sitting past\nthat line. Past 120 days the odds of collecting fall under 50%.\n\nThat's a benchmark, not a claim about your books. You have the real number; I don't.\n\nThe first practice book I analyzed had 68% of its aged accounts with no worklog entry\nat all — $65,287 nobody had ever touched. Not denials. Claims that just went quiet.\nIts second-largest payer was invisible too: UnitedHealthcare under five different\nspellings, $15,399 that never showed up as one payer on any report.\n\nYou can check yours in two minutes without talking to me:\n\n    https://claima.io/leak-report\n\nDrop in an A/R aging export from your PM system. It returns your unworked percentage,\nthe payers hiding under multiple spellings, a tiered recovery estimate, and the\nbalance aging out of the filing window in the next 30–60 days. Parsing runs entirely\nin your browser — nothing is uploaded, no signup.\n\nSize doesn't slow it down: 100,000 claim lines come back in under a second. That's the\npart that's different from asking a billing company for an A/R review and waiting two\nweeks for a spreadsheet. The recovery work still takes as long as payers take — but\nknowing what you're sitting on shouldn't take any time at all.\n\nIf it surfaces something worth working, I take it on contingency: 30% of what I\nactually recover, nothing otherwise. No system switch, no per-seat fee.\n\nGeorge Nagib\nClaima · claima.io · gnagib99@gmail.com",
+   "title": "Manager, Billing & Coding",
+   "practice": "Orthopaedic and Neurosurgery Specialists",
+   "city": "Greenwich",
+   "st": "CT",
+   "heads": 140,
+   "cms": {
+    "n": 64,
+    "allowed": 6350522.190006512,
+    "svcs": 222880,
+    "benes": 40010,
+    "lo": 245321.54213449813,
+    "hi": 681448.7281513837,
+    "specs": {
+     "Physical Therapist in Private Practice": 22,
+     "Hand Surgery": 3,
+     "Orthopedic Surgery": 16,
+     "Physician Assistant": 8,
+     "Family Practice": 1,
+     "Neurosurgery": 4,
+     "Physical Medicine and Rehabilitation": 3,
+     "Occupational Therapist in Private Practice": 2,
+     "Rheumatology": 1,
+     "Interventional Pain Management": 1,
+     "Sports Medicine": 1,
+     "Nurse Practitioner": 2
+    },
+    "docs": [
+     "Sabrina Douglass",
+     "Mark Vitale",
+     "Elizabeth Graveline",
+     "Jonathan Berliner",
+     "Brian Kavanagh",
+     "Steven Hindman"
+    ]
+   },
+   "why": "org NPI 1982021812 confirms 6 Greenwich Office Park; 64 providers vs 140 staff — consistent",
+   "to": "arandazzo@onsmd.com",
+   "subject": "Orthopaedic and Neurosurgery Specialists — A/R aged past 120 days",
+   "fee": 64560.45250506209
+  },
+  {
+   "name": "Regina Byrnes",
+   "email": "Regina,\n\nYou run revenue cycle at Englewood Orthopedic Associates, so you know this number\nbetter than I do. I'm writing because the public data suggests it's worth a look.\n\nCMS shows 60,181 Medicare services across 13,186 patients at your practice —\n$1,873,197 in allowed charges. MGMA puts the median practice at 47 days in A/R with\n9–25% aging past 120 days, which would imply roughly $72,362–$201,005 sitting past\nthat line. Past 120 days the odds of collecting fall under 50%.\n\nThat's a benchmark, not a claim about your books. You have the real number; I don't.\n\nThe first practice book I analyzed had 68% of its aged accounts with no worklog entry\nat all — $65,287 nobody had ever touched. Not denials. Claims that just went quiet.\nIts second-largest payer was invisible too: UnitedHealthcare under five different\nspellings, $15,399 that never showed up as one payer on any report.\n\nYou can check yours in two minutes without talking to me:\n\n    https://claima.io/leak-report\n\nDrop in an A/R aging export from your PM system. It returns your unworked percentage,\nthe payers hiding under multiple spellings, a tiered recovery estimate, and the\nbalance aging out of the filing window in the next 30–60 days. Parsing runs entirely\nin your browser — nothing is uploaded, no signup.\n\nSize doesn't slow it down: 100,000 claim lines come back in under a second. That's the\npart that's different from asking a billing company for an A/R review and waiting two\nweeks for a spreadsheet. The recovery work still takes as long as payers take — but\nknowing what you're sitting on shouldn't take any time at all.\n\nIf it surfaces something worth working, I take it on contingency: 30% of what I\nactually recover, nothing otherwise. No system switch, no per-seat fee.\n\nGeorge Nagib\nClaima · claima.io · gnagib99@gmail.com",
+   "title": "Practice Administrator",
+   "practice": "Englewood Orthopedic Associates",
+   "city": "Englewood",
+   "st": "NJ",
+   "heads": 62,
+   "cms": {
+    "n": 19,
+    "allowed": 1873197.1000075839,
+    "svcs": 60181,
+    "benes": 13186,
+    "lo": 72361.86057563542,
+    "hi": 201005.16826565398,
+    "specs": {
+     "Orthopedic Surgery": 3,
+     "Obstetrics & Gynecology": 3,
+     "Physician Assistant": 4,
+     "Internal Medicine": 2,
+     "Physical Medicine and Rehabilitation": 1,
+     "Nurse Practitioner": 1,
+     "Physical Therapist in Private Practice": 3,
+     "Hand Surgery": 2
+    },
+    "docs": [
+     "Kimberly Koury",
+     "Karen Patrusky",
+     "Asit Shah",
+     "Zachary Murray",
+     "Steven Gillon",
+     "Marc Ross"
+    ]
+   },
+   "why": "19 providers at 401 S Van Brunt St, 62 staff — consistent",
+   "to": "rbyrnes@englewoodortho.com",
+   "subject": "Englewood Orthopedic Associates — A/R aged past 120 days",
+   "fee": 19043.22964148806
+  },
+  {
+   "name": "Tara Baldassarri",
+   "email": "Tara,\n\nYou run revenue cycle at Litchfield Hills Orthopedic Associates, so you know this\nnumber better than I do. I'm writing because the public data suggests it's worth a\nlook.\n\nCMS shows 30,703 Medicare services across 11,500 patients at your practice —\n$1,818,342 in allowed charges. MGMA puts the median practice at 47 days in A/R with\n9–25% aging past 120 days, which would imply roughly $70,243–$195,119 sitting past\nthat line. Past 120 days the odds of collecting fall under 50%.\n\nThat's a benchmark, not a claim about your books. You have the real number; I don't.\n\nThe first practice book I analyzed had 68% of its aged accounts with no worklog entry\nat all — $65,287 nobody had ever touched. Not denials. Claims that just went quiet.\nIts second-largest payer was invisible too: UnitedHealthcare under five different\nspellings, $15,399 that never showed up as one payer on any report.\n\nYou can check yours in two minutes without talking to me:\n\n    https://claima.io/leak-report\n\nDrop in an A/R aging export from your PM system. It returns your unworked percentage,\nthe payers hiding under multiple spellings, a tiered recovery estimate, and the\nbalance aging out of the filing window in the next 30–60 days. Parsing runs entirely\nin your browser — nothing is uploaded, no signup.\n\nSize doesn't slow it down: 100,000 claim lines come back in under a second. That's the\npart that's different from asking a billing company for an A/R review and waiting two\nweeks for a spreadsheet. The recovery work still takes as long as payers take — but\nknowing what you're sitting on shouldn't take any time at all.\n\nIf it surfaces something worth working, I take it on contingency: 30% of what I\nactually recover, nothing otherwise. No system switch, no per-seat fee.\n\nGeorge Nagib\nClaima · claima.io · gnagib99@gmail.com",
+   "title": "Manager, Revenue Cycle Operations",
+   "practice": "Litchfield Hills Orthopedic Associates",
+   "city": "Torrington",
+   "st": "CT",
+   "heads": 40,
+   "cms": {
+    "n": 32,
+    "allowed": 1818342.1700038468,
+    "svcs": 30703,
+    "benes": 11500,
+    "lo": 70242.8071152171,
+    "hi": 195118.90865338084,
+    "specs": {
+     "Physical Therapist in Private Practice": 8,
+     "Occupational Therapist in Private Practice": 4,
+     "Orthopedic Surgery": 3,
+     "Physician Assistant": 5,
+     "Ambulatory Surgical Center": 2,
+     "Gastroenterology": 5,
+     "Pain Management": 1,
+     "Nurse Practitioner": 1,
+     "Hand Surgery": 2,
+     "Pathology": 1
+    },
+    "docs": [
+     "Richard Boulli",
+     "Marisa Concilio",
+     "Megan Deacon",
+     "Frank Pompo",
+     "Valerie Simons",
+     "Lane Spero"
+    ]
+   },
+   "why": "org NPI 1699874404 confirms 245 Alvord Park Rd; 32 providers vs 40 staff — consistent",
+   "to": "tbaldassarri@lhoa.com",
+   "subject": "Litchfield Hills Orthopedic Associates — A/R aged past 120 days",
+   "fee": 18485.5654058213
+  }
+ ],
+ "tierB": [
+  {
+   "name": "Vishal Persaud",
+   "email": "Vishal,\n\nYou run revenue cycle at New York Spine Institute — so this is a two-minute question,\nnot a pitch.\n\nThe first practice book I analyzed had 68% of its aged accounts with no worklog entry\nat all — $65,287 nobody had ever touched. Not denials. Claims that just went quiet.\nIts second-largest payer was invisible too: UnitedHealthcare under five different\nspellings, $15,399 that never showed up as one payer on any report.\n\nBoth of those were sitting in an ordinary aging report. Neither showed up as a problem\non any dashboard, because nothing was denied — the claims just stopped moving.\n\nYou can check your own book without talking to me:\n\n    https://claima.io/leak-report\n\nDrop in an A/R aging export from your PM system. It returns your unworked percentage,\nthe payers hiding under multiple spellings, a tiered recovery estimate, and the\nbalance aging out of the filing window in the next 30–60 days. Parsing runs entirely\nin your browser — nothing is uploaded, no signup.\n\nSize doesn't slow it down: 100,000 claim lines come back in under a second. That's the\npart that's different from asking a billing company for an A/R review and waiting two\nweeks for a spreadsheet. The recovery work still takes as long as payers take — but\nknowing what you're sitting on shouldn't take any time at all.\n\nIf it surfaces something worth working, I take it on contingency: 30% of what I\nactually recover, nothing otherwise. No system switch, no per-seat fee.\n\nGeorge Nagib\nClaima · claima.io · gnagib99@gmail.com",
+   "title": "Revenue Cycle Manager",
+   "practice": "New York Spine Institute",
+   "city": "Westbury",
+   "st": "NY",
+   "heads": 40,
+   "cms": {
+    "n": 1,
+    "allowed": 30227.609999760003,
+    "lo": 1167.696715059222,
+    "hi": 3243.601986275617,
+    "svcs": 179,
+    "benes": 137
+   },
+   "why": "761 Merrick Ave resolves to a different org NPI (Alexandre B. De Moura MD PC). UNDER-MATCHED.",
+   "to": "vpersaud@nyspine.com",
+   "subject": "New York Spine Institute — aged A/R"
+  },
+  {
+   "name": "Gema Silva",
+   "email": "Gema,\n\nYou run revenue cycle at Centers for Neurosurgery, Spine & Orthopedics — so this is a\ntwo-minute question, not a pitch.\n\nThe first practice book I analyzed had 68% of its aged accounts with no worklog entry\nat all — $65,287 nobody had ever touched. Not denials. Claims that just went quiet.\nIts second-largest payer was invisible too: UnitedHealthcare under five different\nspellings, $15,399 that never showed up as one payer on any report.\n\nBoth of those were sitting in an ordinary aging report. Neither showed up as a problem\non any dashboard, because nothing was denied — the claims just stopped moving.\n\nYou can check your own book without talking to me:\n\n    https://claima.io/leak-report\n\nDrop in an A/R aging export from your PM system. It returns your unworked percentage,\nthe payers hiding under multiple spellings, a tiered recovery estimate, and the\nbalance aging out of the filing window in the next 30–60 days. Parsing runs entirely\nin your browser — nothing is uploaded, no signup.\n\nSize doesn't slow it down: 100,000 claim lines come back in under a second. That's the\npart that's different from asking a billing company for an A/R review and waiting two\nweeks for a spreadsheet. The recovery work still takes as long as payers take — but\nknowing what you're sitting on shouldn't take any time at all.\n\nIf it surfaces something worth working, I take it on contingency: 30% of what I\nactually recover, nothing otherwise. No system switch, no per-seat fee.\n\nGeorge Nagib\nClaima · claima.io · gnagib99@gmail.com",
+   "title": "Revenue Cycle Manager",
+   "practice": "Centers for Neurosurgery, Spine & Orthopedics",
+   "city": "Wayne",
+   "st": "NJ",
+   "heads": 50,
+   "cms": {
+    "n": 44,
+    "allowed": 4916648.310001214,
+    "lo": 180634.1812374103,
+    "hi": 501761.6145483619,
+    "svcs": 98027,
+    "benes": 27757
+   },
+   "why": "only 2 providers matched vs 50 staff — other suites missed. UNDER-ATTRIBUTED.",
+   "to": "gema.silva@cnsomd.com",
+   "subject": "CNSO — aged A/R"
+  },
+  {
+   "name": "Bridget Lex",
+   "email": "Bridget,\n\nYou run revenue cycle at Advanced Neurosurgery Associates — so this is a two-minute\nquestion, not a pitch.\n\nThe first practice book I analyzed had 68% of its aged accounts with no worklog entry\nat all — $65,287 nobody had ever touched. Not denials. Claims that just went quiet.\nIts second-largest payer was invisible too: UnitedHealthcare under five different\nspellings, $15,399 that never showed up as one payer on any report.\n\nBoth of those were sitting in an ordinary aging report. Neither showed up as a problem\non any dashboard, because nothing was denied — the claims just stopped moving.\n\nYou can check your own book without talking to me:\n\n    https://claima.io/leak-report\n\nDrop in an A/R aging export from your PM system. It returns your unworked percentage,\nthe payers hiding under multiple spellings, a tiered recovery estimate, and the\nbalance aging out of the filing window in the next 30–60 days. Parsing runs entirely\nin your browser — nothing is uploaded, no signup.\n\nSize doesn't slow it down: 100,000 claim lines come back in under a second. That's the\npart that's different from asking a billing company for an A/R review and waiting two\nweeks for a spreadsheet. The recovery work still takes as long as payers take — but\nknowing what you're sitting on shouldn't take any time at all.\n\nIf it surfaces something worth working, I take it on contingency: 30% of what I\nactually recover, nothing otherwise. No system switch, no per-seat fee.\n\nGeorge Nagib\nClaima · claima.io · gnagib99@gmail.com",
+   "title": "Billing Manager",
+   "practice": "Advanced Neurosurgery Associates",
+   "city": "Rutherford",
+   "st": "NJ",
+   "heads": 26,
+   "cms": {
+    "n": 4,
+    "allowed": 131252.6600000782,
+    "lo": 4729.789979655011,
+    "hi": 13138.305499041699,
+    "svcs": 1482,
+    "benes": 882
+   },
+   "why": "no CMS providers found at 201 State Rt 17. Email domain also differs from listed site.",
+   "to": "blex@advancedneurosurgeons.com",
+   "subject": "Advanced Neurosurgery — aged A/R"
+  },
+  {
+   "name": "Lee Goldberg",
+   "email": "Lee,\n\nYou run revenue cycle at Premier Brain & Spine — so this is a two-minute question, not\na pitch.\n\nThe first practice book I analyzed had 68% of its aged accounts with no worklog entry\nat all — $65,287 nobody had ever touched. Not denials. Claims that just went quiet.\nIts second-largest payer was invisible too: UnitedHealthcare under five different\nspellings, $15,399 that never showed up as one payer on any report.\n\nBoth of those were sitting in an ordinary aging report. Neither showed up as a problem\non any dashboard, because nothing was denied — the claims just stopped moving.\n\nYou can check your own book without talking to me:\n\n    https://claima.io/leak-report\n\nDrop in an A/R aging export from your PM system. It returns your unworked percentage,\nthe payers hiding under multiple spellings, a tiered recovery estimate, and the\nbalance aging out of the filing window in the next 30–60 days. Parsing runs entirely\nin your browser — nothing is uploaded, no signup.\n\nSize doesn't slow it down: 100,000 claim lines come back in under a second. That's the\npart that's different from asking a billing company for an A/R review and waiting two\nweeks for a spreadsheet. The recovery work still takes as long as payers take — but\nknowing what you're sitting on shouldn't take any time at all.\n\nIf it surfaces something worth working, I take it on contingency: 30% of what I\nactually recover, nothing otherwise. No system switch, no per-seat fee.\n\nGeorge Nagib\nClaima · claima.io · gnagib99@gmail.com",
+   "title": "Director of Billing",
+   "practice": "Premier Brain & Spine",
+   "city": "Edison",
+   "st": "NJ",
+   "heads": 12,
+   "cms": {
+    "n": 35,
+    "allowed": 4544350.039997212,
+    "lo": 153203.76713380744,
+    "hi": 425566.0198161318,
+    "svcs": 117791,
+    "benes": 22914
+   },
+   "why": "NPPES shows NO Edison location for this org (Hainesport/Lakewood/Princeton/Haddonfield/Newton/Voorhees). The 31 providers at 10 Parsonage Rd are a DIFFERENT practice. WRONG NUMBER.",
+   "to": "l.goldberg@premierspinenj.com",
+   "subject": "Premier Brain & Spine — aged A/R"
+  },
+  {
+   "name": "Christy Gunther",
+   "email": "Christy,\n\nYou run revenue cycle at Hunterdon Hematology Oncology — so this is a two-minute\nquestion, not a pitch.\n\nThe first practice book I analyzed had 68% of its aged accounts with no worklog entry\nat all — $65,287 nobody had ever touched. Not denials. Claims that just went quiet.\nIts second-largest payer was invisible too: UnitedHealthcare under five different\nspellings, $15,399 that never showed up as one payer on any report.\n\nBoth of those were sitting in an ordinary aging report. Neither showed up as a problem\non any dashboard, because nothing was denied — the claims just stopped moving.\n\nYou can check your own book without talking to me:\n\n    https://claima.io/leak-report\n\nDrop in an A/R aging export from your PM system. It returns your unworked percentage,\nthe payers hiding under multiple spellings, a tiered recovery estimate, and the\nbalance aging out of the filing window in the next 30–60 days. Parsing runs entirely\nin your browser — nothing is uploaded, no signup.\n\nSize doesn't slow it down: 100,000 claim lines come back in under a second. That's the\npart that's different from asking a billing company for an A/R review and waiting two\nweeks for a spreadsheet. The recovery work still takes as long as payers take — but\nknowing what you're sitting on shouldn't take any time at all.\n\nIf it surfaces something worth working, I take it on contingency: 30% of what I\nactually recover, nothing otherwise. No system switch, no per-seat fee.\n\nGeorge Nagib\nClaima · claima.io · gnagib99@gmail.com",
+   "title": "Revenue Cycle Manager",
+   "practice": "Hunterdon Hematology Oncology",
+   "city": "Flemington",
+   "st": "NJ",
+   "heads": 39,
+   "cms": {
+    "n": 19,
+    "allowed": 3386807.5800091224,
+    "lo": 125250.55402108195,
+    "hi": 347918.2056141165,
+    "svcs": 231697,
+    "benes": 22982
+   },
+   "why": "2100 Wescott Dr is a health-system campus — the 63 providers there are NOT all this practice. OVER-ATTRIBUTED.",
+   "to": "cgunther@hhsnj.org",
+   "subject": "Hunterdon Hematology — aged A/R"
+  }
+ ]
+}
