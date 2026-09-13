@@ -37,3 +37,22 @@ export interface PracticeRecord {
   /** Share of allowed dollars in the top five codes. */
   concentration: number
 }
+
+/**
+ * STAGED ROLLOUT.
+ *
+ * 500 pages of one template landing at once can read as scraped content to a search engine and
+ * damage the whole domain, even when every page carries genuinely distinct data. These pages
+ * also name individual physicians rather than institutions, so a smaller first release keeps the
+ * blast radius small if someone objects.
+ *
+ * We publish the highest-value practices first, watch how they index, then raise this number.
+ * The rest stay in the dataset and cost nothing until released. Both the route and the sitemap
+ * read from here so they can never disagree: a sitemap listing pages that 404 is worse for the
+ * domain than publishing nothing.
+ */
+export const PUBLISH_LIMIT = 100
+
+export function publishedPractices(all: PracticeRecord[]): PracticeRecord[] {
+  return [...all].sort((a, b) => b.totalAllowed - a.totalAllowed).slice(0, PUBLISH_LIMIT)
+}

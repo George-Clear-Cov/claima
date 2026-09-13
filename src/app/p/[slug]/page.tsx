@@ -2,7 +2,7 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { LogoMark } from "@/components/Logo"
 import practices from "@/data/practices.json"
-import type { PracticeRecord } from "@/lib/practices"
+import { publishedPractices, type PracticeRecord } from "@/lib/practices"
 
 /**
  * One indexable page per practice, built from data CMS already publishes about them.
@@ -23,7 +23,7 @@ import type { PracticeRecord } from "@/lib/practices"
  * locality-adjusted by CMS for this specific provider. No locality inference happens here.
  */
 
-const ALL = practices as unknown as PracticeRecord[]
+const ALL = publishedPractices(practices as unknown as PracticeRecord[])
 
 export const dynamicParams = false
 
