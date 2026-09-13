@@ -57,6 +57,28 @@ function money2(n: number): string {
   return n.toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2 })
 }
 
+/**
+ * A one-click ask that costs the reader nothing and tells us exactly who they are.
+ *
+ * The body is prefilled with their own top codes so the reply arrives already qualified: we
+ * know the practice, the NPI, and which codes to pull commercial comparisons for. No form, no
+ * endpoint to secure, and nothing on this page ever handles patient data.
+ */
+function askMailto(p: PracticeRecord): string {
+  const codes = p.codes.slice(0, 5).map((c) => c.code).join(", ")
+  const subject = `Commercial comparison for ${p.name}${p.credentials ? `, ${p.credentials}` : ""}`
+  const body = [
+    `Please compare what our commercial payers allowed against Medicare for these codes:`,
+    codes,
+    ``,
+    `Practice: ${p.name}, ${p.city}, ${p.state}`,
+    `NPI: ${p.npi}`,
+    ``,
+    `Best way to reach me:`,
+  ].join("\n")
+  return `mailto:george@claima.io?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+}
+
 export default async function PracticePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   const p = find(slug)
@@ -187,15 +209,29 @@ export default async function PracticePage({ params }: { params: Promise<{ slug:
             Most practices have never checked. A claim paid at 70% of the allowable does not show up
             as a denial or land in anyone&apos;s work queue. It shows up as <em>paid</em>.
           </p>
-          <Link
-            href="/leak-report"
-            className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2.5 rounded-lg transition-colors text-sm"
-          >
-            Check your own remittance file
-          </Link>
+          <div className="flex flex-wrap gap-3">
+            <Link
+              href="/leak-report"
+              className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2.5 rounded-lg transition-colors text-sm"
+            >
+              Check your own remittance file
+            </Link>
+            {/*
+              The lighter ask. Uploading a file is real work, and someone who is interested but
+              not ready had no way to raise a hand. A mailto needs no backend, no form, no
+              storage and no PHI, and the reply itself is the qualification: it arrives from a
+              named person at a practice whose page they were reading.
+            */}
+            <a
+              href={askMailto(p)}
+              className="inline-block bg-white hover:bg-gray-50 text-gray-900 font-medium px-5 py-2.5 rounded-lg border border-gray-300 transition-colors text-sm"
+            >
+              Or have us run these five codes
+            </a>
+          </div>
           <p className="text-[12.5px] text-gray-600 mt-3">
-            Free, no signup, and the file never leaves your browser. Open your network tab before
-            you drop it and you will see no request.
+            The report is free, needs no signup, and the file never leaves your browser. Open your
+            network tab before you drop it and you will see no request.
           </p>
         </section>
 
