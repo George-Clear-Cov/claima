@@ -13,8 +13,24 @@
  *   2. Payer fragmentation — one payer under five spellings hid the #2 payer entirely.
  *   3. Tiered recovery — status-unknown claims need a 276/277, not an appeal.
  *   4. Closing windows — what stops being recoverable in the next 60 days.
+ *   5. Underpayment against the public Medicare floor — money that was paid, but paid short.
+ *
+ * Finding 5 is the one no competitor can copy cheaply. Every funded vendor that detects
+ * underpayment benchmarks against the practice's own loaded payer contracts, so the prospect
+ * has to hand over contracts before anyone can produce a number. The Medicare Physician Fee
+ * Schedule is public, so we can produce one from the practice's own remit and nothing else.
+ * It also finds a different pool than the rest of this module: a denied claim is visible in
+ * every worklist, whereas a claim paid at 70% of the allowable shows up everywhere as "paid"
+ * and is never worked by anyone.
  */
 import type { ImportedRecord } from "./import/types"
+import {
+  analyzeUnderpayment,
+  type BenchmarkInput,
+  type MpfsLocality,
+  type PlaceOfService,
+  type UnderpaymentReport,
+} from "./mpfs"
 import {
   canonicalPayerName,
   resolvePayer,
@@ -175,6 +191,12 @@ export interface LeakReport {
     feeLow: number
     feeHigh: number
   }
+  /**
+   * Paid-but-short, benchmarked against the public Medicare fee schedule. Null when the
+   * caller supplied no locality, or when the upload carried no adjudicated lines (an aging
+   * CSV has balances, not adjudication — only a remittance can support this).
+   */
+  underpayment: UnderpaymentReport | null
   /** Per-file rollup. Length > 1 is portfolio mode. */
   sources: SourceRollup[]
   /** Honest notes about what the export did not contain. */
@@ -297,6 +319,45 @@ function round(n: number): number {
 export interface LeakReportOptions {
   /** Injected for deterministic tests; defaults to now. */
   asOf?: Date
+  /**
+   * Medicare locality the practice bills from. Without it the underpayment section is skipped
+   * entirely rather than guessed: GPCI swings the allowed amount by more than 20% between
+   * Manhattan and Alabama, so a defaulted locality would manufacture a shortfall that is
+   * really a geography error.
+   */
+  locality?: MpfsLocality | null
+  /** Independent practices bill non-facility, which is the default. */
+  placeOfService?: PlaceOfService
+}
+
+/**
+ * Pull every adjudicated service line out of the normalized records. Only remittance sources
+ * populate `allowed` or `paid`; an aging CSV yields nothing here, which is correct.
+ */
+function toBenchmarkInputs(sources: LeakSource[]): BenchmarkInput[] {
+  const out: BenchmarkInput[] = []
+  for (const source of sources) {
+    for (const rec of source.records) {
+      const denied = rec.status === "denied"
+      for (const line of rec.lines) {
+        if (!line.cptCode) continue
+        const adjudicated =
+          line.allowed !== undefined || line.paid !== undefined || line.patientResponsibility !== undefined
+        if (!adjudicated) continue
+        out.push({
+          cpt: line.cptCode,
+          modifiers: line.modifiers,
+          payerName: rec.payerName,
+          allowed: line.allowed,
+          paid: line.paid ?? 0,
+          patientResponsibility: line.patientResponsibility,
+          units: line.units,
+          denied,
+        })
+      }
+    }
+  }
+  return out
 }
 
 export function analyzeLeakReport(
@@ -306,6 +367,14 @@ export function analyzeLeakReport(
   const asOf = opts.asOf ?? new Date()
   const accounts = toAccounts(sources, asOf)
   const balance = sum(accounts.map((a) => a.balance))
+
+  // --- Underpayment vs the public Medicare floor --------------------------
+  // Skipped without a locality, and skipped when the upload carried no adjudicated lines.
+  const benchmarkInputs = opts.locality ? toBenchmarkInputs(sources) : []
+  const underpaymentReport =
+    opts.locality && benchmarkInputs.length > 0
+      ? analyzeUnderpayment(benchmarkInputs, opts.locality, opts.placeOfService ?? "office")
+      : null
 
   // --- Unworked A/R -------------------------------------------------------
   const unworkedAccts = accounts.filter((a) => !a.hasWorklog)
@@ -464,6 +533,7 @@ export function analyzeLeakReport(
       feeLow: round(recoveryLow * CONTINGENCY_RATE),
       feeHigh: round(recoveryHigh * CONTINGENCY_RATE),
     },
+    underpayment: underpaymentReport,
     sources: sourceRollups,
     dataQuality,
   }

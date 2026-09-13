@@ -1,6 +1,7 @@
 import { test, expect, describe } from "bun:test"
 import { parseCsvBacklog } from "./import/fromCsv"
-import { analyzeLeakReport, CONTINGENCY_RATE, RECOVERY_RATES } from "./leak-report"
+import { analyzeLeakReport, CONTINGENCY_RATE, RECOVERY_RATES, type LeakSource } from "./leak-report"
+import { MPFS_LOCALITIES, medicareAllowed } from "./mpfs"
 
 const csv = (rows: string[]) => rows.join("\n")
 
@@ -296,5 +297,82 @@ describe("tier actions describe the tier", () => {
     expect(tier!.accounts).toBe(2)
     expect(tier!.action).not.toContain("intra-operative")
     expect(tier!.action).toContain("good-cause")
+  })
+})
+
+// ── Underpayment vs the Medicare floor ────────────────────────────────────────
+describe("MPFS underpayment section", () => {
+  const MANHATTAN = MPFS_LOCALITIES.find((l) => /manhattan/i.test(l.name))!
+
+  function remitSource(lines: { cpt: string; allowed: number; paid: number; mods?: string[] }[]): LeakSource {
+    return {
+      name: "remit.835",
+      records: [
+        {
+          externalClaimId: "C1",
+          payerName: "Medicare Part B",
+          serviceDate: "2026-03-01",
+          status: "paid",
+          lines: lines.map((l) => ({
+            cptCode: l.cpt,
+            modifiers: l.mods,
+            units: 1,
+            charge: l.allowed * 2,
+            paid: l.paid,
+            allowed: l.allowed,
+          })),
+        },
+      ],
+    }
+  }
+
+  test("is skipped when no locality is supplied, rather than guessed", () => {
+    const r = analyzeLeakReport([remitSource([{ cpt: "99213", allowed: 10, paid: 10 }])])
+    expect(r.underpayment).toBeNull()
+  })
+
+  test("is skipped for an aging CSV, which carries no adjudication", () => {
+    const aging: LeakSource = {
+      name: "aging.csv",
+      records: [
+        {
+          externalClaimId: "A1",
+          payerName: "Aetna",
+          status: "open",
+          totalCharge: 500,
+          lines: [{ cptCode: "99213", charge: 500 }],
+        },
+      ],
+    }
+    const r = analyzeLeakReport([aging], { locality: MANHATTAN })
+    expect(r.underpayment).toBeNull()
+  })
+
+  test("finds a real shortfall from a remittance", () => {
+    const full = medicareAllowed("99213", [], MANHATTAN)!
+    const r = analyzeLeakReport([remitSource([{ cpt: "99213", allowed: full * 0.6, paid: full * 0.48 }])], {
+      locality: MANHATTAN,
+    })
+    expect(r.underpayment).not.toBeNull()
+    expect(r.underpayment!.shortfall).toBeGreaterThan(0)
+    expect(r.underpayment!.shortfallByConfidence.high).toBeGreaterThan(0)
+    expect(r.underpayment!.byCode[0]!.cpt).toBe("99213")
+  })
+
+  test("does not double-count: a denial is not also an underpayment", () => {
+    const denied: LeakSource = {
+      name: "remit.835",
+      records: [
+        {
+          externalClaimId: "D1",
+          payerName: "Medicare Part B",
+          status: "denied",
+          lines: [{ cptCode: "99213", units: 1, charge: 200, paid: 0, allowed: 0 }],
+        },
+      ],
+    }
+    const r = analyzeLeakReport([denied], { locality: MANHATTAN })
+    expect(r.underpayment!.shortfall).toBe(0)
+    expect(r.underpayment!.totals.linesDenied).toBe(1)
   })
 })

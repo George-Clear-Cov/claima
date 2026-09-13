@@ -18,11 +18,18 @@
  * prospect who abandons the flow leaves no PHI behind on their own machine either.
  */
 
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { parseCsvBacklog } from "@/lib/import/fromCsv"
 import { parse835Backlog } from "@/lib/import/from835"
 import { analyzeLeakReport, RECOVERY_RATE_BASIS, type LeakReport, type LeakSource } from "@/lib/leak-report"
+import {
+  MPFS_LOCALITIES,
+  MPFS_RELEASE,
+  findLocality,
+  localityKey,
+  type UnderpaymentReport,
+} from "@/lib/mpfs"
 import { PASSWORD_RULES } from "@/lib/password"
 import { isValidNpi } from "@/lib/npi"
 
@@ -46,12 +53,17 @@ function detectFormat(name: string, text: string): "835" | "csv" {
 }
 
 export default function LeakReportTool({ activationEnabled = false }: { activationEnabled?: boolean }) {
-  const [report, setReport] = useState<LeakReport | null>(null)
   const [sources, setSources] = useState<AnalyzedSource[]>([])
   const [audience, setAudience] = useState<Audience>("practice")
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [dragging, setDragging] = useState(false)
+  /**
+   * Medicare locality, as "STATE-CODE". Deliberately empty until the visitor picks one: GPCI
+   * moves the allowed amount by more than 20% between Manhattan and Alabama, so defaulting it
+   * would invent a shortfall that is really a geography error. Empty simply hides the section.
+   */
+  const [locality, setLocality] = useState("")
   const inputRef = useRef<HTMLInputElement>(null)
 
   const run = useCallback(async (files: FileList | File[]) => {
@@ -79,41 +91,51 @@ export default function LeakReportTool({ activationEnabled = false }: { activati
           "No claim rows were found in that file. An aging or A/R export with one row per " +
             "service line works best. It needs at least a payer column and a balance column.",
         )
-        setReport(null)
+        setSources([])
         return
       }
 
-      const result = analyzeLeakReport(analyzed)
-      if (result.totals.balance === 0) {
+      // Computed here only to validate the parse. The report the UI renders is derived below,
+      // so changing locality re-benchmarks without re-reading the file.
+      if (analyzeLeakReport(analyzed).totals.balance === 0) {
         setError(
           "Rows were found, but every balance came through as zero. The balance column may " +
             "have a header we did not recognize. Try renaming it to Balance or Billed.",
         )
-        setReport(null)
+        setSources([])
         return
       }
 
       setAudience(analyzed.length > 1 ? "portfolio" : "practice")
       setSources(analyzed)
-      setReport(result)
     } catch {
       setError("That file could not be read. Plain CSV or an 835 text file works best.")
-      setReport(null)
+      setSources([])
     } finally {
       setBusy(false)
     }
   }, [])
+
+  /**
+   * Derived, not stored. Picking a locality re-benchmarks against the already-parsed records
+   * with no re-read and no network call, which is what keeps the promise on the page true.
+   */
+  const report = useMemo(
+    () => (sources.length > 0 ? analyzeLeakReport(sources, { locality: findLocality(locality) }) : null),
+    [sources, locality],
+  )
 
   if (report) {
     return (
       <Report
         report={report}
         sources={sources}
+        locality={locality}
+        onLocalityChange={setLocality}
         activationEnabled={activationEnabled}
         audience={audience}
         onAudienceChange={setAudience}
         onReset={() => {
-          setReport(null)
           setSources([])
           setError(null)
           if (inputRef.current) inputRef.current.value = ""
@@ -204,6 +226,8 @@ function Step({ n, title, children }: { n: string; title: string; children: Reac
 function Report({
   report: r,
   sources,
+  locality,
+  onLocalityChange,
   activationEnabled,
   audience,
   onAudienceChange,
@@ -211,12 +235,23 @@ function Report({
 }: {
   report: LeakReport
   sources: AnalyzedSource[]
+  locality: string
+  onLocalityChange: (l: string) => void
   activationEnabled: boolean
   audience: Audience
   onAudienceChange: (a: Audience) => void
   onReset: () => void
 }) {
   const portfolio = audience === "portfolio"
+  // Finding numbers are positional, so derive them once rather than repeating the condition
+  // at each call site — that is how they drifted out of order the last time one was added.
+  const hasFragmentation = r.fragmentation.merged.length > 0
+  const nTiers = hasFragmentation ? "03" : "02"
+  const nDeadlines = hasFragmentation ? "04" : "03"
+  const nUnderpayment = hasFragmentation ? "05" : "04"
+  const hasAdjudicatedLines = sources.some((s) =>
+    s.records.some((rec) => rec.lines.some((l) => l.allowed !== undefined || l.paid !== undefined)),
+  )
   const [activating, setActivating] = useState(false)
 
   const emailBody = encodeURIComponent(
@@ -323,7 +358,7 @@ function Report({
 
       {/* Finding 3 — tiers */}
       <Finding
-        n={r.fragmentation.merged.length > 0 ? "03" : "02"}
+        n={nTiers}
         title="What to do with it, in order"
         lede="Aged A/R is not one problem. Each tier below needs a different action, and they are not equally worth your time."
       >
@@ -366,7 +401,7 @@ function Report({
       {/* Finding 4 — deadlines */}
       {(r.deadlines.within60.accounts > 0 || r.deadlines.alreadyClosed.accounts > 0) && (
         <Finding
-          n={r.fragmentation.merged.length > 0 ? "04" : "03"}
+          n={nDeadlines}
           title="What stops being collectible soon"
           lede="Timely filing is the one deadline that does not negotiate."
         >
@@ -421,6 +456,15 @@ function Report({
       )}
 
       {/* Methodology + honesty */}
+      {/* Finding 5 — paid, but paid short. The one no competitor can produce on a cold prospect. */}
+      <UnderpaymentFinding
+        n={nUnderpayment}
+        report={r.underpayment}
+        locality={locality}
+        onLocalityChange={onLocalityChange}
+        hasAdjudicatedLines={hasAdjudicatedLines}
+      />
+
       <section className="rounded-xl border border-gray-200 bg-gray-50 px-7 py-6 text-sm text-gray-600 leading-relaxed">
         <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500 mb-3">
           How this number was produced
@@ -535,6 +579,216 @@ function Deadline({ label, accounts, balance, tone }: { label: string; accounts:
       <p className="text-[11px] font-semibold uppercase tracking-wide mb-1.5 opacity-80">{label}</p>
       <p className="text-xl font-bold tabular-nums">{money(balance)}</p>
       <p className="text-[12px] mt-0.5 opacity-80">{accounts} account{accounts === 1 ? "" : "s"}</p>
+    </div>
+  )
+}
+
+/**
+ * Underpayment against the public Medicare fee schedule.
+ *
+ * This finding exists because of a gap in the market, not because of a gap in the product:
+ * every funded vendor that detects underpayment benchmarks against the practice's own loaded
+ * payer contracts, so none of them can produce a number for someone who has not signed
+ * anything yet. The Medicare Physician Fee Schedule is public, so we can.
+ *
+ * The section is deliberately honest about weight. A shortfall under traditional Medicare is
+ * a real discrepancy. Under a commercial plan there is no Medicare floor at all, so it is an
+ * anomaly worth a look and is labelled as one.
+ */
+function UnderpaymentFinding({
+  n,
+  report,
+  locality,
+  onLocalityChange,
+  hasAdjudicatedLines,
+}: {
+  n: string
+  report: UnderpaymentReport | null
+  locality: string
+  onLocalityChange: (l: string) => void
+  hasAdjudicatedLines: boolean
+}) {
+  // An aging export carries balances, not adjudication. Say so rather than showing an empty
+  // section that reads like the practice has no underpayments.
+  if (!hasAdjudicatedLines) {
+    return (
+      <Finding
+        n={n}
+        title="Underpayment check needs a remittance file"
+        lede="This export has balances, not payment detail, so there is nothing to benchmark yet."
+      >
+        <p>
+          Drop in an 835 remittance file and this section compares every line the payer actually
+          adjudicated against the published Medicare allowed amount for your locality. That finds
+          a different kind of money than the rest of this report: a denied claim shows up in every
+          worklist, but a claim paid at 70% of the allowable shows up everywhere as{" "}
+          <em>paid</em> and is never worked by anyone.
+        </p>
+      </Finding>
+    )
+  }
+
+  const picker = (
+    <label className="block">
+      <span className="text-[11px] font-semibold uppercase tracking-[0.1em] text-gray-500">
+        Medicare locality
+      </span>
+      <select
+        value={locality}
+        onChange={(e) => onLocalityChange(e.target.value)}
+        className="mt-1.5 w-full max-w-md rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+      >
+        <option value="">Select where you bill from…</option>
+        {Object.entries(
+          MPFS_LOCALITIES.reduce<Record<string, typeof MPFS_LOCALITIES>>((acc, l) => {
+            ;(acc[l.state] ??= []).push(l)
+            return acc
+          }, {}),
+        ).map(([state, list]) => (
+          <optgroup key={state} label={state}>
+            {list.map((l) => (
+              <option key={localityKey(l)} value={localityKey(l)}>
+                {l.name}
+              </option>
+            ))}
+          </optgroup>
+        ))}
+      </select>
+    </label>
+  )
+
+  if (!report) {
+    return (
+      <Finding
+        n={n}
+        title="Were you paid what Medicare says the work is worth?"
+        lede="Pick your locality and this compares every adjudicated line against the published Medicare allowed amount."
+      >
+        {picker}
+        <p>
+          Locality is not optional and is not guessed. The geographic adjustment moves the allowed
+          amount by more than 20% between the most and least expensive areas, so defaulting it
+          would invent a shortfall that is really a mapping error.
+        </p>
+      </Finding>
+    )
+  }
+
+  const { totals, shortfallByConfidence: byConf } = report
+  const nothingFound = report.shortfall <= 0
+
+  return (
+    <Finding
+      n={n}
+      title={
+        nothingFound
+          ? "Nothing was paid below the Medicare floor"
+          : `${money(report.shortfall)} was paid below the Medicare floor`
+      }
+      lede={
+        nothingFound
+          ? `All ${totals.linesBenchmarked} benchmarked lines came in at or above the published Medicare allowed amount for ${report.locality.name}.`
+          : `Across ${totals.linesBenchmarked} adjudicated lines, payers allowed ${money(totals.actualAllowed)} where the published Medicare amount for ${report.locality.name} is ${money(totals.medicareAllowed)}.`
+      }
+    >
+      {picker}
+
+      {!nothingFound && (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <ConfidenceCard
+              label="Traditional Medicare"
+              amount={byConf.high}
+              note="The fee schedule is the allowed amount. A shortfall here is a real discrepancy."
+              tone="red"
+            />
+            <ConfidenceCard
+              label="Medicare Advantage"
+              amount={byConf.medium}
+              note="Contracted MA rates are negotiated, so some of this may be the contract working as written."
+              tone="amber"
+            />
+            <ConfidenceCard
+              label="Commercial and Medicaid"
+              amount={byConf.signal}
+              note="No Medicare floor applies. Commercial rates normally sit above it, so this is a signal, not a violation."
+              tone="gray"
+            />
+          </div>
+
+          {report.byCode.length > 0 && (
+            <div>
+              <p className="font-semibold text-gray-900 mb-2">Where it concentrates</p>
+              <div className="overflow-x-auto">
+                <table className="w-full text-[13px]">
+                  <thead>
+                    <tr className="text-left text-gray-500 border-b border-gray-200">
+                      <th className="py-1.5 pr-4 font-medium">Code</th>
+                      <th className="py-1.5 pr-4 font-medium text-right">Units</th>
+                      <th className="py-1.5 pr-4 font-medium text-right">Short per unit</th>
+                      <th className="py-1.5 font-medium text-right">Total short</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {report.byCode.slice(0, 6).map((c) => (
+                      <tr key={c.cpt} className="border-b border-gray-100 last:border-0">
+                        <td className="py-1.5 pr-4 font-mono text-gray-900">{c.cpt}</td>
+                        <td className="py-1.5 pr-4 text-right tabular-nums text-gray-600">{c.units}</td>
+                        <td className="py-1.5 pr-4 text-right tabular-nums text-gray-600">
+                          {money(c.shortfallPerUnit)}
+                        </td>
+                        <td className="py-1.5 text-right tabular-nums font-semibold text-gray-900">
+                          {money(c.shortfall)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-gray-500 mb-1.5">
+          How this was calculated
+        </p>
+        <ul className="list-disc pl-4 space-y-1 text-[12.5px] text-gray-600">
+          {report.caveats.map((c, i) => (
+            <li key={i}>{c}</li>
+          ))}
+        </ul>
+        <p className="text-[12px] text-gray-500 mt-2">
+          Source: {MPFS_RELEASE.source}, {MPFS_RELEASE.release} {MPFS_RELEASE.year}. Public CMS
+          data, {MPFS_RELEASE.codes.toLocaleString()} priced codes, read in your browser.
+        </p>
+      </div>
+    </Finding>
+  )
+}
+
+function ConfidenceCard({
+  label,
+  amount,
+  note,
+  tone,
+}: {
+  label: string
+  amount: number
+  note: string
+  tone: "red" | "amber" | "gray"
+}) {
+  const tones = {
+    red: "border-red-200 bg-red-50 text-red-800",
+    amber: "border-amber-200 bg-amber-50 text-amber-800",
+    gray: "border-gray-200 bg-gray-50 text-gray-700",
+  }
+  return (
+    <div className={`rounded-lg border px-4 py-3.5 ${tones[tone]}`}>
+      <p className="text-[11px] font-semibold uppercase tracking-wide mb-1 opacity-80">{label}</p>
+      <p className="text-xl font-bold tabular-nums">{money(amount)}</p>
+      <p className="text-[11.5px] mt-1 leading-snug opacity-80">{note}</p>
     </div>
   )
 }

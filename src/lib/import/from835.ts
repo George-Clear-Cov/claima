@@ -56,6 +56,8 @@ function recordFromClaim(remit: Remittance835, c: ClaimPayment): ImportedRecord 
       units: l.units,
       charge: l.charge,
       paid: l.paid,
+      allowed: l.allowed,
+      patientResponsibility: l.patientResp.total || undefined,
     })),
     totalCharge: c.totalCharge,
     totalPaid: c.totalPaid,

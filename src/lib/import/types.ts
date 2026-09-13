@@ -13,6 +13,15 @@ export interface ImportedLine {
   units?: number
   charge?: number
   paid?: number
+  /**
+   * AMT*B6 — what the payer says it allowed for this line. Only remittance (835) sources
+   * carry it; an aging CSV has balances, not adjudication. This is the anchor for
+   * Medicare-fee-schedule underpayment detection, so dropping it in normalization is what
+   * previously made that analysis impossible from the leak report.
+   */
+  allowed?: number
+  /** Line-level PR-group total (deductible + coinsurance + copay). */
+  patientResponsibility?: number
 }
 
 export interface ImportedRecord {
