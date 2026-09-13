@@ -48,3 +48,6 @@ next-env.d.ts
 # skills-lock.json (which IS tracked). Restore with: npx skills install
 .agents/
 .claude/skills/
+
+# CMS API response cache for scripts/fetch-practice-data.ts. Regenerable, and large.
+.cache/
