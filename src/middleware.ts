@@ -10,6 +10,8 @@ const PUBLIC_PATHS = [
   "/terms",
   "/security",
   "/leak-report",         // free diagnostic — no account, and deliberately no auth wall
+  "/pricing",             // published rates — the entire point is that it needs no gate
+  "/p",                   // per-practice profile pages built from public CMS data
   "/engagement",          // recovery services agreement — must be readable before accepting
   "/support",             // public help/support page (marketplace + external support links)
   "/store",               // public storefront — customers don't need an account
