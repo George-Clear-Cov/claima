@@ -58,6 +58,7 @@ export default function Marketing() {
           </div>
           <nav className="flex items-center gap-1">
             <Link href="/leak-report" className="hidden sm:inline-block text-sm text-gray-600 hover:text-gray-900 transition-colors px-3 py-1.5 rounded-md hover:bg-gray-50">Leak Report</Link>
+            <Link href="/pricing" className="hidden sm:inline-block text-sm text-gray-600 hover:text-gray-900 transition-colors px-3 py-1.5 rounded-md hover:bg-gray-50">Pricing</Link>
             <Link href="/security" className="hidden sm:inline-block text-sm text-gray-600 hover:text-gray-900 transition-colors px-3 py-1.5 rounded-md hover:bg-gray-50">Security</Link>
             <Link href="/login" className="text-sm text-gray-600 hover:text-gray-900 transition-colors px-3 py-1.5 rounded-md hover:bg-gray-50">Sign in</Link>
             <Link href="/signup" className="ml-2 text-sm font-medium bg-gray-900 hover:bg-gray-700 text-white px-3.5 py-1.5 rounded-md transition-colors">
@@ -352,6 +353,7 @@ export default function Marketing() {
           <div className="flex items-center gap-5">
             <Link href="/privacy" className="hover:text-gray-200 transition-colors">Privacy</Link>
             <Link href="/terms" className="hover:text-gray-200 transition-colors">Terms</Link>
+            <Link href="/pricing" className="hover:text-gray-200 transition-colors">Pricing</Link>
             <Link href="/security" className="hover:text-gray-200 transition-colors">Security</Link>
             <a href="mailto:support@claima.io" className="hover:text-gray-200 transition-colors">support@claima.io</a>
           </div>
